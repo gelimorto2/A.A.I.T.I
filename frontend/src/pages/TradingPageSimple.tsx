@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Card,
@@ -33,19 +33,12 @@ interface MarketData {
 
 const TradingPageSimple: React.FC = () => {
   const [marketData, setMarketData] = useState<MarketData[]>([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const popularSymbols = ['AAPL', 'GOOGL', 'MSFT', 'TSLA', 'AMZN', 'NVDA', 'META'];
+  const popularSymbols = useMemo(() => ['AAPL', 'GOOGL', 'MSFT', 'TSLA', 'AMZN', 'NVDA', 'META'], []);
 
-  useEffect(() => {
-    fetchMarketData();
-    const interval = setInterval(fetchMarketData, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchMarketData = async () => {
+  const fetchMarketData = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('/api/trading/quotes', {
@@ -67,7 +60,13 @@ const TradingPageSimple: React.FC = () => {
     } catch (error) {
       console.error('Error fetching market data:', error);
     }
-  };
+  }, [popularSymbols]);
+
+  useEffect(() => {
+    fetchMarketData();
+    const interval = setInterval(fetchMarketData, 10000);
+    return () => clearInterval(interval);
+  }, [fetchMarketData]);
 
   return (
     <Box>

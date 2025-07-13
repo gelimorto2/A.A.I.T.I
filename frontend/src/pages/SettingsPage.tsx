@@ -13,7 +13,6 @@ import {
   InputLabel,
   Switch,
   FormControlLabel,
-  Divider,
   Alert,
   Tab,
   Tabs,
@@ -30,7 +29,6 @@ import {
 import {
   Settings,
   Security,
-  Notifications,
   Api,
   Storage,
   ExpandMore,
@@ -121,7 +119,7 @@ const SettingsPage: React.FC = () => {
       });
       
       if (response.ok) {
-        const data = await response.json();
+        // const data = await response.json();
         // Update settings from API
         // For now using mock data
       }
@@ -138,7 +136,7 @@ const SettingsPage: React.FC = () => {
       });
       
       if (response.ok) {
-        const data = await response.json();
+        // const data = await response.json();
         setSystemInfo({
           version: '1.0.0',
           uptime: '2 days, 14 hours',

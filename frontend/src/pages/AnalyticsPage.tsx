@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
-  Grid,
   Card,
   CardContent,
   Typography,
@@ -23,6 +22,7 @@ import {
   LinearProgress,
   Alert,
 } from '@mui/material';
+import Grid from '@mui/material/Grid2';
 import {
   TrendingUp,
   TrendingDown,
@@ -84,7 +84,6 @@ interface BotPerformance {
 
 const AnalyticsPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { portfolio, loading } = useSelector((state: RootState) => state.analytics);
   const { bots } = useSelector((state: RootState) => state.bots);
 
   const [activeTab, setActiveTab] = useState(0);
@@ -92,47 +91,10 @@ const AnalyticsPage: React.FC = () => {
   const [selectedBot, setSelectedBot] = useState('all');
   const [performanceData, setPerformanceData] = useState<PerformanceData[]>([]);
   const [botPerformance, setBotPerformance] = useState<BotPerformance[]>([]);
-  const [loading2, setLoading2] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    dispatch(fetchPortfolio());
-    fetchAnalyticsData();
-  }, [dispatch, timeframe, selectedBot]);
-
-  const fetchAnalyticsData = async () => {
-    setLoading2(true);
-    try {
-      const token = localStorage.getItem('token');
-      
-      // Fetch performance data
-      const perfResponse = await fetch(`/api/analytics/performance?days=${timeframe}&botId=${selectedBot}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (perfResponse.ok) {
-        const perfData = await perfResponse.json();
-        setPerformanceData(generateMockPerformanceData(timeframe));
-      }
-
-      // Fetch bot-specific performance
-      const botResponse = await fetch('/api/analytics/bots-performance', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (botResponse.ok) {
-        const botData = await botResponse.json();
-        setBotPerformance(generateMockBotPerformance());
-      }
-    } catch (error) {
-      setError('Failed to fetch analytics data');
-    } finally {
-      setLoading2(false);
-    }
-  };
-
   // Generate mock data for demonstration
-  const generateMockPerformanceData = (days: number): PerformanceData[] => {
+  const generateMockPerformanceData = useCallback((days: number): PerformanceData[] => {
     const data: PerformanceData[] = [];
     let cumulativePnl = 0;
     
@@ -154,20 +116,73 @@ const AnalyticsPage: React.FC = () => {
     }
     
     return data;
-  };
+  }, []);
 
-  const generateMockBotPerformance = (): BotPerformance[] => {
-    return bots.map(bot => ({
-      botId: bot.id,
-      botName: bot.name,
-      totalPnl: (Math.random() - 0.3) * 5000, // -1500 to 3500
-      totalTrades: Math.floor(Math.random() * 200) + 10,
-      winRate: Math.random() * 40 + 40,
-      sharpeRatio: Math.random() * 2 + 0.5,
-      maxDrawdown: Math.random() * -15 - 2,
-      status: bot.status
-    }));
-  };
+  const generateMockBotPerformance = useCallback((): BotPerformance[] => {
+    return [
+      {
+        botId: '1',
+        botName: 'Momentum Trader',
+        totalTrades: 156,
+        totalPnl: 2347.50,
+        winRate: 57.1,
+        sharpeRatio: 1.34,
+        maxDrawdown: -5.2,
+        status: 'running'
+      },
+      {
+        botId: '2',
+        botName: 'Arbitrage Hunter',
+        totalTrades: 203,
+        totalPnl: 1892.30,
+        winRate: 66.0,
+        sharpeRatio: 1.78,
+        maxDrawdown: -3.1,
+        status: 'running'
+      },
+      {
+        botId: '3',
+        botName: 'Grid Trader',
+        totalTrades: 87,
+        totalPnl: -234.10,
+        winRate: 51.7,
+        sharpeRatio: 0.89,
+        maxDrawdown: -8.4,
+        status: 'stopped'
+      }
+    ];
+  }, []);
+
+  const fetchAnalyticsData = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Fetch performance data
+      const perfResponse = await fetch(`/api/analytics/performance?days=${timeframe}&botId=${selectedBot}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (perfResponse.ok) {
+        setPerformanceData(generateMockPerformanceData(timeframe));
+      }
+
+      // Fetch bot-specific performance
+      const botResponse = await fetch('/api/analytics/bots-performance', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (botResponse.ok) {
+        setBotPerformance(generateMockBotPerformance());
+      }
+    } catch (error) {
+      setError('Failed to fetch analytics data');
+    }
+  }, [timeframe, selectedBot, generateMockPerformanceData, generateMockBotPerformance]);
+
+  useEffect(() => {
+    dispatch(fetchPortfolio());
+    fetchAnalyticsData();
+  }, [dispatch, fetchAnalyticsData]);
 
   const getPerformanceChartData = () => {
     const labels = performanceData.map(d => d.date);
@@ -264,6 +279,7 @@ const AnalyticsPage: React.FC = () => {
     maintainAspectRatio: false,
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const totalPnl = botPerformance.reduce((sum, bot) => sum + bot.totalPnl, 0);
   const totalTrades = botPerformance.reduce((sum, bot) => sum + bot.totalTrades, 0);
   const avgWinRate = botPerformance.length > 0 

@@ -19,12 +19,7 @@ import {
   DialogContent,
   DialogActions,
   IconButton,
-  Switch,
-  FormControlLabel,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Fab,
+
   Menu,
   ListItemIcon,
   ListItemText,
@@ -35,16 +30,11 @@ import {
   Stop,
   Edit,
   Delete,
-  Settings,
   MoreVert,
-  ExpandMore,
   SmartToy,
-  TrendingUp,
-  TrendingDown,
   Warning,
   CheckCircle,
   Error,
-  Refresh,
   Close,
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
@@ -70,7 +60,6 @@ interface Bot {
 const BotsPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { bots, loading } = useSelector((state: RootState) => state.bots);
-  const { user } = useSelector((state: RootState) => state.auth);
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
