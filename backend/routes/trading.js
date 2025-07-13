@@ -2,6 +2,7 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { db } = require('../database/init');
 const { authenticateToken, auditLog } = require('../middleware/auth');
+const marketDataService = require('../utils/marketData');
 const logger = require('../utils/logger');
 
 const router = express.Router();
@@ -196,48 +197,90 @@ router.post('/trades/:tradeId/close', authenticateToken, auditLog('close_trade',
   );
 });
 
-// Get market data (mock endpoint)
-router.get('/market-data/:symbol', authenticateToken, (req, res) => {
-  const { symbol } = req.params;
-  const { timeframe = '1m', limit = 100 } = req.query;
+// Get market data (real data from Alpha Vantage)
+router.get('/market-data/:symbol', authenticateToken, async (req, res) => {
+  try {
+    const { symbol } = req.params;
+    const { timeframe = 'daily', limit = 100 } = req.query;
 
-  // In a real implementation, this would fetch from actual market data providers
-  // For now, we'll return mock data
-  const mockData = Array.from({ length: parseInt(limit) }, (_, i) => {
-    const timestamp = new Date(Date.now() - i * 60000).toISOString();
-    const basePrice = 100 + Math.sin(i * 0.1) * 10;
-    const volatility = Math.random() * 2;
+    const historicalData = await marketDataService.getHistoricalData(symbol, timeframe);
     
-    return {
-      symbol,
-      timestamp,
-      open: basePrice + Math.random() * volatility - volatility / 2,
-      high: basePrice + Math.random() * volatility,
-      low: basePrice - Math.random() * volatility,
-      close: basePrice + Math.random() * volatility - volatility / 2,
-      volume: Math.random() * 1000000,
-      timeframe
-    };
-  }).reverse();
+    if (!historicalData) {
+      return res.status(404).json({ error: 'No data available for symbol' });
+    }
 
-  res.json({ data: mockData });
+    // Limit the data if requested
+    const limitedData = {
+      ...historicalData,
+      data: historicalData.data.slice(0, parseInt(limit))
+    };
+
+    res.json({ data: limitedData });
+  } catch (error) {
+    logger.error('Error fetching market data:', error);
+    res.status(500).json({ error: 'Failed to fetch market data' });
+  }
 });
 
-// Get real-time price (mock endpoint)
-router.get('/price/:symbol', authenticateToken, (req, res) => {
-  const { symbol } = req.params;
-  
-  // Mock real-time price
-  const price = {
-    symbol,
-    price: 100 + Math.random() * 50,
-    timestamp: new Date().toISOString(),
-    bid: 99.5 + Math.random() * 50,
-    ask: 100.5 + Math.random() * 50,
-    volume: Math.random() * 1000000
-  };
+// Get real-time price (real data from Alpha Vantage)
+router.get('/price/:symbol', authenticateToken, async (req, res) => {
+  try {
+    const { symbol } = req.params;
+    
+    const quote = await marketDataService.getQuote(symbol);
+    
+    if (!quote) {
+      return res.status(404).json({ error: 'No quote available for symbol' });
+    }
 
-  res.json(price);
+    res.json(quote);
+  } catch (error) {
+    logger.error('Error fetching price:', error);
+    res.status(500).json({ error: 'Failed to fetch price data' });
+  }
+});
+
+// Search for trading symbols
+router.get('/search/:keywords', authenticateToken, async (req, res) => {
+  try {
+    const { keywords } = req.params;
+    
+    const results = await marketDataService.searchSymbols(keywords);
+    
+    res.json({ results });
+  } catch (error) {
+    logger.error('Error searching symbols:', error);
+    res.status(500).json({ error: 'Failed to search symbols' });
+  }
+});
+
+// Get popular trading symbols
+router.get('/symbols/popular', authenticateToken, (req, res) => {
+  try {
+    const symbols = marketDataService.getPopularSymbols();
+    res.json({ symbols });
+  } catch (error) {
+    logger.error('Error fetching popular symbols:', error);
+    res.status(500).json({ error: 'Failed to fetch popular symbols' });
+  }
+});
+
+// Get multiple quotes
+router.post('/quotes', authenticateToken, async (req, res) => {
+  try {
+    const { symbols } = req.body;
+    
+    if (!symbols || !Array.isArray(symbols)) {
+      return res.status(400).json({ error: 'Symbols array is required' });
+    }
+    
+    const quotes = await marketDataService.getMultipleQuotes(symbols);
+    
+    res.json({ quotes });
+  } catch (error) {
+    logger.error('Error fetching multiple quotes:', error);
+    res.status(500).json({ error: 'Failed to fetch quotes' });
+  }
 });
 
 module.exports = router;

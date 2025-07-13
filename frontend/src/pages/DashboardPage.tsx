@@ -86,7 +86,7 @@ const DashboardPage: React.FC = () => {
 
       {/* System Status Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -105,7 +105,7 @@ const DashboardPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -132,7 +132,7 @@ const DashboardPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -162,7 +162,7 @@ const DashboardPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -211,7 +211,7 @@ const DashboardPage: React.FC = () => {
 
       <Grid container spacing={3}>
         {bots.slice(0, 6).map((bot) => (
-          <Grid item xs={12} sm={6} md={4} key={bot.id}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={bot.id}>
             <Card 
               sx={{ 
                 bgcolor: 'background.paper', 

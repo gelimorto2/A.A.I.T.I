@@ -10,7 +10,7 @@ import RegisterPage from '../pages/RegisterPage';
 import DashboardPage from '../pages/DashboardPage';
 import BotsPage from '../pages/BotsPage';
 import BotDetailPage from '../pages/BotDetailPage';
-import TradingPage from '../pages/TradingPage';
+import TradingPage from '../pages/TradingPageSimple';
 import AnalyticsPage from '../pages/AnalyticsPage';
 import SettingsPage from '../pages/SettingsPage';
 
