@@ -16,6 +16,8 @@ const userRoutes = require('./routes/users');
 
 const { initializeDatabase } = require('./database/init');
 const { authenticateSocket } = require('./middleware/auth');
+const { initializeUserCredentials } = require('./utils/credentials');
+const marketDataService = require('./utils/marketData');
 const logger = require('./utils/logger');
 
 const app = express();
@@ -96,9 +98,29 @@ io.on('connection', (socket) => {
 });
 
 // Global real-time data broadcaster
-const broadcastData = () => {
-  // This will be called periodically to send real-time updates
-  // Market data, bot status, PnL updates, etc.
+const broadcastData = async () => {
+  try {
+    // Get popular symbols and broadcast their prices
+    const symbols = marketDataService.getPopularSymbols().slice(0, 5); // Limit to 5 to avoid API rate limits
+    const quotes = await marketDataService.getMultipleQuotes(symbols);
+    
+    // Broadcast to all connected users
+    io.emit('market_data_update', {
+      timestamp: new Date().toISOString(),
+      quotes: quotes.filter(q => q.success).map(q => q.data)
+    });
+    
+    // Broadcast system health
+    io.emit('system_health', {
+      timestamp: new Date().toISOString(),
+      status: 'healthy',
+      uptime: process.uptime(),
+      memoryUsage: process.memoryUsage(),
+      connectedUsers: io.engine.clientsCount
+    });
+  } catch (error) {
+    logger.error('Error broadcasting data:', error);
+  }
 };
 
 // Initialize database and start server
@@ -106,6 +128,10 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
+    // Initialize credentials first
+    await initializeUserCredentials();
+    logger.info('Credentials initialized successfully');
+    
     await initializeDatabase();
     logger.info('Database initialized successfully');
     
@@ -114,7 +140,7 @@ const startServer = async () => {
     });
     
     // Start real-time data broadcasting
-    setInterval(broadcastData, 1000); // Every second
+    setInterval(broadcastData, 5000); // Every 5 seconds
     
   } catch (error) {
     logger.error('Failed to start server:', error);
