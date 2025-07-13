@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
+  Grid,
   Card,
   CardContent,
   Typography,
@@ -27,7 +28,6 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import Grid from '@mui/material/Grid2';
 import {
   TrendingUp,
   TrendingDown,
@@ -324,7 +324,7 @@ const TradingPage: React.FC = () => {
       {/* Market Watch Tab */}
       {activeTab === 0 && (
         <Grid container spacing={3}>
-          <Grid xs={12}>
+          <Grid size={12}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -431,7 +431,7 @@ const TradingPage: React.FC = () => {
       {/* Charts Tab */}
       {activeTab === 1 && (
         <Grid container spacing={3}>
-          <Grid xs={12}>
+          <Grid size={12}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -468,7 +468,7 @@ const TradingPage: React.FC = () => {
       {/* Active Trades Tab */}
       {activeTab === 2 && (
         <Grid container spacing={3}>
-          <Grid xs={12}>
+          <Grid size={12}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -568,7 +568,7 @@ const TradingPage: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid xs={12}>
+            <Grid size={12}>
               <FormControl fullWidth>
                 <InputLabel>Trading Bot</InputLabel>
                 <Select
@@ -584,7 +584,7 @@ const TradingPage: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid xs={6}>
+            <Grid size={6}>
               <FormControl fullWidth>
                 <InputLabel>Symbol</InputLabel>
                 <Select
@@ -600,7 +600,7 @@ const TradingPage: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid xs={6}>
+            <Grid size={6}>
               <FormControl fullWidth>
                 <InputLabel>Side</InputLabel>
                 <Select
@@ -613,7 +613,7 @@ const TradingPage: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid xs={6}>
+            <Grid size={6}>
               <TextField
                 fullWidth
                 label="Quantity"
@@ -622,7 +622,7 @@ const TradingPage: React.FC = () => {
                 onChange={(e) => setTradeForm({ ...tradeForm, quantity: Number(e.target.value) })}
               />
             </Grid>
-            <Grid xs={6}>
+            <Grid size={6}>
               <TextField
                 fullWidth
                 label="Price (0 for market price)"

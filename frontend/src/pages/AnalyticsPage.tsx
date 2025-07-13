@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
+  Grid,
   Card,
   CardContent,
   Typography,
@@ -22,7 +23,6 @@ import {
   LinearProgress,
   Alert,
 } from '@mui/material';
-import Grid from '@mui/material/Grid2';
 import {
   TrendingUp,
   TrendingDown,
@@ -323,7 +323,7 @@ const AnalyticsPage: React.FC = () => {
 
       {/* Performance Summary Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -350,7 +350,7 @@ const AnalyticsPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -369,7 +369,7 @@ const AnalyticsPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -399,7 +399,7 @@ const AnalyticsPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -465,7 +465,7 @@ const AnalyticsPage: React.FC = () => {
       {/* Performance Charts Tab */}
       {activeTab === 0 && (
         <Grid container spacing={3}>
-          <Grid item xs={12} lg={8}>
+          <Grid size={{ xs: 12, lg: 8 }}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -480,7 +480,7 @@ const AnalyticsPage: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} lg={4}>
+          <Grid size={{ xs: 12, lg: 4 }}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -500,7 +500,7 @@ const AnalyticsPage: React.FC = () => {
       {/* Bot Comparison Tab */}
       {activeTab === 1 && (
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -523,7 +523,7 @@ const AnalyticsPage: React.FC = () => {
                     <TableBody>
                       {botPerformance.map((bot) => (
                         <TableRow key={bot.botId}>
-                          <TableCell fontWeight="bold">{bot.botName}</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>{bot.botName}</TableCell>
                           <TableCell>
                             <Chip 
                               label={bot.status.toUpperCase()}
@@ -568,7 +568,7 @@ const AnalyticsPage: React.FC = () => {
       {/* Allocation Tab */}
       {activeTab === 2 && (
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -583,7 +583,7 @@ const AnalyticsPage: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
