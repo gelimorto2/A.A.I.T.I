@@ -324,7 +324,7 @@ const TradingPage: React.FC = () => {
       {/* Market Watch Tab */}
       {activeTab === 0 && (
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -584,7 +584,7 @@ const TradingPage: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={6}>
+            <Grid xs={6}>
               <FormControl fullWidth>
                 <InputLabel>Symbol</InputLabel>
                 <Select
@@ -600,7 +600,7 @@ const TradingPage: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={6}>
+            <Grid xs={6}>
               <FormControl fullWidth>
                 <InputLabel>Side</InputLabel>
                 <Select
@@ -613,7 +613,7 @@ const TradingPage: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={6}>
+            <Grid xs={6}>
               <TextField
                 fullWidth
                 label="Quantity"
@@ -622,7 +622,7 @@ const TradingPage: React.FC = () => {
                 onChange={(e) => setTradeForm({ ...tradeForm, quantity: Number(e.target.value) })}
               />
             </Grid>
-            <Grid item xs={6}>
+            <Grid xs={6}>
               <TextField
                 fullWidth
                 label="Price (0 for market price)"

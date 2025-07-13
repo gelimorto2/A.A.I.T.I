@@ -15,7 +15,6 @@ import {
   TrendingUp,
   Analytics,
   Settings,
-  Security,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -45,12 +44,6 @@ const menuItems = [
     icon: <Analytics />, 
     path: '/analytics',
     description: 'Performance Intel'
-  },
-  { 
-    text: 'Risk Monitor', 
-    icon: <Security />, 
-    path: '/risk',
-    description: 'Exposure Control'
   },
   { 
     text: 'Settings', 
