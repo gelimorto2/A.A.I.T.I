@@ -224,7 +224,6 @@ const AnalyticsPage: React.FC = () => {
 
   const getBotAllocationData = () => {
     const runningBots = botPerformance.filter(bot => bot.status === 'running');
-    const totalPnl = runningBots.reduce((sum, bot) => sum + Math.abs(bot.totalPnl), 0);
     
     return {
       labels: runningBots.map(bot => bot.botName),
