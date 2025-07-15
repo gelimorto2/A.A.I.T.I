@@ -16,131 +16,175 @@ const userRoutes = require('./routes/users');
 
 const { initializeDatabase } = require('./database/init');
 const { authenticateSocket } = require('./middleware/auth');
-const { initializeUserCredentials } = require('./utils/credentials');
+const { initializeUserCredentials, getCredentials } = require('./utils/credentials');
 const marketDataService = require('./utils/marketData');
 const logger = require('./utils/logger');
 
 const app = express();
 const server = http.createServer(app);
 
+// Initialize credentials and get configuration
+let config = {};
+
+const initializeConfig = async () => {
+  await initializeUserCredentials();
+  const credentials = getCredentials();
+  
+  // Merge default configuration with stored settings
+  config = {
+    port: credentials?.system?.port || process.env.PORT || 5000,
+    nodeEnv: credentials?.system?.nodeEnv || process.env.NODE_ENV || 'development',
+    frontendUrl: credentials?.system?.frontendUrl || process.env.FRONTEND_URL || 'http://localhost:3000',
+    dbPath: credentials?.system?.dbPath || process.env.DB_PATH || './database/aaiti.sqlite',
+    logLevel: credentials?.system?.logLevel || process.env.LOG_LEVEL || 'info',
+    jwtSecret: credentials?.security?.jwtSecret || process.env.JWT_SECRET || 'fallback-secret',
+    jwtExpiresIn: credentials?.system?.jwtExpiresIn || process.env.JWT_EXPIRES_IN || '7d'
+  };
+  
+  return config;
+};
+
 // Configure CORS for Socket.IO
-const io = socketIo(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    methods: ["GET", "POST"],
+const initializeSocketIO = () => {
+  return socketIo(server, {
+    cors: {
+      origin: config.frontendUrl,
+      methods: ["GET", "POST"],
+      credentials: true
+    }
+  });
+};
+
+// Initialize app middleware
+const initializeMiddleware = () => {
+  // Security middleware
+  app.use(helmet());
+  app.use(cors({
+    origin: config.frontendUrl,
     credentials: true
-  }
-});
+  }));
 
-// Security middleware
-app.use(helmet());
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
-  credentials: true
-}));
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
-});
-app.use(limiter);
-
-// Logging
-app.use(morgan('combined'));
-
-// Body parsing
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/bots', botRoutes);
-app.use('/api/trading', tradingRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/users', userRoutes);
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'healthy', 
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+  // Rate limiting
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100 // limit each IP to 100 requests per windowMs
   });
-});
+  app.use(limiter);
 
-// Socket.IO connection handling
-io.use(authenticateSocket);
+  // Logging
+  app.use(morgan('combined'));
 
-io.on('connection', (socket) => {
-  logger.info(`User ${socket.userId} connected`);
-  
-  // Join user-specific room for personalized updates
-  socket.join(`user_${socket.userId}`);
-  
-  // Join bot rooms user has access to
-  // This will be populated based on user permissions
-  
-  socket.on('subscribe_to_bot', (botId) => {
-    // Verify user has access to this bot
-    socket.join(`bot_${botId}`);
-    logger.info(`User ${socket.userId} subscribed to bot ${botId}`);
-  });
-  
-  socket.on('unsubscribe_from_bot', (botId) => {
-    socket.leave(`bot_${botId}`);
-    logger.info(`User ${socket.userId} unsubscribed from bot ${botId}`);
-  });
-  
-  socket.on('disconnect', () => {
-    logger.info(`User ${socket.userId} disconnected`);
-  });
-});
+  // Body parsing
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true }));
 
-// Global real-time data broadcaster
-const broadcastData = async () => {
-  try {
-    // Get popular symbols and broadcast their prices
-    const symbols = marketDataService.getPopularSymbols().slice(0, 5); // Limit to 5 to avoid API rate limits
-    const quotes = await marketDataService.getMultipleQuotes(symbols);
-    
-    // Broadcast to all connected users
-    io.emit('market_data_update', {
+  // Routes
+  app.use('/api/auth', authRoutes);
+  app.use('/api/bots', botRoutes);
+  app.use('/api/trading', tradingRoutes);
+  app.use('/api/analytics', analyticsRoutes);
+  app.use('/api/users', userRoutes);
+
+  // Health check endpoint
+  app.get('/api/health', (req, res) => {
+    res.json({ 
+      status: 'healthy', 
       timestamp: new Date().toISOString(),
-      quotes: quotes.filter(q => q.success).map(q => q.data)
-    });
-    
-    // Broadcast system health
-    io.emit('system_health', {
-      timestamp: new Date().toISOString(),
-      status: 'healthy',
       uptime: process.uptime(),
-      memoryUsage: process.memoryUsage(),
-      connectedUsers: io.engine.clientsCount
+      config: {
+        nodeEnv: config.nodeEnv,
+        version: '1.0.0'
+      }
     });
-  } catch (error) {
-    logger.error('Error broadcasting data:', error);
-  }
+  });
+};
+
+// Socket.IO connection handling and real-time data
+const initializeSocketHandlers = (io) => {
+  io.use(authenticateSocket);
+
+  io.on('connection', (socket) => {
+    logger.info(`User ${socket.userId} connected`);
+    
+    // Join user-specific room for personalized updates
+    socket.join(`user_${socket.userId}`);
+    
+    // Join bot rooms user has access to
+    // This will be populated based on user permissions
+    
+    socket.on('subscribe_to_bot', (botId) => {
+      // Verify user has access to this bot
+      socket.join(`bot_${botId}`);
+      logger.info(`User ${socket.userId} subscribed to bot ${botId}`);
+    });
+    
+    socket.on('unsubscribe_from_bot', (botId) => {
+      socket.leave(`bot_${botId}`);
+      logger.info(`User ${socket.userId} unsubscribed from bot ${botId}`);
+    });
+    
+    socket.on('disconnect', () => {
+      logger.info(`User ${socket.userId} disconnected`);
+    });
+  });
+
+  // Global real-time data broadcaster
+  const broadcastData = async () => {
+    try {
+      // Get popular symbols and broadcast their prices
+      const symbols = marketDataService.getPopularSymbols().slice(0, 5); // Limit to 5 to avoid API rate limits
+      const quotes = await marketDataService.getMultipleQuotes(symbols);
+      
+      // Broadcast to all connected users
+      io.emit('market_data_update', {
+        timestamp: new Date().toISOString(),
+        quotes: quotes.filter(q => q.success).map(q => q.data)
+      });
+      
+      // Broadcast system health
+      io.emit('system_health', {
+        timestamp: new Date().toISOString(),
+        status: 'healthy',
+        uptime: process.uptime(),
+        memoryUsage: process.memoryUsage(),
+        connectedUsers: io.engine.clientsCount
+      });
+    } catch (error) {
+      logger.error('Error broadcasting data:', error);
+    }
+  };
+
+  // Start real-time data broadcasting
+  setInterval(broadcastData, 5000); // Every 5 seconds
+  
+  return io;
 };
 
 // Initialize database and start server
-const PORT = process.env.PORT || 5000;
-
 const startServer = async () => {
   try {
-    // Initialize credentials first
-    await initializeUserCredentials();
-    logger.info('Credentials initialized successfully');
+    // Initialize configuration first
+    await initializeConfig();
+    logger.info('Configuration initialized successfully');
     
+    // Initialize database
     await initializeDatabase();
     logger.info('Database initialized successfully');
     
-    server.listen(PORT, () => {
-      logger.info(`AAITI Backend Server running on port ${PORT}`);
-    });
+    // Initialize middleware
+    initializeMiddleware();
+    logger.info('Middleware initialized successfully');
     
-    // Start real-time data broadcasting
-    setInterval(broadcastData, 5000); // Every 5 seconds
+    // Initialize Socket.IO
+    const io = initializeSocketIO();
+    initializeSocketHandlers(io);
+    logger.info('Socket.IO initialized successfully');
+    
+    server.listen(config.port, () => {
+      logger.info(`AAITI Backend Server running on port ${config.port}`);
+      logger.info(`Frontend URL: ${config.frontendUrl}`);
+      logger.info(`Environment: ${config.nodeEnv}`);
+    });
     
   } catch (error) {
     logger.error('Failed to start server:', error);
@@ -156,7 +200,8 @@ process.on('SIGTERM', () => {
   });
 });
 
-module.exports = { app, io };
+// Export configuration for other modules
+module.exports = { app, config, getCredentials };
 
 // Start server if this file is run directly
 if (require.main === module) {

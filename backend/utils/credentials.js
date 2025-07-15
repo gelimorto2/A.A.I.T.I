@@ -116,26 +116,58 @@ const initializeUserCredentials = () => {
       password: 'AAITI2025',
       role: 'admin'
     },
+    general: {
+      theme: 'dark',
+      language: 'en',
+      timezone: 'UTC',
+      currency: 'USD',
+      autoRefresh: true,
+      refreshInterval: 5,
+      soundEnabled: true,
+      notificationsEnabled: true
+    },
     trading: {
-      // These will be populated with real API credentials
+      // Default trading settings
+      defaultTradingMode: 'paper',
+      maxConcurrentBots: 5,
+      globalStopLoss: 10,
+      globalTakeProfit: 20,
+      riskManagementEnabled: true,
+      emergencyStopEnabled: true,
+      maxDailyLoss: 1000,
+      positionSizing: 'fixed',
+      slippageTolerance: 0.1,
+      // API credentials
       alphaVantage: {
         apiKey: process.env.ALPHA_VANTAGE_API_KEY || 'demo'
       },
-      // Add other trading platform credentials as needed
       binance: {
         apiKey: process.env.BINANCE_API_KEY || '',
         apiSecret: process.env.BINANCE_API_SECRET || '',
         sandbox: process.env.BINANCE_SANDBOX === 'true'
       }
     },
-    database: {
-      encryption: true,
-      backupEnabled: true
-    },
     security: {
       jwtSecret: process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex'),
       sessionTimeout: '7d',
-      maxLoginAttempts: 5
+      maxLoginAttempts: 5,
+      twoFactorEnabled: false,
+      loginAlerts: true,
+      ipWhitelist: '',
+      apiRateLimit: 100,
+      encryptionEnabled: true
+    },
+    system: {
+      port: parseInt(process.env.PORT) || 5000,
+      nodeEnv: process.env.NODE_ENV || 'development',
+      frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+      dbPath: process.env.DB_PATH || './database/aaiti.sqlite',
+      logLevel: process.env.LOG_LEVEL || 'info',
+      jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d'
+    },
+    database: {
+      encryption: true,
+      backupEnabled: true
     }
   };
   
