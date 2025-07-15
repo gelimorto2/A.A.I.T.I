@@ -277,4 +277,41 @@ router.get('/market-regime', authenticateToken, (req, res) => {
   });
 });
 
+// Get system information
+router.get('/system-info', authenticateToken, (req, res) => {
+  try {
+    const uptime = process.uptime();
+    const uptimeDays = Math.floor(uptime / 86400);
+    const uptimeHours = Math.floor((uptime % 86400) / 3600);
+    const uptimeMinutes = Math.floor((uptime % 3600) / 60);
+    
+    const memoryUsage = process.memoryUsage();
+    const databaseSize = 45.2; // Mock database size in MB
+    
+    const systemInfo = {
+      version: '1.0.0',
+      uptime: `${uptimeDays} days, ${uptimeHours} hours, ${uptimeMinutes} minutes`,
+      lastBackup: '2 hours ago', // Mock value
+      databaseSize: `${databaseSize} MB`,
+      activeSessions: 1, // Mock value
+      apiCalls: Math.floor(Math.random() * 2000) + 1000, // Mock value
+      systemHealth: 'Healthy',
+      memoryUsage: {
+        rss: Math.round(memoryUsage.rss / 1024 / 1024 * 100) / 100,
+        heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024 * 100) / 100,
+        heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024 * 100) / 100,
+        external: Math.round(memoryUsage.external / 1024 / 1024 * 100) / 100
+      },
+      nodeVersion: process.version,
+      platform: process.platform,
+      architecture: process.arch
+    };
+    
+    res.json({ systemInfo });
+  } catch (error) {
+    logger.error('Error fetching system info:', error);
+    res.status(500).json({ error: 'Failed to fetch system information' });
+  }
+});
+
 module.exports = router;

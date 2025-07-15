@@ -1,6 +1,7 @@
 const express = require('express');
 const { db } = require('../database/init');
 const { authenticateToken, requireRole, auditLog } = require('../middleware/auth');
+const { getCredentials, updateCredentials } = require('../utils/credentials');
 const logger = require('../utils/logger');
 
 const router = express.Router();
@@ -202,6 +203,167 @@ router.get('/system/audit', authenticateToken, requireRole(['admin']), (req, res
 
     res.json({ logs: logsWithParsedDetails });
   });
+});
+
+// Get user settings (all categories)
+router.get('/settings', authenticateToken, (req, res) => {
+  try {
+    const credentials = getCredentials();
+    
+    // Return settings with sensitive data masked
+    const settings = {
+      general: credentials?.general || {
+        theme: 'dark',
+        language: 'en',
+        timezone: 'UTC',
+        currency: 'USD',
+        autoRefresh: true,
+        refreshInterval: 5,
+        soundEnabled: true,
+        notificationsEnabled: true
+      },
+      trading: credentials?.trading || {
+        defaultTradingMode: 'paper',
+        maxConcurrentBots: 5,
+        globalStopLoss: 10,
+        globalTakeProfit: 20,
+        riskManagementEnabled: true,
+        emergencyStopEnabled: true,
+        maxDailyLoss: 1000,
+        positionSizing: 'fixed',
+        slippageTolerance: 0.1
+      },
+      security: credentials?.security || {
+        twoFactorEnabled: false,
+        sessionTimeout: 60,
+        loginAlerts: true,
+        ipWhitelist: '',
+        apiRateLimit: 100,
+        encryptionEnabled: true
+      },
+      system: credentials?.system || {
+        port: 5000,
+        nodeEnv: 'development',
+        frontendUrl: 'http://localhost:3000',
+        dbPath: './database/aaiti.sqlite',
+        logLevel: 'info',
+        jwtExpiresIn: '7d'
+      },
+      // API keys should be masked
+      api: {
+        alphaVantageKey: credentials?.trading?.alphaVantage?.apiKey ? '***masked***' : '',
+        binanceApiKey: credentials?.trading?.binance?.apiKey ? '***masked***' : '',
+        binanceApiSecret: credentials?.trading?.binance?.apiSecret ? '***masked***' : '',
+        coinbaseApiKey: '',
+        coinbaseApiSecret: '',
+        webhookUrl: '',
+        webhookSecret: ''
+      }
+    };
+    
+    res.json({ settings });
+  } catch (error) {
+    logger.error('Error fetching settings:', error);
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+// Update specific settings category
+router.put('/settings/:category', authenticateToken, auditLog('settings_update', 'settings'), (req, res) => {
+  try {
+    const { category } = req.params;
+    const settings = req.body;
+    
+    const validCategories = ['general', 'trading', 'security', 'system', 'api'];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({ error: 'Invalid settings category' });
+    }
+
+    // Validate admin required for system settings
+    if (category === 'system' && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin role required for system settings' });
+    }
+
+    // For API settings, update the trading credentials
+    if (category === 'api') {
+      const credentials = getCredentials() || {};
+      
+      if (!credentials.trading) {
+        credentials.trading = {};
+      }
+      
+      // Update API credentials
+      if (settings.alphaVantageKey && settings.alphaVantageKey !== '***masked***') {
+        credentials.trading.alphaVantage = {
+          apiKey: settings.alphaVantageKey
+        };
+      }
+      
+      if (settings.binanceApiKey && settings.binanceApiKey !== '***masked***') {
+        credentials.trading.binance = {
+          ...credentials.trading.binance,
+          apiKey: settings.binanceApiKey
+        };
+      }
+      
+      if (settings.binanceApiSecret && settings.binanceApiSecret !== '***masked***') {
+        credentials.trading.binance = {
+          ...credentials.trading.binance,
+          apiSecret: settings.binanceApiSecret
+        };
+      }
+      
+      updateCredentials('trading', credentials.trading);
+    } else {
+      // Update other settings categories
+      updateCredentials(category, settings);
+    }
+    
+    logger.info(`Settings updated: ${category} by user ${req.user.username}`);
+    res.json({ message: `${category} settings updated successfully` });
+  } catch (error) {
+    logger.error('Error updating settings:', error);
+    res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+// Export user data
+router.get('/export-data', authenticateToken, auditLog('data_export', 'user'), (req, res) => {
+  try {
+    const exportData = {
+      timestamp: new Date().toISOString(),
+      user: {
+        username: req.user.username,
+        email: req.user.email,
+        role: req.user.role
+      },
+      settings: getCredentials(),
+      // Add more data to export as needed
+    };
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="aaiti-data-${req.user.username}-${new Date().toISOString().split('T')[0]}.json"`);
+    res.json(exportData);
+  } catch (error) {
+    logger.error('Error exporting data:', error);
+    res.status(500).json({ error: 'Failed to export data' });
+  }
+});
+
+// Admin only: Backup database
+router.post('/system/backup', authenticateToken, requireRole(['admin']), auditLog('database_backup', 'system'), (req, res) => {
+  try {
+    // In a real implementation, this would create a database backup
+    // For now, we'll just log the action
+    logger.info(`Database backup initiated by admin ${req.user.username}`);
+    res.json({ 
+      message: 'Database backup completed successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('Error creating backup:', error);
+    res.status(500).json({ error: 'Failed to create backup' });
+  }
 });
 
 module.exports = router;

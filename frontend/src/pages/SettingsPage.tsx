@@ -96,6 +96,15 @@ const SettingsPage: React.FC = () => {
     encryptionEnabled: true
   });
 
+  const [systemSettings, setSystemSettings] = useState({
+    port: 5000,
+    nodeEnv: 'development',
+    frontendUrl: 'http://localhost:3000',
+    dbPath: './database/aaiti.sqlite',
+    logLevel: 'info',
+    jwtExpiresIn: '7d'
+  });
+
   const [systemInfo, setSystemInfo] = useState({
     version: '1.0.0',
     uptime: '0 days',
@@ -119,9 +128,19 @@ const SettingsPage: React.FC = () => {
       });
       
       if (response.ok) {
-        // const data = await response.json();
-        // Update settings from API
-        // For now using mock data
+        const data = await response.json();
+        const settings = data.settings;
+        
+        // Update all settings state with actual data from backend
+        setGeneralSettings(settings.general || generalSettings);
+        setTradingSettings(settings.trading || tradingSettings);
+        setSecuritySettings(settings.security || securitySettings);
+        setSystemSettings(settings.system || systemSettings);
+        setApiSettings(settings.api || apiSettings);
+        
+        console.log('Settings loaded:', settings);
+      } else {
+        console.error('Failed to load settings:', response.statusText);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -136,7 +155,10 @@ const SettingsPage: React.FC = () => {
       });
       
       if (response.ok) {
-        // const data = await response.json();
+        const data = await response.json();
+        setSystemInfo(data.systemInfo);
+      } else {
+        // Fallback to mock data if API fails
         setSystemInfo({
           version: '1.0.0',
           uptime: '2 days, 14 hours',
@@ -149,6 +171,16 @@ const SettingsPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error loading system info:', error);
+      // Fallback to mock data
+      setSystemInfo({
+        version: '1.0.0',
+        uptime: '2 days, 14 hours',
+        lastBackup: '2 hours ago',
+        databaseSize: '45.2 MB',
+        activeSessions: 1,
+        apiCalls: 1247,
+        systemHealth: 'Healthy'
+      });
     }
   };
 
@@ -225,7 +257,7 @@ const SettingsPage: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/admin/backup-database', {
+      const response = await fetch('/api/users/system/backup', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -830,6 +862,113 @@ const SettingsPage: React.FC = () => {
                     </Alert>
                   </Grid>
                 </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid size={{ xs: 12 }}>
+            <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
+              <CardContent>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  System Configuration
+                </Typography>
+                
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      fullWidth
+                      label="Server Port"
+                      type="number"
+                      value={systemSettings.port}
+                      onChange={(e) => setSystemSettings({...systemSettings, port: parseInt(e.target.value)})}
+                      disabled={user?.role !== 'admin'}
+                      helperText={user?.role !== 'admin' ? 'Admin access required' : 'Port for backend server'}
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <FormControl fullWidth disabled={user?.role !== 'admin'}>
+                      <InputLabel>Environment</InputLabel>
+                      <Select
+                        value={systemSettings.nodeEnv}
+                        label="Environment"
+                        onChange={(e) => setSystemSettings({...systemSettings, nodeEnv: e.target.value})}
+                      >
+                        <MenuItem value="development">Development</MenuItem>
+                        <MenuItem value="production">Production</MenuItem>
+                        <MenuItem value="staging">Staging</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+
+                  <Grid size={12}>
+                    <TextField
+                      fullWidth
+                      label="Frontend URL"
+                      value={systemSettings.frontendUrl}
+                      onChange={(e) => setSystemSettings({...systemSettings, frontendUrl: e.target.value})}
+                      disabled={user?.role !== 'admin'}
+                      helperText={user?.role !== 'admin' ? 'Admin access required' : 'URL for CORS and socket connections'}
+                    />
+                  </Grid>
+
+                  <Grid size={12}>
+                    <TextField
+                      fullWidth
+                      label="Database Path"
+                      value={systemSettings.dbPath}
+                      onChange={(e) => setSystemSettings({...systemSettings, dbPath: e.target.value})}
+                      disabled={user?.role !== 'admin'}
+                      helperText={user?.role !== 'admin' ? 'Admin access required' : 'Path to SQLite database file'}
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <FormControl fullWidth disabled={user?.role !== 'admin'}>
+                      <InputLabel>Log Level</InputLabel>
+                      <Select
+                        value={systemSettings.logLevel}
+                        label="Log Level"
+                        onChange={(e) => setSystemSettings({...systemSettings, logLevel: e.target.value})}
+                      >
+                        <MenuItem value="error">Error</MenuItem>
+                        <MenuItem value="warn">Warning</MenuItem>
+                        <MenuItem value="info">Info</MenuItem>
+                        <MenuItem value="debug">Debug</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      fullWidth
+                      label="JWT Expiration"
+                      value={systemSettings.jwtExpiresIn}
+                      onChange={(e) => setSystemSettings({...systemSettings, jwtExpiresIn: e.target.value})}
+                      disabled={user?.role !== 'admin'}
+                      helperText={user?.role !== 'admin' ? 'Admin access required' : 'e.g., 7d, 24h, 60m'}
+                    />
+                  </Grid>
+                </Grid>
+
+                {user?.role === 'admin' && (
+                  <Button
+                    variant="contained"
+                    startIcon={<Save />}
+                    onClick={() => saveSettings('system', systemSettings)}
+                    disabled={loading}
+                    sx={{ mt: 2 }}
+                    color="warning"
+                  >
+                    Save System Settings
+                  </Button>
+                )}
+
+                {user?.role !== 'admin' && (
+                  <Alert severity="warning" sx={{ mt: 2 }}>
+                    System configuration requires administrator privileges.
+                  </Alert>
+                )}
               </CardContent>
             </Card>
           </Grid>

@@ -2,28 +2,46 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 const logger = require('../utils/logger');
+const { getCredentials } = require('../utils/credentials');
 
-const DB_PATH = process.env.DB_PATH || './database/aaiti.sqlite';
+// Get database path from configuration
+const getDbPath = () => {
+  const credentials = getCredentials();
+  return credentials?.system?.dbPath || process.env.DB_PATH || './database/aaiti.sqlite';
+};
 
-// Ensure database directory exists
-const dbDir = path.dirname(DB_PATH);
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
-}
+let db = null;
 
-const db = new sqlite3.Database(DB_PATH, (err) => {
-  if (err) {
-    logger.error('Error opening database:', err);
-  } else {
-    logger.info('Connected to SQLite database');
+// Initialize database connection
+const initializeDbConnection = () => {
+  if (db) return db;
+  
+  const DB_PATH = getDbPath();
+  
+  // Ensure database directory exists
+  const dbDir = path.dirname(DB_PATH);
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
   }
-});
+
+  db = new sqlite3.Database(DB_PATH, (err) => {
+    if (err) {
+      logger.error('Error opening database:', err);
+    } else {
+      logger.info('Connected to SQLite database');
+    }
+  });
+  
+  return db;
+};
 
 const initializeDatabase = async () => {
   return new Promise((resolve, reject) => {
-    db.serialize(() => {
+    const database = initializeDbConnection();
+    
+    database.serialize(() => {
       // Users table
-      db.run(`
+      database.run(`
         CREATE TABLE IF NOT EXISTS users (
           id TEXT PRIMARY KEY,
           username TEXT UNIQUE NOT NULL,
@@ -38,7 +56,7 @@ const initializeDatabase = async () => {
       `);
 
       // Trading bots table
-      db.run(`
+      database.run(`
         CREATE TABLE IF NOT EXISTS bots (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
@@ -55,7 +73,7 @@ const initializeDatabase = async () => {
       `);
 
       // Bot metrics table for health monitoring
-      db.run(`
+      database.run(`
         CREATE TABLE IF NOT EXISTS bot_metrics (
           id TEXT PRIMARY KEY,
           bot_id TEXT NOT NULL,
@@ -74,7 +92,7 @@ const initializeDatabase = async () => {
       `);
 
       // Trading signals table
-      db.run(`
+      database.run(`
         CREATE TABLE IF NOT EXISTS trading_signals (
           id TEXT PRIMARY KEY,
           bot_id TEXT NOT NULL,
@@ -92,7 +110,7 @@ const initializeDatabase = async () => {
       `);
 
       // Trades table
-      db.run(`
+      database.run(`
         CREATE TABLE IF NOT EXISTS trades (
           id TEXT PRIMARY KEY,
           bot_id TEXT NOT NULL,
@@ -113,7 +131,7 @@ const initializeDatabase = async () => {
       `);
 
       // Risk parameters table
-      db.run(`
+      database.run(`
         CREATE TABLE IF NOT EXISTS risk_parameters (
           id TEXT PRIMARY KEY,
           bot_id TEXT NOT NULL,
@@ -129,7 +147,7 @@ const initializeDatabase = async () => {
       `);
 
       // Audit log table
-      db.run(`
+      database.run(`
         CREATE TABLE IF NOT EXISTS audit_logs (
           id TEXT PRIMARY KEY,
           user_id TEXT,
@@ -144,7 +162,7 @@ const initializeDatabase = async () => {
       `);
 
       // Market data table (for backtesting and analysis)
-      db.run(`
+      database.run(`
         CREATE TABLE IF NOT EXISTS market_data (
           id TEXT PRIMARY KEY,
           symbol TEXT NOT NULL,
@@ -159,7 +177,7 @@ const initializeDatabase = async () => {
       `);
 
       // Bot performance snapshots
-      db.run(`
+      database.run(`
         CREATE TABLE IF NOT EXISTS performance_snapshots (
           id TEXT PRIMARY KEY,
           bot_id TEXT NOT NULL,
@@ -187,6 +205,8 @@ const initializeDatabase = async () => {
 };
 
 module.exports = {
-  db,
+  get db() {
+    return initializeDbConnection();
+  },
   initializeDatabase
 };

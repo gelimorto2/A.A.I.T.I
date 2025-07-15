@@ -4,9 +4,19 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const { db } = require('../database/init');
 const { authenticateToken, auditLog } = require('../middleware/auth');
+const { getCredentials } = require('../utils/credentials');
 const logger = require('../utils/logger');
 
 const router = express.Router();
+
+// Helper function to get JWT configuration from credentials
+const getJwtConfig = () => {
+  const credentials = getCredentials();
+  return {
+    secret: credentials?.security?.jwtSecret || process.env.JWT_SECRET || 'fallback-secret',
+    expiresIn: credentials?.system?.jwtExpiresIn || process.env.JWT_EXPIRES_IN || '7d'
+  };
+};
 
 // Register new user
 router.post('/register', auditLog('user_register'), async (req, res) => {
@@ -108,10 +118,11 @@ router.post('/login', auditLog('user_login'), async (req, res) => {
         );
 
         // Generate JWT
+        const jwtConfig = getJwtConfig();
         const token = jwt.sign(
           { userId: user.id, username: user.username, role: user.role },
-          process.env.JWT_SECRET,
-          { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+          jwtConfig.secret,
+          { expiresIn: jwtConfig.expiresIn }
         );
 
         logger.info(`User logged in: ${user.username}`);
@@ -147,10 +158,11 @@ router.get('/profile', authenticateToken, (req, res) => {
 
 // Refresh token
 router.post('/refresh', authenticateToken, (req, res) => {
+  const jwtConfig = getJwtConfig();
   const newToken = jwt.sign(
     { userId: req.user.id, username: req.user.username, role: req.user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    jwtConfig.secret,
+    { expiresIn: jwtConfig.expiresIn }
   );
 
   res.json({

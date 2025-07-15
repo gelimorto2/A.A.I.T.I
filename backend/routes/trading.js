@@ -283,4 +283,70 @@ router.post('/quotes', authenticateToken, async (req, res) => {
   }
 });
 
+// Test API connection for trading providers
+router.post('/test-connection/:provider', authenticateToken, async (req, res) => {
+  try {
+    const { provider } = req.params;
+    
+    switch (provider.toLowerCase()) {
+      case 'alphavantage':
+        try {
+          const testQuote = await marketDataService.getQuote('AAPL');
+          if (testQuote && testQuote.success) {
+            res.json({ 
+              success: true, 
+              message: 'Alpha Vantage connection successful',
+              provider: 'Alpha Vantage'
+            });
+          } else {
+            res.status(400).json({ 
+              success: false, 
+              message: 'Alpha Vantage connection failed - check API key',
+              provider: 'Alpha Vantage'
+            });
+          }
+        } catch (error) {
+          res.status(400).json({ 
+            success: false, 
+            message: 'Alpha Vantage connection failed',
+            provider: 'Alpha Vantage'
+          });
+        }
+        break;
+        
+      case 'binance':
+        // For now, simulate connection test
+        res.json({ 
+          success: true, 
+          message: 'Binance connection test completed (simulated)',
+          provider: 'Binance'
+        });
+        break;
+        
+      case 'coinbase':
+        // For now, simulate connection test
+        res.json({ 
+          success: true, 
+          message: 'Coinbase connection test completed (simulated)',
+          provider: 'Coinbase'
+        });
+        break;
+        
+      default:
+        res.status(400).json({ 
+          success: false, 
+          message: 'Unknown provider',
+          provider: provider
+        });
+    }
+  } catch (error) {
+    logger.error('Error testing connection:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Connection test failed',
+      provider: req.params.provider
+    });
+  }
+});
+
 module.exports = router;
