@@ -10,6 +10,7 @@
 - **Mission-Critical Interface**: Dark theme, tactical design focused on clarity and speed
 - **Real-Time Data**: WebSocket-powered live updates for all critical metrics
 - **Secure Authentication**: JWT-based auth with role-based access control
+- **Comprehensive Settings Management**: UI-based configuration system with no external file dependencies
 - **Audit Trail**: Complete logging of all user actions and bot operations
 
 ## 🛠 Tech Stack
@@ -20,6 +21,7 @@
 - **Socket.IO** for real-time communication
 - **JWT** authentication
 - **Winston** logging
+- **Integrated Settings System** with database persistence
 
 ### Frontend
 - **React** with TypeScript
@@ -27,6 +29,7 @@
 - **Redux Toolkit** for state management
 - **Socket.IO Client** for real-time updates
 - **Chart.js** for advanced visualizations
+- **Comprehensive Settings UI** for system configuration
 
 ## 📦 Installation & Setup
 
@@ -49,15 +52,7 @@ npm run install:all
 ```
 *This command installs dependencies for both frontend and backend.*
 
-3. **Set up environment variables**
-```bash
-cd backend
-cp .env.example .env
-cd ..
-```
-*The default environment settings work for development.*
-
-4. **Start development servers**
+3. **Start development servers**
 ```bash
 npm run dev
 ```
@@ -67,6 +62,7 @@ npm run dev
 - Frontend React app available at `http://localhost:3000`
 - Backend shows "AAITI Backend Server running on port 5000"
 - Frontend shows "Compiled successfully!" with no ESLint errors
+- Settings are automatically initialized and managed through the UI
 
 ### Manual Setup (Alternative)
 
@@ -76,7 +72,6 @@ If you prefer to start services individually:
 ```bash
 cd backend
 npm install
-cp .env.example .env
 npm run dev
 ```
 
@@ -110,6 +105,7 @@ A.A.I.T.I/
 │   ├── database/           # SQLite database and schemas
 │   ├── middleware/         # Authentication & logging
 │   ├── utils/              # Utilities and helpers
+│   ├── config/             # Settings management system
 │   └── server.js           # Main server file
 ├── frontend/               # React application
 │   ├── src/
@@ -118,15 +114,27 @@ A.A.I.T.I/
 │   │   ├── store/          # Redux store and slices
 │   │   ├── services/       # API service layer
 │   │   ├── contexts/       # React contexts
+│   │   ├── settings/       # Settings management UI
 │   │   └── types/          # TypeScript type definitions
 │   └── public/             # Static assets
 └── package.json            # Root package configuration
 ```
 
+## ⚙️ Settings Management
+
+**New UI-Based Configuration System:**
+- **No .env file required** - All settings managed through the application UI
+- **Database-persisted settings** - Configurations saved to SQLite database
+- **Real-time updates** - Settings changes applied immediately
+- **User-friendly interface** - Comprehensive settings panel in the application
+- **Default configurations** - Sensible defaults for immediate use
+
+Access settings through the application's Settings panel after logging in.
+
 ## 🔐 Authentication
 
 Default setup creates users with these roles:
-- **Admin**: Full system access
+- **Admin**: Full system access including settings management
 - **Trader**: Full trading access
 - **Viewer**: Read-only access
 
@@ -138,6 +146,11 @@ Create your first user by registering at `/register` or using the API directly.
 - `POST /api/auth/login` - User login
 - `POST /api/auth/register` - User registration
 - `GET /api/auth/profile` - Get user profile
+
+### Settings
+- `GET /api/settings` - Get all settings
+- `PUT /api/settings` - Update settings
+- `POST /api/settings/reset` - Reset to defaults
 
 ### Bots
 - `GET /api/bots` - List user's bots
@@ -166,6 +179,7 @@ The system uses WebSocket connections to provide real-time updates for:
 - Trade executions
 - Performance metrics
 - Price updates
+- Settings changes
 
 ## 🎨 UI/UX Design
 
@@ -174,6 +188,7 @@ AAITI features a mission-critical dark interface designed for clarity and speed:
 - **Typography**: JetBrains Mono for professional monospace appearance
 - **Layout**: Tactical sidebar navigation with real-time status indicators
 - **Components**: Minimal, focused design that prioritizes information density
+- **Settings Panel**: Intuitive configuration interface with real-time validation
 
 ## 🚦 Development
 
@@ -193,21 +208,21 @@ AAITI features a mission-critical dark interface designed for clarity and speed:
 - `npm run build` - Build for production
 - `npm test` - Run tests
 
-### Environment Variables
+### Configuration
 
-Backend (`.env`):
-```
-PORT=5000
-NODE_ENV=development
-JWT_SECRET=your-super-secret-jwt-key
-JWT_EXPIRES_IN=7d
-FRONTEND_URL=http://localhost:3000
-DB_PATH=./database/aaiti.sqlite
-```
+**No Environment Files Required:**
+All configuration is managed through the application's Settings UI. The system automatically:
+- Initializes with sensible defaults
+- Persists settings to the database
+- Provides real-time configuration updates
+- Includes validation and error handling
 
 ## 🔮 Roadmap
 
-### ✅ Completed Features
+### ✅ Recently Completed Features
+- [x] **Comprehensive Settings Management System** - UI-based configuration with database persistence
+- [x] **Removal of .env Dependencies** - Streamlined setup process
+- [x] **Enhanced User Experience** - Improved onboarding and configuration flow
 - [x] Multi-Bot Management interface
 - [x] Real-Time Monitoring dashboard
 - [x] Trading Modes support (live, paper, shadow)
@@ -248,9 +263,9 @@ DB_PATH=./database/aaiti.sqlite
 **Problem:** Backend fails to start or crashes
 **Solutions:**
 - Verify port 5000 is available: `lsof -ti:5000`
-- Check environment file exists: `ls backend/.env`
 - Ensure all backend dependencies are installed: `cd backend && npm install`
 - Check database permissions: `ls -la backend/database/`
+- Settings are now managed internally - no .env file required
 
 #### Port Already in Use
 **Problem:** `Error: listen EADDRINUSE: address already in use`
@@ -268,11 +283,13 @@ sudo lsof -ti:5000 | xargs sudo kill -9
 - Update dependencies: `npm run install:all`
 - Clear build cache: `cd frontend && rm -rf build && npm run build`
 
-#### ESLint Warnings
-**Problem:** Development server shows warnings
-**Solution:** Most warnings are non-critical but can be fixed:
-- Unused variables: Remove or prefix with underscore `_variable`
-- Import order: Use `eslint --fix` to auto-fix
+#### Settings Configuration
+**Problem:** Unable to configure application settings
+**Solutions:**
+- Access settings through the UI after logging in
+- Check user permissions (Admin role required for settings changes)
+- Verify database connectivity
+- Settings are automatically initialized on first run
 
 #### Database Issues
 **Problem:** SQLite database errors
@@ -291,7 +308,7 @@ sudo lsof -ti:5000 | xargs sudo kill -9
 
 1. Check the browser console for frontend errors (F12 → Console)
 2. Check backend logs in terminal for API errors
-3. Verify all environment variables in `backend/.env`
+3. Verify settings through the application's Settings UI
 4. Ensure all dependencies are installed with correct versions
 
 ## ⚠️ Disclaimer
@@ -322,16 +339,18 @@ ISC License - see LICENSE file for details.
 - ✅ User authentication system
 - ✅ Real-time WebSocket communication
 - ✅ Dark theme UI with mission-critical design
+- ✅ **Comprehensive Settings Management System**
+- ✅ **UI-based configuration (no .env files required)**
 - ✅ Production build process
 - ✅ Mock trading data integration
 - ✅ All API endpoints responding correctly
 
-### Latest Tests Passed:
-- Frontend compiles without errors or warnings
-- Backend starts on port 5000 with proper logging
-- Health check endpoint responds correctly
-- Authentication system functional
-- Production build successful
-- No critical vulnerabilities in dependencies
+### Latest Updates Verified:
+- Settings management system fully operational
+- No external configuration files required
+- Enhanced user experience with streamlined setup
+- Database-persisted configuration system
+- Real-time settings validation and updates
+- Improved onboarding process
 
-**Ready for development and demonstration use!**
+**Ready for development and demonstration use with enhanced configuration management!**
