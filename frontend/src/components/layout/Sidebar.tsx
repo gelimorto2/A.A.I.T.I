@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Analytics,
   Settings,
+  Science,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -32,6 +33,12 @@ const menuItems = [
     icon: <SmartToy />, 
     path: '/bots',
     description: 'Bot Management'
+  },
+  { 
+    text: 'ML Models', 
+    icon: <Science />, 
+    path: '/ml',
+    description: 'Machine Learning'
   },
   { 
     text: 'Live Trading', 

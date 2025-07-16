@@ -191,6 +191,123 @@ const initializeDatabase = async () => {
           exposure REAL,
           FOREIGN KEY (bot_id) REFERENCES bots (id)
         )
+      `);
+
+      // ML Models table
+      database.run(`
+        CREATE TABLE IF NOT EXISTS ml_models (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          algorithm_type TEXT NOT NULL,
+          target_timeframe TEXT NOT NULL,
+          symbols TEXT NOT NULL,
+          parameters TEXT,
+          model_data TEXT,
+          training_status TEXT DEFAULT 'untrained',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          last_trained DATETIME,
+          accuracy REAL,
+          precision_score REAL,
+          recall_score REAL,
+          f1_score REAL,
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+      `);
+
+      // ML Training Data table
+      database.run(`
+        CREATE TABLE IF NOT EXISTS ml_training_data (
+          id TEXT PRIMARY KEY,
+          model_id TEXT NOT NULL,
+          features TEXT NOT NULL,
+          target REAL NOT NULL,
+          timestamp DATETIME NOT NULL,
+          symbol TEXT NOT NULL,
+          timeframe TEXT NOT NULL,
+          FOREIGN KEY (model_id) REFERENCES ml_models (id)
+        )
+      `);
+
+      // ML Predictions table
+      database.run(`
+        CREATE TABLE IF NOT EXISTS ml_predictions (
+          id TEXT PRIMARY KEY,
+          model_id TEXT NOT NULL,
+          bot_id TEXT,
+          symbol TEXT NOT NULL,
+          prediction_value REAL NOT NULL,
+          confidence REAL NOT NULL,
+          features TEXT NOT NULL,
+          actual_value REAL,
+          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+          timeframe TEXT NOT NULL,
+          FOREIGN KEY (model_id) REFERENCES ml_models (id),
+          FOREIGN KEY (bot_id) REFERENCES bots (id)
+        )
+      `);
+
+      // Backtesting Results table
+      database.run(`
+        CREATE TABLE IF NOT EXISTS backtesting_results (
+          id TEXT PRIMARY KEY,
+          model_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          symbols TEXT NOT NULL,
+          start_date DATE NOT NULL,
+          end_date DATE NOT NULL,
+          initial_capital REAL NOT NULL,
+          final_capital REAL NOT NULL,
+          total_return REAL NOT NULL,
+          sharpe_ratio REAL,
+          max_drawdown REAL,
+          total_trades INTEGER,
+          win_rate REAL,
+          avg_trade_duration REAL,
+          profit_factor REAL,
+          parameters TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (model_id) REFERENCES ml_models (id),
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+      `);
+
+      // Backtesting Trades table
+      database.run(`
+        CREATE TABLE IF NOT EXISTS backtesting_trades (
+          id TEXT PRIMARY KEY,
+          backtest_id TEXT NOT NULL,
+          symbol TEXT NOT NULL,
+          side TEXT NOT NULL,
+          entry_date DATETIME NOT NULL,
+          exit_date DATETIME,
+          entry_price REAL NOT NULL,
+          exit_price REAL,
+          quantity REAL NOT NULL,
+          pnl REAL,
+          signal_confidence REAL,
+          prediction_accuracy REAL,
+          FOREIGN KEY (backtest_id) REFERENCES backtesting_results (id)
+        )
+      `);
+
+      // Model Performance Metrics table
+      database.run(`
+        CREATE TABLE IF NOT EXISTS model_performance_metrics (
+          id TEXT PRIMARY KEY,
+          model_id TEXT NOT NULL,
+          metric_date DATE NOT NULL,
+          accuracy REAL,
+          precision_score REAL,
+          recall_score REAL,
+          f1_score REAL,
+          mean_absolute_error REAL,
+          root_mean_square_error REAL,
+          directional_accuracy REAL,
+          profit_correlation REAL,
+          FOREIGN KEY (model_id) REFERENCES ml_models (id)
+        )
       `, (err) => {
         if (err) {
           logger.error('Error creating tables:', err);

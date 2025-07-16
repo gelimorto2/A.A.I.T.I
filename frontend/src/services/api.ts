@@ -204,4 +204,102 @@ export const usersAPI = {
   },
 };
 
+// ML API
+export const mlAPI = {
+  // Models
+  getModels: async () => {
+    const response = await apiClient.get('/ml/models');
+    return response.data;
+  },
+
+  getModel: async (modelId: string) => {
+    const response = await apiClient.get(`/ml/models/${modelId}`);
+    return response.data;
+  },
+
+  createModel: async (modelConfig: {
+    name: string;
+    algorithmType: string;
+    targetTimeframe: string;
+    symbols: string[];
+    parameters?: Record<string, any>;
+    trainingPeriodDays?: number;
+  }) => {
+    const response = await apiClient.post('/ml/models', modelConfig);
+    return response.data;
+  },
+
+  updateModel: async (modelId: string, updates: {
+    name?: string;
+    parameters?: Record<string, any>;
+    retrain?: boolean;
+  }) => {
+    const response = await apiClient.put(`/ml/models/${modelId}`, updates);
+    return response.data;
+  },
+
+  deleteModel: async (modelId: string) => {
+    const response = await apiClient.delete(`/ml/models/${modelId}`);
+    return response.data;
+  },
+
+  // Predictions
+  makePrediction: async (modelId: string, predictionData: {
+    symbols?: string[];
+    features?: number[];
+  }) => {
+    const response = await apiClient.post(`/ml/models/${modelId}/predict`, predictionData);
+    return response.data;
+  },
+
+  getPredictions: async (modelId: string, params?: {
+    limit?: number;
+    offset?: number;
+    symbol?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.offset) queryParams.append('offset', params.offset.toString());
+    if (params?.symbol) queryParams.append('symbol', params.symbol);
+    
+    const url = `/ml/models/${modelId}/predictions${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    const response = await apiClient.get(url);
+    return response.data;
+  },
+
+  // Backtesting
+  runBacktest: async (modelId: string, backtestConfig: {
+    symbols?: string[];
+    startDate: string;
+    endDate: string;
+    initialCapital?: number;
+    commission?: number;
+    slippage?: number;
+    positionSizing?: string;
+    riskPerTrade?: number;
+    stopLoss?: number;
+    takeProfit?: number;
+    maxPositions?: number;
+  }) => {
+    const response = await apiClient.post(`/ml/models/${modelId}/backtest`, backtestConfig);
+    return response.data;
+  },
+
+  getBacktests: async (modelId: string) => {
+    const response = await apiClient.get(`/ml/models/${modelId}/backtests`);
+    return response.data;
+  },
+
+  getBacktestDetails: async (backtestId: string) => {
+    const response = await apiClient.get(`/ml/backtests/${backtestId}`);
+    return response.data;
+  },
+
+  // Model comparison
+  compareModels: async (modelIds: string[], metric: string = 'accuracy') => {
+    const response = await apiClient.post('/ml/compare', { modelIds, metric });
+    return response.data;
+  },
+};
+
 export default apiClient;
