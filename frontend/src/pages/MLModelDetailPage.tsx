@@ -136,7 +136,7 @@ const MLModelDetailPage: React.FC = () => {
       new Date(p.timestamp).toLocaleDateString()
     );
     
-    const datasets = [];
+    const datasets: any[] = [];
     
     // Group predictions by symbol
     const predictionsBySymbol = predictions.slice(-30).reduce((acc, pred) => {
