@@ -1,0 +1,737 @@
+const { v4: uuidv4 } = require('uuid');
+const { mean } = require('simple-statistics');
+const logger = require('./logger');
+const mlService = require('./mlService');
+
+class BacktestingService {
+  constructor() {
+    this.activeBacktests = new Map();
+  }
+
+  /**
+   * Run a backtest for a given model and parameters
+   */
+  async runBacktest(backtestConfig) {
+    const backtestId = uuidv4();
+    const {
+      modelId,
+      userId,
+      symbols,
+      startDate,
+      endDate,
+      initialCapital = 100000,
+      commission = 0.001, // 0.1%
+      slippage = 0.0005, // 0.05%
+      positionSizing = 'fixed', // fixed, percentage, kelly
+      riskPerTrade = 0.02, // 2% risk per trade
+      stopLoss = 0.05, // 5%
+      takeProfit = 0.10, // 10%
+      maxPositions = 5
+    } = backtestConfig;
+
+    try {
+      logger.info(`Starting backtest ${backtestId} for model ${modelId}`);
+      
+      // Get model
+      const model = mlService.getModel(modelId);
+      if (!model) {
+        throw new Error(`Model ${modelId} not found`);
+      }
+
+      // Get historical market data
+      const marketData = await this.getHistoricalData(symbols, startDate, endDate);
+      if (!marketData || marketData.length === 0) {
+        throw new Error('No historical data available for the specified period');
+      }
+
+      // Initialize backtest state
+      const backtestState = this.initializeBacktestState(
+        backtestId,
+        initialCapital,
+        commission,
+        slippage,
+        maxPositions
+      );
+
+      // Run the backtest simulation
+      const trades = await this.simulateTrading(
+        model,
+        marketData,
+        backtestState,
+        {
+          positionSizing,
+          riskPerTrade,
+          stopLoss,
+          takeProfit
+        }
+      );
+
+      // Calculate performance metrics
+      const performanceMetrics = this.calculateBacktestPerformance(
+        trades,
+        backtestState,
+        initialCapital
+      );
+
+      // Prepare backtest results
+      const backtestResults = {
+        id: backtestId,
+        modelId,
+        userId,
+        symbols,
+        startDate,
+        endDate,
+        initialCapital,
+        finalCapital: backtestState.currentCapital,
+        totalReturn: performanceMetrics.totalReturn,
+        sharpeRatio: performanceMetrics.sharpeRatio,
+        maxDrawdown: performanceMetrics.maxDrawdown,
+        totalTrades: trades.length,
+        winRate: performanceMetrics.winRate,
+        avgTradeDuration: performanceMetrics.avgTradeDuration,
+        profitFactor: performanceMetrics.profitFactor,
+        parameters: JSON.stringify(backtestConfig),
+        trades: trades,
+        performanceMetrics,
+        createdAt: new Date().toISOString()
+      };
+
+      this.activeBacktests.set(backtestId, backtestResults);
+      logger.info(`Backtest ${backtestId} completed successfully`);
+      
+      return backtestResults;
+    } catch (error) {
+      logger.error(`Error running backtest ${backtestId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Initialize backtest state
+   */
+  initializeBacktestState(backtestId, initialCapital, commission, slippage, maxPositions) {
+    return {
+      backtestId,
+      currentCapital: initialCapital,
+      initialCapital,
+      positions: new Map(),
+      openPositions: [],
+      completedTrades: [],
+      commission,
+      slippage,
+      maxPositions,
+      equity: [initialCapital],
+      equityDates: [new Date()],
+      peakEquity: initialCapital,
+      maxDrawdown: 0,
+      dailyReturns: []
+    };
+  }
+
+  /**
+   * Simulate trading based on model predictions
+   */
+  async simulateTrading(model, marketData, backtestState, tradingParams) {
+    const { positionSizing, riskPerTrade, stopLoss, takeProfit } = tradingParams;
+    const trades = [];
+
+    // Group market data by date for proper simulation
+    const dataByDate = this.groupDataByDate(marketData);
+    const dates = Object.keys(dataByDate).sort();
+
+    for (let dateIndex = 0; dateIndex < dates.length; dateIndex++) {
+      const currentDate = dates[dateIndex];
+      const currentData = dataByDate[currentDate];
+
+      // Update existing positions (check for stops/exits)
+      await this.updatePositions(backtestState, currentData, trades);
+
+      // Generate new signals if we have enough historical data
+      if (dateIndex >= 30) { // Need at least 30 days of data for features
+        const signals = await this.generateSignals(model, currentData, marketData, dateIndex);
+        
+        // Execute new trades based on signals
+        for (const signal of signals) {
+          if (backtestState.openPositions.length >= backtestState.maxPositions) {
+            break; // Maximum positions reached
+          }
+
+          const trade = await this.executeSignal(
+            signal,
+            backtestState,
+            positionSizing,
+            riskPerTrade,
+            stopLoss,
+            takeProfit
+          );
+
+          if (trade) {
+            trades.push(trade);
+          }
+        }
+      }
+
+      // Update equity curve
+      this.updateEquityCurve(backtestState, currentDate);
+    }
+
+    // Close any remaining open positions
+    await this.closeAllPositions(backtestState, trades, marketData);
+
+    return trades;
+  }
+
+  /**
+   * Generate trading signals based on model predictions
+   */
+  async generateSignals(model, currentData, historicalData, currentIndex) {
+    const signals = [];
+
+    for (const symbolData of currentData) {
+      try {
+        // Extract features for prediction
+        const features = this.extractFeaturesForPrediction(
+          historicalData,
+          symbolData.symbol,
+          currentIndex
+        );
+
+        if (features.length === 0) continue;
+
+        // Get prediction from model
+        const prediction = mlService.predict(
+          mlService.deserializeModel(model.model).modelData,
+          [features],
+          model.algorithmType
+        )[0];
+
+        // Convert prediction to signal
+        const signal = this.predictionToSignal(prediction, symbolData, model.algorithmType);
+        
+        if (signal && signal.confidence > 0.6) { // Only trade high-confidence signals
+          signals.push(signal);
+        }
+      } catch (error) {
+        logger.warn(`Error generating signal for ${symbolData.symbol}:`, error);
+      }
+    }
+
+    return signals;
+  }
+
+  /**
+   * Extract features for prediction from historical data
+   */
+  extractFeaturesForPrediction(historicalData, symbol, currentIndex) {
+    const symbolData = historicalData
+      .filter(d => d.symbol === symbol)
+      .slice(Math.max(0, currentIndex - 50), currentIndex)
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+    if (symbolData.length < 20) return [];
+
+    const prices = symbolData.map(d => d.close);
+    const volumes = symbolData.map(d => d.volume);
+    const returns = [];
+    
+    for (let i = 1; i < prices.length; i++) {
+      returns.push((prices[i] - prices[i-1]) / prices[i-1]);
+    }
+
+    // Calculate technical indicators as features
+    const features = [
+      this.calculateSMA(prices, 5),
+      this.calculateSMA(prices, 10),
+      this.calculateSMA(prices, 20),
+      this.calculateEMA(prices, 12),
+      this.calculateEMA(prices, 26),
+      this.calculateRSI(prices, 14),
+      this.calculateMACD(prices),
+      this.calculateBollingerBands(prices, 20).position,
+      mean(returns.slice(-5)), // 5-day average return
+      mean(volumes.slice(-5)) / mean(volumes), // Volume ratio
+      prices[prices.length - 1] / prices[prices.length - 20] - 1, // 20-day return
+      Math.sqrt(mean(returns.slice(-10).map(r => r * r))) // 10-day volatility
+    ];
+
+    return features.filter(f => !isNaN(f) && isFinite(f));
+  }
+
+  /**
+   * Convert model prediction to trading signal
+   */
+  predictionToSignal(prediction, symbolData, algorithmType) {
+    let signal = null;
+    let confidence = 0;
+
+    switch (algorithmType) {
+      case 'linear_regression':
+      case 'polynomial_regression':
+      case 'moving_average':
+        // For regression models, prediction is expected price change
+        const changeThreshold = 0.02; // 2%
+        if (prediction > changeThreshold) {
+          signal = 'buy';
+          confidence = Math.min(Math.abs(prediction) / 0.1, 1); // Scale confidence
+        } else if (prediction < -changeThreshold) {
+          signal = 'sell';
+          confidence = Math.min(Math.abs(prediction) / 0.1, 1);
+        }
+        break;
+
+      case 'naive_bayes':
+      case 'random_forest':
+        // For classification models, prediction is class probability
+        if (prediction > 0.5) {
+          signal = 'buy';
+          confidence = prediction;
+        } else if (prediction < -0.5) {
+          signal = 'sell';
+          confidence = Math.abs(prediction);
+        }
+        break;
+
+      case 'technical_indicators':
+        // For technical indicators, prediction is combined signal strength
+        if (prediction > 0.1) {
+          signal = 'buy';
+          confidence = Math.min(prediction, 1);
+        } else if (prediction < -0.1) {
+          signal = 'sell';
+          confidence = Math.min(Math.abs(prediction), 1);
+        }
+        break;
+    }
+
+    if (signal) {
+      return {
+        symbol: symbolData.symbol,
+        signal,
+        confidence,
+        price: symbolData.close,
+        timestamp: symbolData.timestamp,
+        prediction
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Execute a trading signal
+   */
+  async executeSignal(signal, backtestState, positionSizing, riskPerTrade, stopLoss, takeProfit) {
+    const { symbol, signal: side, confidence, price } = signal;
+    
+    // Calculate position size
+    const positionSize = this.calculatePositionSize(
+      backtestState.currentCapital,
+      price,
+      riskPerTrade,
+      positionSizing,
+      confidence
+    );
+
+    if (positionSize <= 0) return null;
+
+    // Apply slippage
+    const executionPrice = side === 'buy' 
+      ? price * (1 + backtestState.slippage)
+      : price * (1 - backtestState.slippage);
+
+    const tradeValue = positionSize * executionPrice;
+    const commission = tradeValue * backtestState.commission;
+
+    // Check if we have enough capital
+    if (tradeValue + commission > backtestState.currentCapital) {
+      return null; // Insufficient capital
+    }
+
+    // Create trade
+    const trade = {
+      id: uuidv4(),
+      backtestId: backtestState.backtestId,
+      symbol,
+      side,
+      entryDate: signal.timestamp,
+      entryPrice: executionPrice,
+      quantity: positionSize,
+      signalConfidence: confidence,
+      stopLossPrice: side === 'buy' 
+        ? executionPrice * (1 - stopLoss)
+        : executionPrice * (1 + stopLoss),
+      takeProfitPrice: side === 'buy'
+        ? executionPrice * (1 + takeProfit)
+        : executionPrice * (1 - takeProfit),
+      commission,
+      status: 'open'
+    };
+
+    // Update backtest state
+    backtestState.currentCapital -= (tradeValue + commission);
+    backtestState.openPositions.push(trade);
+    backtestState.positions.set(trade.id, trade);
+
+    return trade;
+  }
+
+  /**
+   * Update existing positions (check stops, exits)
+   */
+  async updatePositions(backtestState, currentData, trades) {
+    const positionsToClose = [];
+
+    for (const position of backtestState.openPositions) {
+      const symbolData = currentData.find(d => d.symbol === position.symbol);
+      if (!symbolData) continue;
+
+      const currentPrice = symbolData.close;
+      let shouldClose = false;
+      let exitReason = '';
+
+      // Check stop loss
+      if ((position.side === 'buy' && currentPrice <= position.stopLossPrice) ||
+          (position.side === 'sell' && currentPrice >= position.stopLossPrice)) {
+        shouldClose = true;
+        exitReason = 'stop_loss';
+      }
+
+      // Check take profit
+      if ((position.side === 'buy' && currentPrice >= position.takeProfitPrice) ||
+          (position.side === 'sell' && currentPrice <= position.takeProfitPrice)) {
+        shouldClose = true;
+        exitReason = 'take_profit';
+      }
+
+      if (shouldClose) {
+        positionsToClose.push({ position, currentPrice, exitReason, timestamp: symbolData.timestamp });
+      }
+    }
+
+    // Close positions
+    for (const { position, currentPrice, exitReason, timestamp } of positionsToClose) {
+      this.closePosition(position, currentPrice, exitReason, timestamp, backtestState, trades);
+    }
+  }
+
+  /**
+   * Close a position
+   */
+  closePosition(position, exitPrice, exitReason, timestamp, backtestState, trades) {
+    // Apply slippage
+    const executionPrice = position.side === 'buy'
+      ? exitPrice * (1 - backtestState.slippage)
+      : exitPrice * (1 + backtestState.slippage);
+
+    const tradeValue = position.quantity * executionPrice;
+    const commission = tradeValue * backtestState.commission;
+
+    // Calculate P&L
+    let pnl;
+    if (position.side === 'buy') {
+      pnl = (executionPrice - position.entryPrice) * position.quantity - position.commission - commission;
+    } else {
+      pnl = (position.entryPrice - executionPrice) * position.quantity - position.commission - commission;
+    }
+
+    // Update position
+    position.exitDate = timestamp;
+    position.exitPrice = executionPrice;
+    position.pnl = pnl;
+    position.exitReason = exitReason;
+    position.status = 'closed';
+    position.duration = new Date(timestamp) - new Date(position.entryDate);
+
+    // Update backtest state
+    backtestState.currentCapital += tradeValue - commission;
+    backtestState.openPositions = backtestState.openPositions.filter(p => p.id !== position.id);
+    backtestState.completedTrades.push(position);
+
+    // Update trades array
+    const tradeIndex = trades.findIndex(t => t.id === position.id);
+    if (tradeIndex !== -1) {
+      trades[tradeIndex] = { ...position };
+    }
+  }
+
+  /**
+   * Calculate position size
+   */
+  calculatePositionSize(capital, price, riskPerTrade, positionSizing, confidence = 1) {
+    switch (positionSizing) {
+      case 'fixed':
+        return Math.floor((capital * 0.1) / price); // 10% of capital per trade
+      
+      case 'percentage':
+        const percentage = Math.min(riskPerTrade * confidence, 0.2); // Max 20% per trade
+        return Math.floor((capital * percentage) / price);
+      
+      case 'kelly':
+        // Simplified Kelly Criterion (would need historical win rate and avg returns)
+        const kellyFraction = Math.min(riskPerTrade * confidence * 2, 0.25); // Max 25%
+        return Math.floor((capital * kellyFraction) / price);
+      
+      default:
+        return Math.floor((capital * 0.1) / price);
+    }
+  }
+
+  /**
+   * Update equity curve
+   */
+  updateEquityCurve(backtestState, currentDate) {
+    let totalEquity = backtestState.currentCapital;
+
+    // Add unrealized P&L from open positions
+    for (const position of backtestState.openPositions) {
+      // This would need current market price, simplified for now
+      totalEquity += position.quantity * position.entryPrice * 0.01; // Placeholder
+    }
+
+    backtestState.equity.push(totalEquity);
+    backtestState.equityDates.push(new Date(currentDate));
+
+    // Update peak equity and drawdown
+    if (totalEquity > backtestState.peakEquity) {
+      backtestState.peakEquity = totalEquity;
+    } else {
+      const drawdown = (backtestState.peakEquity - totalEquity) / backtestState.peakEquity;
+      if (drawdown > backtestState.maxDrawdown) {
+        backtestState.maxDrawdown = drawdown;
+      }
+    }
+
+    // Calculate daily return
+    if (backtestState.equity.length > 1) {
+      const prevEquity = backtestState.equity[backtestState.equity.length - 2];
+      const dailyReturn = (totalEquity - prevEquity) / prevEquity;
+      backtestState.dailyReturns.push(dailyReturn);
+    }
+  }
+
+  /**
+   * Calculate backtest performance metrics
+   */
+  calculateBacktestPerformance(trades, backtestState, initialCapital) {
+    const completedTrades = trades.filter(t => t.status === 'closed');
+    
+    if (completedTrades.length === 0) {
+      return {
+        totalReturn: 0,
+        sharpeRatio: 0,
+        maxDrawdown: 0,
+        winRate: 0,
+        avgTradeDuration: 0,
+        profitFactor: 0
+      };
+    }
+
+    // Total return
+    const totalReturn = (backtestState.currentCapital - initialCapital) / initialCapital;
+
+    // Win rate
+    const winningTrades = completedTrades.filter(t => t.pnl > 0);
+    const winRate = winningTrades.length / completedTrades.length;
+
+    // Average trade duration (in days)
+    const avgTradeDuration = mean(completedTrades.map(t => t.duration)) / (24 * 60 * 60 * 1000);
+
+    // Profit factor
+    const grossProfit = winningTrades.reduce((sum, t) => sum + t.pnl, 0);
+    const grossLoss = Math.abs(completedTrades.filter(t => t.pnl < 0).reduce((sum, t) => sum + t.pnl, 0));
+    const profitFactor = grossLoss === 0 ? (grossProfit > 0 ? Infinity : 0) : grossProfit / grossLoss;
+
+    // Sharpe ratio
+    const avgDailyReturn = mean(backtestState.dailyReturns);
+    const stdDailyReturn = Math.sqrt(mean(backtestState.dailyReturns.map(r => Math.pow(r - avgDailyReturn, 2))));
+    const sharpeRatio = stdDailyReturn === 0 ? 0 : (avgDailyReturn / stdDailyReturn) * Math.sqrt(252); // Annualized
+
+    return {
+      totalReturn,
+      sharpeRatio,
+      maxDrawdown: backtestState.maxDrawdown,
+      winRate,
+      avgTradeDuration,
+      profitFactor,
+      totalTrades: completedTrades.length,
+      winningTrades: winningTrades.length,
+      losingTrades: completedTrades.length - winningTrades.length,
+      grossProfit,
+      grossLoss,
+      avgWin: winningTrades.length > 0 ? grossProfit / winningTrades.length : 0,
+      avgLoss: (completedTrades.length - winningTrades.length) > 0 ? grossLoss / (completedTrades.length - winningTrades.length) : 0
+    };
+  }
+
+  /**
+   * Get historical market data (mock implementation)
+   */
+  async getHistoricalData(symbols, startDate, endDate) {
+    // In a real implementation, this would fetch data from a market data provider
+    // For now, generate mock data
+    const data = [];
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    for (const symbol of symbols) {
+      let currentDate = new Date(start);
+      let price = 100 + Math.random() * 50; // Starting price between 100-150
+      
+      while (currentDate <= end) {
+        // Generate daily OHLCV data
+        const dailyChange = (Math.random() - 0.5) * 0.1; // ±5% daily change
+        const open = price;
+        const close = price * (1 + dailyChange);
+        const high = Math.max(open, close) * (1 + Math.random() * 0.02);
+        const low = Math.min(open, close) * (1 - Math.random() * 0.02);
+        const volume = 1000000 + Math.random() * 500000;
+        
+        data.push({
+          id: uuidv4(),
+          symbol,
+          timestamp: currentDate.toISOString(),
+          open,
+          high,
+          low,
+          close,
+          volume,
+          timeframe: '1d'
+        });
+        
+        price = close;
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    }
+    
+    return data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  }
+
+  /**
+   * Group market data by date
+   */
+  groupDataByDate(marketData) {
+    return marketData.reduce((groups, data) => {
+      const date = data.timestamp.split('T')[0];
+      if (!groups[date]) groups[date] = [];
+      groups[date].push(data);
+      return groups;
+    }, {});
+  }
+
+  /**
+   * Close all remaining positions
+   */
+  async closeAllPositions(backtestState, trades, marketData) {
+    // Get last prices for each symbol
+    const lastPrices = {};
+    const lastDate = Math.max(...marketData.map(d => new Date(d.timestamp)));
+    
+    marketData
+      .filter(d => new Date(d.timestamp).getTime() === lastDate)
+      .forEach(d => {
+        lastPrices[d.symbol] = d.close;
+      });
+
+    // Close all open positions
+    for (const position of [...backtestState.openPositions]) {
+      const lastPrice = lastPrices[position.symbol];
+      if (lastPrice) {
+        this.closePosition(
+          position,
+          lastPrice,
+          'end_of_backtest',
+          new Date(lastDate).toISOString(),
+          backtestState,
+          trades
+        );
+      }
+    }
+  }
+
+  /**
+   * Technical indicator calculations
+   */
+  calculateSMA(prices, period) {
+    if (prices.length < period) return NaN;
+    const slice = prices.slice(-period);
+    return mean(slice);
+  }
+
+  calculateEMA(prices, period) {
+    if (prices.length < period) return NaN;
+    const multiplier = 2 / (period + 1);
+    let ema = mean(prices.slice(0, period));
+    
+    for (let i = period; i < prices.length; i++) {
+      ema = (prices[i] * multiplier) + (ema * (1 - multiplier));
+    }
+    
+    return ema;
+  }
+
+  calculateRSI(prices, period = 14) {
+    if (prices.length < period + 1) return NaN;
+    
+    let gains = 0;
+    let losses = 0;
+    
+    for (let i = 1; i <= period; i++) {
+      const change = prices[prices.length - i] - prices[prices.length - i - 1];
+      if (change > 0) gains += change;
+      else losses -= change;
+    }
+    
+    const avgGain = gains / period;
+    const avgLoss = losses / period;
+    const rs = avgGain / avgLoss;
+    
+    return 100 - (100 / (1 + rs));
+  }
+
+  calculateMACD(prices) {
+    const ema12 = this.calculateEMA(prices, 12);
+    const ema26 = this.calculateEMA(prices, 26);
+    return ema12 - ema26;
+  }
+
+  calculateBollingerBands(prices, period = 20) {
+    const sma = this.calculateSMA(prices, period);
+    const slice = prices.slice(-period);
+    const variance = mean(slice.map(p => Math.pow(p - sma, 2)));
+    const stdDev = Math.sqrt(variance);
+    
+    const upperBand = sma + (2 * stdDev);
+    const lowerBand = sma - (2 * stdDev);
+    const currentPrice = prices[prices.length - 1];
+    
+    return {
+      upper: upperBand,
+      middle: sma,
+      lower: lowerBand,
+      position: (currentPrice - lowerBand) / (upperBand - lowerBand) // 0-1 position within bands
+    };
+  }
+
+  /**
+   * Get backtest results
+   */
+  getBacktestResults(backtestId) {
+    return this.activeBacktests.get(backtestId);
+  }
+
+  /**
+   * List all backtests
+   */
+  listBacktests() {
+    return Array.from(this.activeBacktests.values());
+  }
+
+  /**
+   * Delete backtest results
+   */
+  deleteBacktest(backtestId) {
+    return this.activeBacktests.delete(backtestId);
+  }
+}
+
+module.exports = new BacktestingService();

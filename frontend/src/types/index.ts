@@ -140,3 +140,143 @@ export interface PerformanceSnapshot {
   max_drawdown: number;
   exposure: number;
 }
+
+// Machine Learning Types
+export interface MLModel {
+  id: string;
+  name: string;
+  user_id: string;
+  algorithm_type: 'linear_regression' | 'polynomial_regression' | 'random_forest' | 'naive_bayes' | 'moving_average' | 'technical_indicators';
+  target_timeframe: string;
+  symbols: string[];
+  parameters: Record<string, any>;
+  model_data?: string;
+  training_status: 'untrained' | 'training' | 'trained' | 'error';
+  created_at: string;
+  updated_at: string;
+  last_trained?: string;
+  accuracy?: number;
+  precision_score?: number;
+  recall_score?: number;
+  f1_score?: number;
+  prediction_count?: number;
+  backtest_count?: number;
+  avg_confidence?: number;
+}
+
+export interface MLPrediction {
+  id: string;
+  model_id: string;
+  bot_id?: string;
+  symbol: string;
+  prediction_value: number;
+  confidence: number;
+  features: number[];
+  actual_value?: number;
+  timestamp: string;
+  timeframe: string;
+  model_name?: string;
+}
+
+export interface BacktestResult {
+  id: string;
+  model_id: string;
+  user_id: string;
+  symbols: string[];
+  start_date: string;
+  end_date: string;
+  initial_capital: number;
+  final_capital: number;
+  total_return: number;
+  sharpe_ratio: number;
+  max_drawdown: number;
+  total_trades: number;
+  win_rate: number;
+  avg_trade_duration: number;
+  profit_factor: number;
+  parameters: Record<string, any>;
+  created_at: string;
+  trade_count?: number;
+  trades?: BacktestTrade[];
+  performanceMetrics?: BacktestPerformanceMetrics;
+}
+
+export interface BacktestTrade {
+  id: string;
+  backtest_id: string;
+  symbol: string;
+  side: 'buy' | 'sell';
+  entry_date: string;
+  exit_date?: string;
+  entry_price: number;
+  exit_price?: number;
+  quantity: number;
+  pnl?: number;
+  signal_confidence: number;
+  prediction_accuracy?: number;
+  exitReason?: string;
+  duration?: number;
+}
+
+export interface BacktestPerformanceMetrics {
+  totalReturn: number;
+  sharpeRatio: number;
+  maxDrawdown: number;
+  winRate: number;
+  avgTradeDuration: number;
+  profitFactor: number;
+  totalTrades: number;
+  winningTrades: number;
+  losingTrades: number;
+  grossProfit: number;
+  grossLoss: number;
+  avgWin: number;
+  avgLoss: number;
+}
+
+export interface MLTrainingData {
+  id: string;
+  model_id: string;
+  features: number[];
+  target: number;
+  timestamp: string;
+  symbol: string;
+  timeframe: string;
+}
+
+export interface ModelPerformanceMetrics {
+  id: string;
+  model_id: string;
+  metric_date: string;
+  accuracy: number;
+  precision_score: number;
+  recall_score: number;
+  f1_score: number;
+  mean_absolute_error: number;
+  root_mean_square_error: number;
+  directional_accuracy: number;
+  profit_correlation: number;
+}
+
+export interface MLModelConfig {
+  name: string;
+  algorithmType: string;
+  targetTimeframe: string;
+  symbols: string[];
+  parameters?: Record<string, any>;
+  trainingPeriodDays?: number;
+}
+
+export interface BacktestConfig {
+  symbols?: string[];
+  startDate: string;
+  endDate: string;
+  initialCapital?: number;
+  commission?: number;
+  slippage?: number;
+  positionSizing?: 'fixed' | 'percentage' | 'kelly';
+  riskPerTrade?: number;
+  stopLoss?: number;
+  takeProfit?: number;
+  maxPositions?: number;
+}

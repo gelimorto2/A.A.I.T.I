@@ -13,6 +13,7 @@ const botRoutes = require('./routes/bots');
 const tradingRoutes = require('./routes/trading');
 const analyticsRoutes = require('./routes/analytics');
 const userRoutes = require('./routes/users');
+const mlRoutes = require('./routes/ml');
 
 const { initializeDatabase } = require('./database/init');
 const { authenticateSocket } = require('./middleware/auth');
@@ -84,6 +85,7 @@ const initializeMiddleware = () => {
   app.use('/api/trading', tradingRoutes);
   app.use('/api/analytics', analyticsRoutes);
   app.use('/api/users', userRoutes);
+  app.use('/api/ml', mlRoutes);
 
   // Health check endpoint
   app.get('/api/health', (req, res) => {
