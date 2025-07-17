@@ -1,16 +1,18 @@
 # A.A.I.T.I - Auto AI Trading Interface
 
-🧠 **AAITI** isn't a dashboard. It's a mission-critical environment for deploying, supervising, and evolving AI-powered trading agents in live markets.
+🧠 **AAITI** isn't a dashboard. It's a mission-critical environment for deploying, supervising, and evolving AI-powered trading agents in live crypto markets.
 
 ## 🚀 Features
 
 - **Multi-Bot Management**: Run multiple AI trading bots in parallel with isolated execution environments
+- **Real-Time Crypto Data**: Live cryptocurrency data via CoinGecko API (no API key required)
 - **Real-Time Monitoring**: Live bot health scores, P&L tracking, and performance analytics
 - **Trading Modes**: Support for live, paper, and shadow trading modes
 - **Mission-Critical Interface**: Dark theme, tactical design focused on clarity and speed
-- **Real-Time Data**: WebSocket-powered live updates for all critical metrics
+- **Real-Time WebSocket Updates**: Live updates for all critical metrics and market data
 - **Secure Authentication**: JWT-based auth with role-based access control
 - **Comprehensive Settings Management**: UI-based configuration system with no external file dependencies
+- **Enhanced Logging**: Verbose, structured logging throughout the application
 - **Audit Trail**: Complete logging of all user actions and bot operations
 
 ## 🛠 Tech Stack
@@ -19,8 +21,9 @@
 - **Node.js** with Express.js
 - **SQLite** database for development (easily upgradeable)
 - **Socket.IO** for real-time communication
+- **CoinGecko API** for live cryptocurrency data (no API key required)
 - **JWT** authentication
-- **Winston** logging
+- **Winston** structured logging with enhanced verbosity
 - **Integrated Settings System** with database persistence
 
 ### Frontend
@@ -39,6 +42,35 @@
 - **Git** for cloning the repository
 
 ### Quick Start (Recommended)
+
+#### Option 1: Simple Shell Script Installation 🚀
+
+1. **Clone the repository**
+```bash
+git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
+```
+
+2. **Run the installation script**
+```bash
+./install.sh
+```
+
+This script will:
+- ✅ Check system requirements
+- ⬇️ Install all dependencies (root, backend, frontend)
+- ⚙️ Set up configuration
+- 🎯 Display detailed next steps
+
+**Available script options:**
+```bash
+./install.sh          # Full installation (default)
+./install.sh build    # Install + build for production
+./install.sh check    # Check requirements only
+./install.sh help     # Show help
+```
+
+#### Option 2: Manual npm Installation
 
 1. **Clone the repository**
 ```bash
@@ -60,8 +92,9 @@ npm run dev
 **✅ Success indicators:**
 - Backend API server running on `http://localhost:5000`
 - Frontend React app available at `http://localhost:3000`
-- Backend shows "AAITI Backend Server running on port 5000"
+- Backend shows enhanced startup logs with emojis and detailed information
 - Frontend shows "Compiled successfully!" with no ESLint errors
+- Real-time cryptocurrency data fetching via CoinGecko API
 - Settings are automatically initialized and managed through the UI
 
 ### Manual Setup (Alternative)
@@ -87,14 +120,36 @@ npm start
 To create a production-ready build:
 
 ```bash
-# Build frontend for production
-npm run build
+# Option 1: Using install script
+./install.sh build
 
-# Start backend in production mode
-npm run start:backend
+# Option 2: Manual build
+npm run build              # Build frontend for production
+npm run start:backend      # Start backend in production mode
 ```
 
 The built frontend will be in `frontend/build/` directory.
+
+### Enhanced Logging & Monitoring
+
+AAITI now features comprehensive logging throughout the application:
+
+- **Startup Logs**: Detailed server initialization with emojis and status indicators
+- **Real-time Data**: Verbose logging of CoinGecko API calls and responses
+- **WebSocket Events**: Detailed connection, subscription, and broadcast logging
+- **Performance Metrics**: Response times, cache statistics, and system health
+- **Error Handling**: Structured error logs with stack traces and context
+
+**Log Levels Available:**
+- `debug`: Detailed debugging information
+- `info`: General operational information (default)
+- `warn`: Warning conditions
+- `error`: Error conditions
+
+**Monitoring Endpoints:**
+- Health Check: `http://localhost:5000/api/health`
+- Real-time market data via WebSocket
+- System performance metrics in logs
 
 ## 🏗 Project Structure
 
@@ -160,26 +215,65 @@ Create your first user by registering at `/register` or using the API directly.
 - `POST /api/bots/:id/start` - Start bot
 - `POST /api/bots/:id/stop` - Stop bot
 
-### Trading
+### Trading & Market Data
 - `GET /api/trading/signals/:botId` - Get trading signals
 - `GET /api/trading/trades/:botId` - Get trades
 - `POST /api/trading/execute` - Execute manual trade
-- `GET /api/trading/market-data/:symbol` - Get market data
+- `GET /api/trading/market-data/:symbol` - Get cryptocurrency market data
+- `GET /api/health` - System health check with market data statistics
 
 ### Analytics
 - `GET /api/analytics/portfolio` - Portfolio overview
 - `GET /api/analytics/performance/:botId` - Bot performance
 - `GET /api/analytics/risk` - Risk analysis
 
+## 💰 Cryptocurrency Data
+
+AAITI now uses **CoinGecko API** for live cryptocurrency data:
+
+### Supported Cryptocurrencies
+- Bitcoin (BTC)
+- Ethereum (ETH)
+- Binance Coin (BNB)
+- Cardano (ADA)
+- Solana (SOL)
+- Polkadot (DOT)
+- Dogecoin (DOGE)
+- Chainlink (LINK)
+- Polygon (MATIC)
+
+### Data Features
+- ✅ **No API key required** - Free access to CoinGecko data
+- 🔄 **Real-time updates** - Live price and volume data
+- 📊 **Historical data** - Price history and charts
+- 💾 **Smart caching** - Efficient data retrieval with 1-minute cache
+- 🔄 **Automatic fallback** - Mock data when API is unavailable
+- 📈 **Symbol conversion** - Automatic conversion between common symbol formats
+
+### Symbol Format Support
+The system automatically converts between different symbol formats:
+- `BTC`, `BTC-USD` → `bitcoin`
+- `ETH`, `ETH-USD` → `ethereum`
+- `BNB` → `binancecoin`
+- And more...
+
 ## 🔄 Real-Time Features
 
 The system uses WebSocket connections to provide real-time updates for:
-- Bot status changes
-- New trading signals
-- Trade executions
-- Performance metrics
-- Price updates
-- Settings changes
+- **Live Cryptocurrency Prices** - Real-time updates from CoinGecko API
+- Bot status changes and health monitoring
+- New trading signals and opportunities
+- Trade executions and order status
+- Performance metrics and analytics
+- System health and performance statistics
+- Market data cache statistics
+- Settings changes and configuration updates
+
+**WebSocket Events:**
+- `market_data_update` - Live crypto price updates every 5 seconds
+- `system_health` - Server health, uptime, and performance metrics
+- `bot_update` - Bot status and performance changes
+- `trade_update` - Real-time trade execution updates
 
 ## 🎨 UI/UX Design
 
@@ -346,6 +440,12 @@ ISC License - see LICENSE file for details.
 - ✅ All API endpoints responding correctly
 
 ### Latest Updates Verified:
+- ✅ **CoinGecko API Integration** - Real-time cryptocurrency data without API keys
+- ✅ **Enhanced Logging System** - Verbose, structured logging with emojis and detailed context
+- ✅ **Simplified Installation** - New shell script installation option
+- ✅ **Improved Error Handling** - Graceful fallbacks and comprehensive error logging
+- ✅ **Real-time Market Data Broadcasting** - Live crypto price updates via WebSocket
+- ✅ **Performance Monitoring** - Response time tracking and cache statistics
 - Settings management system fully operational
 - No external configuration files required
 - Enhanced user experience with streamlined setup
@@ -353,4 +453,4 @@ ISC License - see LICENSE file for details.
 - Real-time settings validation and updates
 - Improved onboarding process
 
-**Ready for development and demonstration use with enhanced configuration management!**
+**Ready for development and demonstration use with enhanced cryptocurrency trading capabilities!**

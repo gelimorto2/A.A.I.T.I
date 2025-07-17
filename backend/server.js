@@ -28,6 +28,8 @@ const server = http.createServer(app);
 let config = {};
 
 const initializeConfig = async () => {
+  logger.info('🔧 Initializing AAITI configuration...', { service: 'aaiti-backend' });
+  
   await initializeUserCredentials();
   const credentials = getCredentials();
   
@@ -41,6 +43,16 @@ const initializeConfig = async () => {
     jwtSecret: credentials?.security?.jwtSecret || process.env.JWT_SECRET || 'fallback-secret',
     jwtExpiresIn: credentials?.system?.jwtExpiresIn || process.env.JWT_EXPIRES_IN || '7d'
   };
+  
+  logger.info('✅ Configuration loaded successfully', { 
+    port: config.port,
+    environment: config.nodeEnv,
+    frontendUrl: config.frontendUrl,
+    logLevel: config.logLevel,
+    databasePath: config.dbPath,
+    jwtExpiresIn: config.jwtExpiresIn,
+    service: 'aaiti-backend'
+  });
   
   return config;
 };
@@ -58,12 +70,20 @@ const initializeSocketIO = () => {
 
 // Initialize app middleware
 const initializeMiddleware = () => {
+  logger.info('🔐 Setting up security middleware...', { service: 'aaiti-backend' });
+  
   // Security middleware
   app.use(helmet());
   app.use(cors({
     origin: config.frontendUrl,
     credentials: true
   }));
+
+  logger.info('⚡ Configuring rate limiting...', { 
+    windowMs: '15 minutes',
+    maxRequests: 100,
+    service: 'aaiti-backend'
+  });
 
   // Rate limiting
   const limiter = rateLimit({
@@ -72,12 +92,16 @@ const initializeMiddleware = () => {
   });
   app.use(limiter);
 
+  logger.info('📝 Setting up request logging...', { service: 'aaiti-backend' });
+  
   // Logging
   app.use(morgan('combined'));
 
   // Body parsing
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
+
+  logger.info('🛣️ Registering API routes...', { service: 'aaiti-backend' });
 
   // Routes
   app.use('/api/auth', authRoutes);
@@ -87,29 +111,58 @@ const initializeMiddleware = () => {
   app.use('/api/users', userRoutes);
   app.use('/api/ml', mlRoutes);
 
+  logger.info('🏥 Setting up health check endpoint...', { service: 'aaiti-backend' });
+
   // Health check endpoint
   app.get('/api/health', (req, res) => {
-    res.json({ 
+    const healthData = { 
       status: 'healthy', 
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
+      memory: process.memoryUsage(),
       config: {
         nodeEnv: config.nodeEnv,
-        version: '1.0.0'
+        version: '1.0.0',
+        port: config.port
+      },
+      marketData: {
+        provider: 'CoinGecko',
+        cacheStats: marketDataService.getCacheStats()
       }
+    };
+    
+    logger.debug('Health check requested', { 
+      uptime: healthData.uptime,
+      memoryUsage: healthData.memory,
+      service: 'aaiti-backend'
     });
+    
+    res.json(healthData);
   });
+
+  logger.info('✅ Middleware setup completed', { service: 'aaiti-backend' });
 };
 
 // Socket.IO connection handling and real-time data
 const initializeSocketHandlers = (io) => {
+  logger.info('🔌 Setting up WebSocket authentication...', { service: 'aaiti-backend' });
   io.use(authenticateSocket);
 
   io.on('connection', (socket) => {
-    logger.info(`User ${socket.userId} connected`);
+    logger.info('🟢 WebSocket connection established', { 
+      userId: socket.userId,
+      socketId: socket.id,
+      userAgent: socket.handshake.headers['user-agent'],
+      service: 'aaiti-backend'
+    });
     
     // Join user-specific room for personalized updates
     socket.join(`user_${socket.userId}`);
+    logger.debug('User joined personal room', { 
+      userId: socket.userId,
+      room: `user_${socket.userId}`,
+      service: 'aaiti-backend'
+    });
     
     // Join bot rooms user has access to
     // This will be populated based on user permissions
@@ -117,89 +170,210 @@ const initializeSocketHandlers = (io) => {
     socket.on('subscribe_to_bot', (botId) => {
       // Verify user has access to this bot
       socket.join(`bot_${botId}`);
-      logger.info(`User ${socket.userId} subscribed to bot ${botId}`);
+      logger.info('🤖 User subscribed to bot updates', { 
+        userId: socket.userId,
+        botId,
+        service: 'aaiti-backend'
+      });
     });
     
     socket.on('unsubscribe_from_bot', (botId) => {
       socket.leave(`bot_${botId}`);
-      logger.info(`User ${socket.userId} unsubscribed from bot ${botId}`);
+      logger.info('🚫 User unsubscribed from bot updates', { 
+        userId: socket.userId,
+        botId,
+        service: 'aaiti-backend'
+      });
     });
     
-    socket.on('disconnect', () => {
-      logger.info(`User ${socket.userId} disconnected`);
+    socket.on('disconnect', (reason) => {
+      logger.info('🔴 WebSocket connection closed', { 
+        userId: socket.userId,
+        socketId: socket.id,
+        reason,
+        service: 'aaiti-backend'
+      });
     });
   });
 
   // Global real-time data broadcaster
   const broadcastData = async () => {
     try {
+      const startTime = Date.now();
+      
       // Get popular symbols and broadcast their prices
       const symbols = marketDataService.getPopularSymbols().slice(0, 5); // Limit to 5 to avoid API rate limits
+      logger.debug('📡 Broadcasting market data', { 
+        symbolCount: symbols.length,
+        symbols,
+        connectedUsers: io.engine.clientsCount,
+        service: 'aaiti-backend'
+      });
+      
       const quotes = await marketDataService.getMultipleQuotes(symbols);
+      const successfulQuotes = quotes.filter(q => q.success);
       
       // Broadcast to all connected users
       io.emit('market_data_update', {
         timestamp: new Date().toISOString(),
-        quotes: quotes.filter(q => q.success).map(q => q.data)
+        quotes: successfulQuotes.map(q => q.data),
+        metadata: {
+          totalSymbols: symbols.length,
+          successfulFetches: successfulQuotes.length,
+          provider: 'CoinGecko'
+        }
       });
       
       // Broadcast system health
-      io.emit('system_health', {
+      const healthData = {
         timestamp: new Date().toISOString(),
         status: 'healthy',
         uptime: process.uptime(),
         memoryUsage: process.memoryUsage(),
-        connectedUsers: io.engine.clientsCount
+        connectedUsers: io.engine.clientsCount,
+        marketData: {
+          lastUpdate: new Date().toISOString(),
+          cacheStats: marketDataService.getCacheStats()
+        }
+      };
+      
+      io.emit('system_health', healthData);
+      
+      const broadcastTime = Date.now() - startTime;
+      logger.debug('📡 Market data broadcast completed', { 
+        broadcastTime: `${broadcastTime}ms`,
+        quotesDelivered: successfulQuotes.length,
+        connectedUsers: io.engine.clientsCount,
+        service: 'aaiti-backend'
       });
+      
     } catch (error) {
-      logger.error('Error broadcasting data:', error);
+      logger.error('❌ Error broadcasting real-time data', { 
+        error: error.message,
+        stack: error.stack,
+        service: 'aaiti-backend'
+      });
     }
   };
+
+  logger.info('📡 Starting real-time data broadcaster', { 
+    interval: '5 seconds',
+    service: 'aaiti-backend'
+  });
 
   // Start real-time data broadcasting
   setInterval(broadcastData, 5000); // Every 5 seconds
   
+  logger.info('✅ WebSocket handlers initialized successfully', { service: 'aaiti-backend' });
   return io;
 };
 
 // Initialize database and start server
 const startServer = async () => {
   try {
+    const serverStartTime = Date.now();
+    logger.info('🚀 Starting AAITI Backend Server...', { 
+      version: '1.0.0',
+      nodeVersion: process.version,
+      platform: process.platform,
+      service: 'aaiti-backend'
+    });
+    
     // Initialize configuration first
     await initializeConfig();
-    logger.info('Configuration initialized successfully');
+    logger.info('✅ Configuration initialized successfully', { service: 'aaiti-backend' });
     
     // Initialize database
+    logger.info('💾 Initializing database connection...', { service: 'aaiti-backend' });
     await initializeDatabase();
-    logger.info('Database initialized successfully');
+    logger.info('✅ Database initialized successfully', { service: 'aaiti-backend' });
     
     // Initialize middleware
+    logger.info('⚙️ Setting up application middleware...', { service: 'aaiti-backend' });
     initializeMiddleware();
-    logger.info('Middleware initialized successfully');
+    logger.info('✅ Middleware initialized successfully', { service: 'aaiti-backend' });
     
     // Initialize Socket.IO
+    logger.info('🔌 Initializing WebSocket server...', { service: 'aaiti-backend' });
     const io = initializeSocketIO();
     initializeSocketHandlers(io);
-    logger.info('Socket.IO initialized successfully');
+    logger.info('✅ Socket.IO initialized successfully', { service: 'aaiti-backend' });
+    
+    logger.info('🌐 Starting HTTP server...', { 
+      port: config.port,
+      service: 'aaiti-backend'
+    });
     
     server.listen(config.port, () => {
-      logger.info(`AAITI Backend Server running on port ${config.port}`);
-      logger.info(`Frontend URL: ${config.frontendUrl}`);
-      logger.info(`Environment: ${config.nodeEnv}`);
+      const serverStartupTime = Date.now() - serverStartTime;
+      logger.info('🎉 AAITI Backend Server successfully started!', {
+        port: config.port,
+        environment: config.nodeEnv,
+        frontendUrl: config.frontendUrl,
+        startupTime: `${serverStartupTime}ms`,
+        service: 'aaiti-backend'
+      });
+      
+      logger.info('🔗 Server endpoints available:', {
+        api: `http://localhost:${config.port}/api`,
+        health: `http://localhost:${config.port}/api/health`,
+        websocket: `ws://localhost:${config.port}`,
+        frontend: config.frontendUrl,
+        service: 'aaiti-backend'
+      });
+      
+      logger.info('📊 Market data provider: CoinGecko (no API key required)', { 
+        service: 'aaiti-backend'
+      });
     });
     
   } catch (error) {
-    logger.error('Failed to start server:', error);
+    logger.error('💥 Failed to start server', { 
+      error: error.message,
+      stack: error.stack,
+      service: 'aaiti-backend'
+    });
     process.exit(1);
   }
 };
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    logger.info('Process terminated');
+  logger.info('🛑 SIGTERM received, initiating graceful shutdown...', { 
+    service: 'aaiti-backend'
   });
+  server.close(() => {
+    logger.info('✅ Server shut down gracefully', { service: 'aaiti-backend' });
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  logger.info('🛑 SIGINT received, initiating graceful shutdown...', { 
+    service: 'aaiti-backend'
+  });
+  server.close(() => {
+    logger.info('✅ Server shut down gracefully', { service: 'aaiti-backend' });
+    process.exit(0);
+  });
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('💥 Uncaught exception detected', { 
+    error: error.message,
+    stack: error.stack,
+    service: 'aaiti-backend'
+  });
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('💥 Unhandled promise rejection detected', { 
+    reason,
+    promise,
+    service: 'aaiti-backend'
+  });
+  process.exit(1);
 });
 
 // Export configuration for other modules

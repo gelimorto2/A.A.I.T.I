@@ -7,70 +7,105 @@ class MarketDataService {
     this.credentials = getCredentials('trading');
     this.cache = new Map();
     this.cacheTimeout = 60000; // 1 minute cache
-    this.symbols = ['AAPL', 'GOOGL', 'MSFT', 'TSLA', 'AMZN', 'NVDA', 'META', 'BTC-USD', 'ETH-USD'];
+    this.symbols = ['bitcoin', 'ethereum', 'binancecoin', 'cardano', 'solana', 'polkadot', 'dogecoin', 'chainlink', 'polygon'];
+    this.baseUrl = 'https://api.coingecko.com/api/v3';
+    logger.info('MarketDataService initialized with CoinGecko API', { 
+      service: 'market-data',
+      cacheTimeout: this.cacheTimeout,
+      supportedSymbols: this.symbols.length 
+    });
   }
 
   /**
-   * Get Alpha Vantage API key
+   * Validate symbol format and convert to CoinGecko format
    */
-  getApiKey() {
-    const apiKey = this.credentials?.alphaVantage?.apiKey || process.env.ALPHA_VANTAGE_API_KEY || 'demo';
+  validateAndConvertSymbol(symbol) {
+    // Convert common symbols to CoinGecko IDs
+    const symbolMap = {
+      'BTC': 'bitcoin',
+      'BTC-USD': 'bitcoin',
+      'ETH': 'ethereum', 
+      'ETH-USD': 'ethereum',
+      'BNB': 'binancecoin',
+      'ADA': 'cardano',
+      'SOL': 'solana',
+      'DOT': 'polkadot',
+      'DOGE': 'dogecoin',
+      'LINK': 'chainlink',
+      'MATIC': 'polygon'
+    };
+
+    const convertedSymbol = symbolMap[symbol.toUpperCase()] || symbol.toLowerCase();
+    logger.debug('Symbol conversion', { 
+      original: symbol, 
+      converted: convertedSymbol,
+      service: 'market-data'
+    });
     
-    // If using demo key, we'll fall back to mock data
-    if (apiKey === 'demo') {
-      logger.warn('Using demo API key - falling back to mock data. Get a free API key from https://www.alphavantage.co/support/#api-key');
-    }
-    
-    return apiKey;
+    return convertedSymbol;
   }
 
   /**
-   * Fetch real-time quote data
+   * Fetch real-time quote data from CoinGecko
    */
   async getQuote(symbol) {
     try {
-      const cacheKey = `quote_${symbol}`;
+      const startTime = Date.now();
+      const convertedSymbol = this.validateAndConvertSymbol(symbol);
+      const cacheKey = `quote_${convertedSymbol}`;
+      
+      logger.debug('Fetching quote data', { 
+        symbol: convertedSymbol, 
+        originalSymbol: symbol,
+        cacheKey,
+        service: 'market-data'
+      });
+      
       const cached = this.cache.get(cacheKey);
       
       if (cached && (Date.now() - cached.timestamp) < this.cacheTimeout) {
+        logger.debug('Returning cached quote data', { 
+          symbol: convertedSymbol, 
+          cacheAge: Date.now() - cached.timestamp,
+          service: 'market-data'
+        });
         return cached.data;
       }
 
-      const apiKey = this.getApiKey();
-      
-      // If using demo key, return mock data immediately
-      if (apiKey === 'demo') {
-        return this.getMockQuote(symbol);
-      }
-      
-      // Alpha Vantage Global Quote endpoint
-      const response = await axios.get('https://www.alphavantage.co/query', {
+      // CoinGecko simple price endpoint (no API key required)
+      const response = await axios.get(`${this.baseUrl}/simple/price`, {
         params: {
-          function: 'GLOBAL_QUOTE',
-          symbol: symbol,
-          apikey: apiKey
+          ids: convertedSymbol,
+          vs_currencies: 'usd',
+          include_24hr_change: 'true',
+          include_24hr_vol: 'true',
+          include_last_updated_at: 'true'
         },
         timeout: 10000
       });
 
-      const data = response.data['Global Quote'];
+      const data = response.data[convertedSymbol];
       
-      if (!data || Object.keys(data).length === 0) {
+      if (!data) {
+        logger.warn('No data available for symbol', { 
+          symbol: convertedSymbol, 
+          originalSymbol: symbol,
+          service: 'market-data'
+        });
         throw new Error(`No data available for symbol: ${symbol}`);
       }
 
       const quote = {
-        symbol: data['01. symbol'],
-        price: parseFloat(data['05. price']),
-        change: parseFloat(data['09. change']),
-        changePercent: data['10. change percent'].replace('%', ''),
-        volume: parseInt(data['06. volume']),
-        high: parseFloat(data['03. high']),
-        low: parseFloat(data['04. low']),
-        open: parseFloat(data['02. open']),
-        previousClose: parseFloat(data['08. previous close']),
-        timestamp: data['07. latest trading day'],
-        lastRefreshed: new Date().toISOString()
+        symbol: convertedSymbol,
+        originalSymbol: symbol,
+        price: data.usd,
+        change: data.usd_24h_change || 0,
+        changePercent: data.usd_24h_change || 0,
+        volume: data.usd_24h_vol || 0,
+        lastUpdated: new Date(data.last_updated_at * 1000).toISOString(),
+        lastRefreshed: new Date().toISOString(),
+        provider: 'CoinGecko',
+        isReal: true
       };
 
       // Cache the result
@@ -79,94 +114,123 @@ class MarketDataService {
         timestamp: Date.now()
       });
 
+      const responseTime = Date.now() - startTime;
+      logger.info('Successfully fetched quote data', { 
+        symbol: convertedSymbol, 
+        price: quote.price,
+        change: quote.change,
+        responseTime: `${responseTime}ms`,
+        service: 'market-data'
+      });
+
       return quote;
     } catch (error) {
-      logger.error(`Error fetching quote for ${symbol}:`, error.message);
+      logger.error('Error fetching quote data', { 
+        symbol, 
+        error: error.message,
+        stack: error.stack,
+        service: 'market-data'
+      });
       
       // Return mock data as fallback
+      logger.info('Falling back to mock data', { symbol, service: 'market-data' });
       return this.getMockQuote(symbol);
     }
   }
 
   /**
-   * Fetch historical data
+   * Fetch historical data from CoinGecko
    */
   async getHistoricalData(symbol, interval = 'daily', outputSize = 'compact') {
     try {
-      const cacheKey = `history_${symbol}_${interval}_${outputSize}`;
+      const startTime = Date.now();
+      const convertedSymbol = this.validateAndConvertSymbol(symbol);
+      const cacheKey = `history_${convertedSymbol}_${interval}_${outputSize}`;
+      
+      logger.debug('Fetching historical data', { 
+        symbol: convertedSymbol, 
+        originalSymbol: symbol,
+        interval,
+        outputSize,
+        cacheKey,
+        service: 'market-data'
+      });
+      
       const cached = this.cache.get(cacheKey);
       
       if (cached && (Date.now() - cached.timestamp) < this.cacheTimeout * 5) { // 5 min cache for historical
+        logger.debug('Returning cached historical data', { 
+          symbol: convertedSymbol, 
+          cacheAge: Date.now() - cached.timestamp,
+          service: 'market-data'
+        });
         return cached.data;
       }
 
-      const apiKey = this.getApiKey();
-      
-      // If using demo key, return mock data immediately
-      if (apiKey === 'demo') {
-        return this.getMockHistoricalData(symbol, interval);
-      }
-      
-      let functionName;
-      
+      // Determine days parameter based on interval
+      let days = 30;
       switch (interval) {
         case '1min':
-          functionName = 'TIME_SERIES_INTRADAY';
+        case 'hourly':
+          days = 1;
           break;
         case 'daily':
-          functionName = 'TIME_SERIES_DAILY';
+          days = outputSize === 'full' ? 365 : 30;
           break;
         case 'weekly':
-          functionName = 'TIME_SERIES_WEEKLY';
+          days = 90;
           break;
         case 'monthly':
-          functionName = 'TIME_SERIES_MONTHLY';
+          days = 365;
           break;
-        default:
-          functionName = 'TIME_SERIES_DAILY';
       }
 
-      const params = {
-        function: functionName,
-        symbol: symbol,
-        apikey: apiKey,
-        outputsize: outputSize
-      };
-
-      if (interval === '1min') {
-        params.interval = '1min';
-      }
-
-      const response = await axios.get('https://www.alphavantage.co/query', {
-        params,
+      // CoinGecko market chart endpoint
+      const response = await axios.get(`${this.baseUrl}/coins/${convertedSymbol}/market_chart`, {
+        params: {
+          vs_currency: 'usd',
+          days: days,
+          interval: interval === '1min' ? 'minutely' : 'daily'
+        },
         timeout: 15000
       });
 
-      const data = response.data;
-      const timeSeriesKey = Object.keys(data).find(key => key.includes('Time Series'));
+      const prices = response.data.prices || [];
+      const volumes = response.data.total_volumes || [];
       
-      if (!timeSeriesKey || !data[timeSeriesKey]) {
+      if (prices.length === 0) {
+        logger.warn('No historical data available', { 
+          symbol: convertedSymbol, 
+          originalSymbol: symbol,
+          service: 'market-data'
+        });
         throw new Error(`No historical data available for symbol: ${symbol}`);
       }
 
-      const timeSeries = data[timeSeriesKey];
-      const historicalData = Object.entries(timeSeries)
-        .slice(0, 100) // Limit to 100 data points
-        .map(([date, values]) => ({
-          date,
-          open: parseFloat(values['1. open']),
-          high: parseFloat(values['2. high']),
-          low: parseFloat(values['3. low']),
-          close: parseFloat(values['4. close']),
-          volume: parseInt(values['5. volume'])
-        }))
-        .reverse(); // Most recent first
+      const historicalData = prices.slice(0, 100).map((pricePoint, index) => {
+        const [timestamp, price] = pricePoint;
+        const volume = volumes[index] ? volumes[index][1] : 0;
+        const date = new Date(timestamp);
+        
+        return {
+          date: date.toISOString().split('T')[0],
+          timestamp: timestamp,
+          close: Number(price.toFixed(8)),
+          volume: Number(volume.toFixed(0)),
+          open: Number(price.toFixed(8)), // CoinGecko doesn't provide OHLC, using close as approximation
+          high: Number(price.toFixed(8)),
+          low: Number(price.toFixed(8))
+        };
+      }).reverse(); // Most recent first
 
       const result = {
-        symbol,
+        symbol: convertedSymbol,
+        originalSymbol: symbol,
         interval,
         data: historicalData,
-        lastRefreshed: new Date().toISOString()
+        lastRefreshed: new Date().toISOString(),
+        provider: 'CoinGecko',
+        dataPoints: historicalData.length
       };
 
       // Cache the result
@@ -175,11 +239,27 @@ class MarketDataService {
         timestamp: Date.now()
       });
 
+      const responseTime = Date.now() - startTime;
+      logger.info('Successfully fetched historical data', { 
+        symbol: convertedSymbol, 
+        dataPoints: historicalData.length,
+        interval,
+        responseTime: `${responseTime}ms`,
+        service: 'market-data'
+      });
+
       return result;
     } catch (error) {
-      logger.error(`Error fetching historical data for ${symbol}:`, error.message);
+      logger.error('Error fetching historical data', { 
+        symbol, 
+        interval,
+        error: error.message,
+        stack: error.stack,
+        service: 'market-data'
+      });
       
       // Return mock historical data as fallback
+      logger.info('Falling back to mock historical data', { symbol, interval, service: 'market-data' });
       return this.getMockHistoricalData(symbol, interval);
     }
   }
@@ -188,48 +268,78 @@ class MarketDataService {
    * Get multiple quotes at once
    */
   async getMultipleQuotes(symbols) {
+    const startTime = Date.now();
+    logger.info('Fetching multiple quotes', { 
+      symbolCount: symbols.length, 
+      symbols,
+      service: 'market-data'
+    });
+    
     const promises = symbols.map(symbol => this.getQuote(symbol));
     const results = await Promise.allSettled(promises);
     
-    return results.map((result, index) => ({
+    const processedResults = results.map((result, index) => ({
       symbol: symbols[index],
       success: result.status === 'fulfilled',
       data: result.status === 'fulfilled' ? result.value : null,
       error: result.status === 'rejected' ? result.reason.message : null
     }));
+
+    const successCount = processedResults.filter(r => r.success).length;
+    const responseTime = Date.now() - startTime;
+    
+    logger.info('Completed multiple quotes fetch', { 
+      totalSymbols: symbols.length,
+      successCount,
+      failureCount: symbols.length - successCount,
+      responseTime: `${responseTime}ms`,
+      service: 'market-data'
+    });
+    
+    return processedResults;
   }
 
   /**
-   * Search for symbols
+   * Search for crypto symbols using CoinGecko
    */
   async searchSymbols(keywords) {
     try {
-      const apiKey = this.getApiKey();
+      const startTime = Date.now();
+      logger.debug('Searching for symbols', { keywords, service: 'market-data' });
       
-      const response = await axios.get('https://www.alphavantage.co/query', {
+      const response = await axios.get(`${this.baseUrl}/search`, {
         params: {
-          function: 'SYMBOL_SEARCH',
-          keywords: keywords,
-          apikey: apiKey
+          query: keywords
         },
         timeout: 10000
       });
 
-      const matches = response.data.bestMatches || [];
+      const coins = response.data.coins || [];
       
-      return matches.slice(0, 10).map(match => ({
-        symbol: match['1. symbol'],
-        name: match['2. name'],
-        type: match['3. type'],
-        region: match['4. region'],
-        marketOpen: match['5. marketOpen'],
-        marketClose: match['6. marketClose'],
-        timezone: match['7. timezone'],
-        currency: match['8. currency'],
-        matchScore: parseFloat(match['9. matchScore'])
+      const results = coins.slice(0, 10).map(coin => ({
+        symbol: coin.id,
+        name: coin.name,
+        ticker: coin.symbol?.toUpperCase(),
+        marketCapRank: coin.market_cap_rank,
+        thumb: coin.thumb,
+        large: coin.large
       }));
+
+      const responseTime = Date.now() - startTime;
+      logger.info('Symbol search completed', { 
+        keywords, 
+        resultsCount: results.length,
+        responseTime: `${responseTime}ms`,
+        service: 'market-data'
+      });
+
+      return results;
     } catch (error) {
-      logger.error(`Error searching symbols for "${keywords}":`, error.message);
+      logger.error('Error searching symbols', { 
+        keywords, 
+        error: error.message,
+        service: 'market-data'
+      });
       return [];
     }
   }
@@ -238,11 +348,19 @@ class MarketDataService {
    * Mock quote data for fallback
    */
   getMockQuote(symbol) {
+    const convertedSymbol = this.validateAndConvertSymbol(symbol);
     const basePrice = 100 + Math.random() * 500;
     const change = (Math.random() - 0.5) * 10;
     
+    logger.debug('Generating mock quote data', { 
+      symbol: convertedSymbol, 
+      originalSymbol: symbol,
+      service: 'market-data'
+    });
+    
     return {
-      symbol,
+      symbol: convertedSymbol,
+      originalSymbol: symbol,
       price: Number((basePrice + change).toFixed(2)),
       change: Number(change.toFixed(2)),
       changePercent: Number(((change / basePrice) * 100).toFixed(2)),
@@ -253,7 +371,8 @@ class MarketDataService {
       previousClose: Number(basePrice.toFixed(2)),
       timestamp: new Date().toISOString().split('T')[0],
       lastRefreshed: new Date().toISOString(),
-      isMock: true
+      isMock: true,
+      provider: 'Mock'
     };
   }
 
@@ -261,8 +380,16 @@ class MarketDataService {
    * Mock historical data for fallback
    */
   getMockHistoricalData(symbol, interval) {
+    const convertedSymbol = this.validateAndConvertSymbol(symbol);
     const data = [];
     const basePrice = 100 + Math.random() * 500;
+    
+    logger.debug('Generating mock historical data', { 
+      symbol: convertedSymbol, 
+      originalSymbol: symbol,
+      interval,
+      service: 'market-data'
+    });
     
     for (let i = 99; i >= 0; i--) {
       const date = new Date();
@@ -276,6 +403,7 @@ class MarketDataService {
       
       data.push({
         date: date.toISOString().split('T')[0],
+        timestamp: date.getTime(),
         open: Number(open.toFixed(2)),
         high: Number(high.toFixed(2)),
         low: Number(low.toFixed(2)),
@@ -285,11 +413,14 @@ class MarketDataService {
     }
     
     return {
-      symbol,
+      symbol: convertedSymbol,
+      originalSymbol: symbol,
       interval,
       data,
       lastRefreshed: new Date().toISOString(),
-      isMock: true
+      isMock: true,
+      provider: 'Mock',
+      dataPoints: data.length
     };
   }
 
@@ -297,6 +428,10 @@ class MarketDataService {
    * Get popular trading symbols
    */
   getPopularSymbols() {
+    logger.debug('Returning popular crypto symbols', { 
+      symbolCount: this.symbols.length,
+      service: 'market-data'
+    });
     return this.symbols;
   }
 
@@ -304,8 +439,34 @@ class MarketDataService {
    * Clear cache
    */
   clearCache() {
+    const cacheSize = this.cache.size;
     this.cache.clear();
-    logger.info('Market data cache cleared');
+    logger.info('Market data cache cleared', { 
+      previousCacheSize: cacheSize,
+      service: 'market-data'
+    });
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats() {
+    const stats = {
+      size: this.cache.size,
+      timeout: this.cacheTimeout,
+      entries: []
+    };
+
+    for (const [key, value] of this.cache.entries()) {
+      stats.entries.push({
+        key,
+        age: Date.now() - value.timestamp,
+        expired: (Date.now() - value.timestamp) > this.cacheTimeout
+      });
+    }
+
+    logger.debug('Cache statistics', { stats, service: 'market-data' });
+    return stats;
   }
 }
 
