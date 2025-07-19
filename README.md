@@ -2,7 +2,7 @@
 
 🧠 **AAITI** isn't a dashboard. It's a mission-critical environment for deploying, supervising, and evolving AI-powered trading agents in live crypto markets.
 
-## - [x] Features
+## ✅ Features
 
 - **Multi-Bot Management**: Run multiple AI trading bots in parallel with isolated execution environments
 - **Real-Time Crypto Data**: Live cryptocurrency data via CoinGecko API (no API key required)
