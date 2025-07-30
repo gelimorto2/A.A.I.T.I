@@ -54,6 +54,62 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Function to clean installation
+clean_install() {
+    print_header "Performing clean installation..."
+    
+    if [ -d "node_modules" ] || [ -d "backend/node_modules" ] || [ -d "frontend/node_modules" ]; then
+        print_step "Removing existing node_modules directories..."
+        rm -rf node_modules backend/node_modules frontend/node_modules
+        print_status "Cleaned existing installations"
+    fi
+    
+    if [ -d "frontend/build" ]; then
+        print_step "Removing existing build directory..."
+        rm -rf frontend/build
+        print_status "Cleaned existing build"
+    fi
+    
+    if [ -f "package-lock.json" ] || [ -f "backend/package-lock.json" ] || [ -f "frontend/package-lock.json" ]; then
+        print_step "Removing lock files for fresh installation..."
+        rm -f package-lock.json backend/package-lock.json frontend/package-lock.json
+        print_status "Cleaned lock files"
+    fi
+    
+    echo ""
+}
+
+# Function to install production dependencies only
+install_production() {
+    print_header "Installing production dependencies..."
+    
+    # Install root dependencies
+    print_step "Installing root package dependencies..."
+    npm install --production
+    print_status "Root dependencies installed"
+    
+    # Install backend dependencies
+    print_step "Installing backend dependencies..."
+    cd backend
+    npm install --production
+    cd ..
+    print_status "Backend dependencies installed"
+    
+    # Install frontend dependencies and build
+    print_step "Installing frontend dependencies..."
+    cd frontend
+    npm install
+    print_status "Frontend dependencies installed"
+    
+    print_step "Building frontend for production..."
+    npm run build
+    cd ..
+    print_status "Frontend built for production"
+    
+    print_status "Production installation complete!"
+    echo ""
+}
+
 # Check system requirements
 check_requirements() {
     print_header "Checking system requirements..."
@@ -154,43 +210,44 @@ setup_configuration() {
 show_success() {
     echo ""
     echo -e "${WHITE}================================================${NC}"
-    echo -e "${GREEN}${ROCKET} AAITI Installation Complete! ${ROCKET}${NC}"
+    echo -e "${GREEN}${ROCKET} AAITI v1.0 Production Ready! ${ROCKET}${NC}"
     echo -e "${WHITE}================================================${NC}"
     echo ""
     
-    print_header "Next Steps:"
+    print_header "Production Startup:"
     echo ""
     
-    print_step "Start the development servers:"
-    echo -e "  ${YELLOW}npm run dev${NC}"
+    print_step "Start the complete application (single command):"
+    echo -e "  ${YELLOW}npm start${NC}  ${CYAN}# Production mode with built frontend${NC}"
     echo ""
     
-    print_step "Or start services individually:"
-    echo -e "  Backend:  ${YELLOW}cd backend && npm run dev${NC}"
-    echo -e "  Frontend: ${YELLOW}cd frontend && npm start${NC}"
+    print_step "Development mode (hot reload):"
+    echo -e "  ${YELLOW}npm run dev${NC}  ${CYAN}# Development with live reload${NC}"
     echo ""
     
     print_step "Build for production:"
-    echo -e "  ${YELLOW}npm run build${NC}"
-    echo -e "  ${YELLOW}npm run start:backend${NC}"
+    echo -e "  ${YELLOW}npm run build:all${NC}  ${CYAN}# Build and optimize for production${NC}"
     echo ""
     
     print_header "Access Points:"
-    echo -e "  🌐 Frontend: ${CYAN}http://localhost:3000${NC}"
+    echo -e "  🌐 Application: ${CYAN}http://localhost:3000${NC}"
     echo -e "  🔧 Backend API: ${CYAN}http://localhost:5000${NC}"
     echo -e "  🏥 Health Check: ${CYAN}http://localhost:5000/api/health${NC}"
     echo ""
     
-    print_header "Features:"
-    echo -e "  📊 Real-time crypto data via CoinGecko API (no API key required)"
+    print_header "Production Features:"
+    echo -e "  🚀 Single command startup (npm start)"
+    echo -e "  📊 Real-time crypto data via CoinGecko API"
     echo -e "  🤖 Multi-bot management interface"
     echo -e "  📡 WebSocket real-time updates"
     echo -e "  🔐 Secure authentication system"
     echo -e "  ⚙️ UI-based configuration management"
+    echo -e "  🎯 Mission-critical dark theme interface"
+    echo -e "  📈 Advanced charting and analytics"
     echo ""
     
-    print_info "Configuration and user management available through the web interface"
-    print_info "Check the README.md for detailed documentation"
+    print_info "Ready for production deployment!"
+    print_info "Check the README.md for detailed documentation and screenshots"
     echo ""
 }
 
@@ -206,7 +263,7 @@ check_directory() {
 # Handle command line arguments
 case "${1:-install}" in
     "install"|"")
-        print_header "AAITI Auto AI Trading Interface - Installation Script"
+        print_header "AAITI v1.0 Production Installation"
         echo ""
         check_directory
         check_requirements
@@ -214,14 +271,34 @@ case "${1:-install}" in
         setup_configuration
         show_success
         ;;
+    "clean")
+        print_header "AAITI - Clean Installation"
+        echo ""
+        check_directory
+        check_requirements
+        clean_install
+        install_dependencies
+        setup_configuration
+        show_success
+        ;;
+    "production"|"prod")
+        print_header "AAITI - Production Installation"
+        echo ""
+        check_directory
+        check_requirements
+        clean_install
+        install_production
+        setup_configuration
+        show_success
+        ;;
     "build")
-        print_header "AAITI - Build Script"
+        print_header "AAITI - Build for Production"
         echo ""
         check_directory
         check_requirements
         install_dependencies
         build_application
-        print_status "Build process complete!"
+        print_status "Production build complete!"
         ;;
     "requirements"|"check")
         print_header "AAITI - Requirements Check"
@@ -229,21 +306,27 @@ case "${1:-install}" in
         check_requirements
         ;;
     "help"|"-h"|"--help")
-        echo -e "${WHITE}AAITI Installation Script${NC}"
+        echo -e "${WHITE}AAITI v1.0 Production Installation Script${NC}"
         echo ""
         echo -e "${YELLOW}Usage:${NC}"
         echo -e "  ./install.sh [command]"
         echo ""
         echo -e "${YELLOW}Commands:${NC}"
-        echo -e "  install     ${CYAN}Full installation (default)${NC}"
+        echo -e "  install     ${CYAN}Standard installation (default)${NC}"
+        echo -e "  clean       ${CYAN}Clean installation (removes existing files)${NC}"
+        echo -e "  production  ${CYAN}Production-only installation with build${NC}"
         echo -e "  build       ${CYAN}Install dependencies and build for production${NC}"
         echo -e "  check       ${CYAN}Check system requirements only${NC}"
         echo -e "  help        ${CYAN}Show this help message${NC}"
         echo ""
         echo -e "${YELLOW}Examples:${NC}"
-        echo -e "  ./install.sh"
-        echo -e "  ./install.sh build"
-        echo -e "  ./install.sh check"
+        echo -e "  ./install.sh clean      ${CYAN}# Clean install from scratch${NC}"
+        echo -e "  ./install.sh production ${CYAN}# Production-ready installation${NC}"
+        echo -e "  ./install.sh build      ${CYAN}# Just build for production${NC}"
+        echo ""
+        echo -e "${YELLOW}Post-Installation:${NC}"
+        echo -e "  npm start    ${CYAN}# Start production application${NC}"
+        echo -e "  npm run dev  ${CYAN}# Start development mode${NC}"
         ;;
     *)
         print_error "Unknown command: $1"

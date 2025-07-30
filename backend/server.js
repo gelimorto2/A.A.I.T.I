@@ -20,9 +20,13 @@ const { authenticateSocket } = require('./middleware/auth');
 const { initializeUserCredentials, getCredentials } = require('./utils/credentials');
 const marketDataService = require('./utils/marketData');
 const logger = require('./utils/logger');
+const ASCIIDashboard = require('./utils/asciiDashboard');
 
 const app = express();
 const server = http.createServer(app);
+
+// Initialize ASCII Dashboard
+const dashboard = new ASCIIDashboard();
 
 // Initialize credentials and get configuration
 let config = {};
@@ -149,6 +153,11 @@ const initializeSocketHandlers = (io) => {
   io.use(authenticateSocket);
 
   io.on('connection', (socket) => {
+    // Update dashboard with new connection
+    dashboard.updateStats({
+      connections: io.engine.clientsCount
+    });
+    
     logger.info('🟢 WebSocket connection established', { 
       userId: socket.userId,
       socketId: socket.id,
@@ -187,6 +196,11 @@ const initializeSocketHandlers = (io) => {
     });
     
     socket.on('disconnect', (reason) => {
+      // Update dashboard with disconnection
+      dashboard.updateStats({
+        connections: Math.max(0, io.engine.clientsCount - 1)
+      });
+      
       logger.info('🔴 WebSocket connection closed', { 
         userId: socket.userId,
         socketId: socket.id,
@@ -306,6 +320,17 @@ const startServer = async () => {
     
     server.listen(config.port, () => {
       const serverStartupTime = Date.now() - serverStartTime;
+      
+      // Update dashboard with initial status
+      dashboard.updateStats({
+        serverStatus: 'ONLINE',
+        dbStatus: 'CONNECTED',
+        marketDataStatus: 'ACTIVE'
+      });
+      
+      // Start ASCII Dashboard
+      dashboard.start();
+      
       logger.info('🎉 AAITI Backend Server successfully started!', {
         port: config.port,
         environment: config.nodeEnv,
@@ -342,6 +367,7 @@ process.on('SIGTERM', () => {
   logger.info('🛑 SIGTERM received, initiating graceful shutdown...', { 
     service: 'aaiti-backend'
   });
+  dashboard.stop();
   server.close(() => {
     logger.info('✅ Server shut down gracefully', { service: 'aaiti-backend' });
     process.exit(0);
@@ -352,6 +378,7 @@ process.on('SIGINT', () => {
   logger.info('🛑 SIGINT received, initiating graceful shutdown...', { 
     service: 'aaiti-backend'
   });
+  dashboard.stop();
   server.close(() => {
     logger.info('✅ Server shut down gracefully', { service: 'aaiti-backend' });
     process.exit(0);
