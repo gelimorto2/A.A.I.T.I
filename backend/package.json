@@ -1,7 +1,7 @@
 {
   "name": "aaiti-backend",
   "version": "1.0.0",
-  "description": "AAITI Backend - Auto AI Trading Interface API Server",
+  "description": "A.A.I.T.I v1.0 Backend - Auto AI Trading Interface API Server with ASCII Dashboard",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

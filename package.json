@@ -1,7 +1,7 @@
 {
   "name": "aaiti",
   "version": "1.0.0",
-  "description": "Auto AI Trading Interface - Mission-Critical Trading Command Deck",
+  "description": "A.A.I.T.I v1.0 - Auto AI Trading Interface: Production-Ready Neural Command Deck for AI-Powered Trading",
   "main": "index.js",
   "scripts": {
     "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
