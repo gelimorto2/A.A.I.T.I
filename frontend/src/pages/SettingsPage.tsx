@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Grid,
@@ -115,12 +115,7 @@ const SettingsPage: React.FC = () => {
     systemHealth: 'Healthy'
   });
 
-  useEffect(() => {
-    loadSettings();
-    loadSystemInfo();
-  }, []);
-
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('/api/users/settings', {
@@ -145,9 +140,9 @@ const SettingsPage: React.FC = () => {
     } catch (error) {
       console.error('Error loading settings:', error);
     }
-  };
+  }, [generalSettings, tradingSettings, securitySettings, systemSettings, apiSettings]);
 
-  const loadSystemInfo = async () => {
+  const loadSystemInfo = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('/api/analytics/system-info', {
@@ -182,7 +177,12 @@ const SettingsPage: React.FC = () => {
         systemHealth: 'Healthy'
       });
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadSettings();
+    loadSystemInfo();
+  }, [loadSettings, loadSystemInfo]);
 
   const saveSettings = async (category: string, settings: any) => {
     setLoading(true);

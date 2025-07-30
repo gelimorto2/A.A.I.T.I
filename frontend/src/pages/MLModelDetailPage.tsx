@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -15,7 +15,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   Chip,
   IconButton,
   Alert,
@@ -27,8 +26,6 @@ import {
   PlayArrow,
   TrendingUp,
   TrendingDown,
-  Assessment,
-  Science,
 } from '@mui/icons-material';
 import { Line } from 'react-chartjs-2';
 import {
@@ -86,13 +83,7 @@ const MLModelDetailPage: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (modelId) {
-      loadModelData();
-    }
-  }, [modelId]);
-
-  const loadModelData = async () => {
+  const loadModelData = useCallback(async () => {
     if (!modelId) return;
     
     try {
@@ -116,7 +107,13 @@ const MLModelDetailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [modelId]);
+
+  useEffect(() => {
+    if (modelId) {
+      loadModelData();
+    }
+  }, [modelId, loadModelData]);
 
   const runPrediction = async () => {
     if (!model) return;
