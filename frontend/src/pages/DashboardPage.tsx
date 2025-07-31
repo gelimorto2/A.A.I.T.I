@@ -22,6 +22,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store/store';
 import { fetchBots } from '../store/slices/botsSlice';
 import { fetchPortfolio } from '../store/slices/analyticsSlice';
+import HealthTooltip from '../components/common/HealthTooltip';
+import PnLChartTooltip from '../components/common/PnLChartTooltip';
 
 const DashboardPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -106,30 +108,32 @@ const DashboardPage: React.FC = () => {
         </Grid>
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                {totalPnL >= 0 ? (
-                  <TrendingUp sx={{ color: '#00ff88', mr: 1 }} />
-                ) : (
-                  <TrendingDown sx={{ color: '#ff3366', mr: 1 }} />
-                )}
-                <Typography variant="h6" fontWeight="bold">
-                  Total P&L
+          <PnLChartTooltip currentPnL={totalPnL}>
+            <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333', cursor: 'pointer' }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  {totalPnL >= 0 ? (
+                    <TrendingUp sx={{ color: '#00ff88', mr: 1 }} />
+                  ) : (
+                    <TrendingDown sx={{ color: '#ff3366', mr: 1 }} />
+                  )}
+                  <Typography variant="h6" fontWeight="bold">
+                    Total P&L
+                  </Typography>
+                </Box>
+                <Typography 
+                  variant="h3" 
+                  fontWeight="bold"
+                  color={totalPnL >= 0 ? '#00ff88' : '#ff3366'}
+                >
+                  ${totalPnL.toFixed(2)}
                 </Typography>
-              </Box>
-              <Typography 
-                variant="h3" 
-                fontWeight="bold"
-                color={totalPnL >= 0 ? '#00ff88' : '#ff3366'}
-              >
-                ${totalPnL.toFixed(2)}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {totalTrades} total trades
-              </Typography>
-            </CardContent>
-          </Card>
+                <Typography variant="body2" color="text.secondary">
+                  {totalTrades} total trades
+                </Typography>
+              </CardContent>
+            </Card>
+          </PnLChartTooltip>
         </Grid>
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -163,26 +167,28 @@ const DashboardPage: React.FC = () => {
         </Grid>
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Warning sx={{ color: '#ffaa00', mr: 1 }} />
-                <Typography variant="h6" fontWeight="bold">
-                  System Health
+          <HealthTooltip>
+            <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333', cursor: 'pointer' }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Warning sx={{ color: '#ffaa00', mr: 1 }} />
+                  <Typography variant="h6" fontWeight="bold">
+                    System Health
+                  </Typography>
+                </Box>
+                <Typography 
+                  variant="h3" 
+                  color="#00ff88"
+                  fontWeight="bold"
+                >
+                  98%
                 </Typography>
-              </Box>
-              <Typography 
-                variant="h3" 
-                color="#00ff88"
-                fontWeight="bold"
-              >
-                98%
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                All systems operational
-              </Typography>
-            </CardContent>
-          </Card>
+                <Typography variant="body2" color="text.secondary">
+                  All systems operational
+                </Typography>
+              </CardContent>
+            </Card>
+          </HealthTooltip>
         </Grid>
       </Grid>
 
@@ -275,21 +281,23 @@ const DashboardPage: React.FC = () => {
                 )}
 
                 {bot.pnl !== undefined && (
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      P&L: <span style={{ 
-                        color: bot.pnl >= 0 ? '#00ff88' : '#ff3366',
-                        fontWeight: 'bold' 
-                      }}>
-                        ${bot.pnl.toFixed(2)}
-                      </span>
-                    </Typography>
-                    {bot.total_trades && (
+                  <PnLChartTooltip currentPnL={bot.pnl} botId={bot.id}>
+                    <Box sx={{ cursor: 'pointer' }}>
                       <Typography variant="body2" color="text.secondary">
-                        Trades: {bot.total_trades}
+                        P&L: <span style={{ 
+                          color: bot.pnl >= 0 ? '#00ff88' : '#ff3366',
+                          fontWeight: 'bold' 
+                        }}>
+                          ${bot.pnl.toFixed(2)}
+                        </span>
                       </Typography>
-                    )}
-                  </Box>
+                      {bot.total_trades && (
+                        <Typography variant="body2" color="text.secondary">
+                          Trades: {bot.total_trades}
+                        </Typography>
+                      )}
+                    </Box>
+                  </PnLChartTooltip>
                 )}
               </CardContent>
             </Card>

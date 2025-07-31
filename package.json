@@ -13,7 +13,14 @@
     "build": "cd frontend && npm run build",
     "build:all": "npm run build && echo 'Build complete - ready for production'",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "install:clean": "npm run clean && npm run install:all",
+    "install:production": "npm run clean && npm install --production && cd backend && npm install --production && cd ../frontend && npm install && npm run build",
     "clean": "rm -rf node_modules backend/node_modules frontend/node_modules && rm -rf frontend/build",
+    "clean:cache": "npm cache clean --force && cd backend && npm cache clean --force && cd ../frontend && npm cache clean --force",
+    "clean:all": "npm run clean && npm run clean:cache && rm -f package-lock.json backend/package-lock.json frontend/package-lock.json",
+    "health": "curl -s http://localhost:5000/api/health | python3 -m json.tool || echo 'Backend not running'",
+    "check": "node --version && npm --version && echo 'System check complete'",
+    "setup": "npm run install:all && npm run build:all && echo 'Setup complete - ready to start!'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
