@@ -28,6 +28,9 @@ const server = http.createServer(app);
 // Initialize ASCII Dashboard
 const dashboard = new ASCIIDashboard();
 
+// Connect logger to dashboard
+logger.setDashboard(dashboard);
+
 // Initialize credentials and get configuration
 let config = {};
 

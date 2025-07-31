@@ -308,7 +308,7 @@ const BotsPage: React.FC = () => {
       {/* Bots Grid */}
       <Grid container spacing={3}>
         {bots.map((bot) => (
-          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={bot.id}>
+          <Grid item xs={12} sm={6} md={4} key={bot.id}>
             <Card 
               sx={{ 
                 bgcolor: 'background.paper', 
@@ -535,7 +535,7 @@ const BotsPage: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Agent Name"
@@ -543,7 +543,7 @@ const BotsPage: React.FC = () => {
                 onChange={(e) => setBotForm({ ...botForm, name: e.target.value })}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
                 <InputLabel>Strategy Type</InputLabel>
                 <Select
@@ -559,7 +559,7 @@ const BotsPage: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={12}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Description"
@@ -569,7 +569,7 @@ const BotsPage: React.FC = () => {
                 onChange={(e) => setBotForm({ ...botForm, description: e.target.value })}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
                 <InputLabel>Trading Mode</InputLabel>
                 <Select
@@ -583,7 +583,7 @@ const BotsPage: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Max Position Size ($)"
@@ -595,7 +595,7 @@ const BotsPage: React.FC = () => {
                 })}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Stop Loss (%)"
@@ -607,7 +607,7 @@ const BotsPage: React.FC = () => {
                 })}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Take Profit (%)"
@@ -653,7 +653,7 @@ const BotsPage: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Agent Name"
@@ -661,7 +661,7 @@ const BotsPage: React.FC = () => {
                 onChange={(e) => setBotForm({ ...botForm, name: e.target.value })}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
                 <InputLabel>Strategy Type</InputLabel>
                 <Select
@@ -677,7 +677,7 @@ const BotsPage: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={12}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Description"
@@ -687,7 +687,7 @@ const BotsPage: React.FC = () => {
                 onChange={(e) => setBotForm({ ...botForm, description: e.target.value })}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
                 <InputLabel>Trading Mode</InputLabel>
                 <Select
@@ -701,7 +701,7 @@ const BotsPage: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Max Position Size ($)"
@@ -713,7 +713,7 @@ const BotsPage: React.FC = () => {
                 })}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Stop Loss (%)"
@@ -725,7 +725,7 @@ const BotsPage: React.FC = () => {
                 })}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Take Profit (%)"

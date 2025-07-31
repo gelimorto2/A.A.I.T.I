@@ -250,7 +250,7 @@ const BotDetailPage: React.FC = () => {
 
       {/* Status Cards */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -273,7 +273,7 @@ const BotDetailPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>P&L</Typography>
@@ -296,7 +296,7 @@ const BotDetailPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>Performance</Typography>
@@ -313,7 +313,7 @@ const BotDetailPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>Health Score</Typography>
@@ -356,7 +356,7 @@ const BotDetailPage: React.FC = () => {
 
         <TabPanel value={tabValue} index={0}>
           <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid item xs={12} md={6}>
               <Typography variant="h6" gutterBottom>Strategy Information</Typography>
               <Box sx={{ mb: 2 }}>
                 <Typography variant="body2" color="text.secondary">Strategy Type</Typography>
@@ -371,7 +371,7 @@ const BotDetailPage: React.FC = () => {
                 <Typography variant="body1">{formatDateTime(bot.updated_at)}</Typography>
               </Box>
             </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid item xs={12} md={6}>
               <Typography variant="h6" gutterBottom>Performance Metrics</Typography>
               <Box sx={{ mb: 2 }}>
                 <Typography variant="body2" color="text.secondary">Sharpe Ratio</Typography>
@@ -494,7 +494,7 @@ const BotDetailPage: React.FC = () => {
           {bot.config ? (
             <Box>
               <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 6 }}>
+                <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>Risk Management</Typography>
                   <Box sx={{ mb: 1 }}>
                     <Typography variant="body2" color="text.secondary">Max Position Size</Typography>
@@ -509,7 +509,7 @@ const BotDetailPage: React.FC = () => {
                     <Typography variant="body1">{bot.config.take_profit_percent || 0}%</Typography>
                   </Box>
                 </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
+                <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>Trading Parameters</Typography>
                   <Box sx={{ mb: 1 }}>
                     <Typography variant="body2" color="text.secondary">Trading Pairs</Typography>

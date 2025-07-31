@@ -322,7 +322,7 @@ const AnalyticsPage: React.FC = () => {
 
       {/* Performance Summary Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -349,7 +349,7 @@ const AnalyticsPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -368,7 +368,7 @@ const AnalyticsPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -398,7 +398,7 @@ const AnalyticsPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -464,7 +464,7 @@ const AnalyticsPage: React.FC = () => {
       {/* Performance Charts Tab */}
       {activeTab === 0 && (
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, lg: 8 }}>
+          <Grid item xs={12} lg={8}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -479,7 +479,7 @@ const AnalyticsPage: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid size={{ xs: 12, lg: 4 }}>
+          <Grid item xs={12} lg={4}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -499,7 +499,7 @@ const AnalyticsPage: React.FC = () => {
       {/* Bot Comparison Tab */}
       {activeTab === 1 && (
         <Grid container spacing={3}>
-          <Grid size={12}>
+          <Grid item xs={12}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -567,7 +567,7 @@ const AnalyticsPage: React.FC = () => {
       {/* Allocation Tab */}
       {activeTab === 2 && (
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -582,7 +582,7 @@ const AnalyticsPage: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>

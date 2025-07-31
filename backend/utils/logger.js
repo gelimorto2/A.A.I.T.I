@@ -1,5 +1,8 @@
 const winston = require('winston');
 
+// Dashboard instance will be set by the main application
+let dashboardInstance = null;
+
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: winston.format.combine(
@@ -14,6 +17,19 @@ const logger = winston.createLogger({
   ]
 });
 
+// Custom transport for dashboard logs
+class DashboardTransport extends winston.Transport {
+  log(info, callback) {
+    if (dashboardInstance && dashboardInstance.addLog) {
+      dashboardInstance.addLog(info.level, info.message, info);
+    }
+    callback();
+  }
+}
+
+// Add dashboard transport
+logger.add(new DashboardTransport());
+
 // If we're not in production, log to console as well
 if (process.env.NODE_ENV !== 'production') {
   logger.add(new winston.transports.Console({
@@ -23,5 +39,10 @@ if (process.env.NODE_ENV !== 'production') {
     )
   }));
 }
+
+// Function to set dashboard instance
+logger.setDashboard = (dashboard) => {
+  dashboardInstance = dashboard;
+};
 
 module.exports = logger;

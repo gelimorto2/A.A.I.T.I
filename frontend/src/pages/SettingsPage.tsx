@@ -319,7 +319,7 @@ const SettingsPage: React.FC = () => {
       {/* General Settings Tab */}
       {activeTab === 0 && (
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -327,7 +327,7 @@ const SettingsPage: React.FC = () => {
                 </Typography>
                 
                 <Grid container spacing={2}>
-                  <Grid size={{ xs: 12, sm: 6 }}>
+                  <Grid item xs={12} sm={6}>
                     <FormControl fullWidth>
                       <InputLabel>Theme</InputLabel>
                       <Select
@@ -342,7 +342,7 @@ const SettingsPage: React.FC = () => {
                     </FormControl>
                   </Grid>
                   
-                  <Grid size={{ xs: 12, sm: 6 }}>
+                  <Grid item xs={12} sm={6}>
                     <FormControl fullWidth>
                       <InputLabel>Currency</InputLabel>
                       <Select
@@ -358,7 +358,7 @@ const SettingsPage: React.FC = () => {
                     </FormControl>
                   </Grid>
 
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <FormControlLabel
                       control={
                         <Switch
@@ -370,7 +370,7 @@ const SettingsPage: React.FC = () => {
                     />
                   </Grid>
 
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <TextField
                       fullWidth
                       label="Refresh Interval (seconds)"
@@ -381,7 +381,7 @@ const SettingsPage: React.FC = () => {
                     />
                   </Grid>
 
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <FormControlLabel
                       control={
                         <Switch
@@ -407,7 +407,7 @@ const SettingsPage: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -415,7 +415,7 @@ const SettingsPage: React.FC = () => {
                 </Typography>
                 
                 <Grid container spacing={2}>
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <TextField
                       fullWidth
                       label="Username"
@@ -424,7 +424,7 @@ const SettingsPage: React.FC = () => {
                     />
                   </Grid>
                   
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <TextField
                       fullWidth
                       label="Email"
@@ -433,7 +433,7 @@ const SettingsPage: React.FC = () => {
                     />
                   </Grid>
 
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <TextField
                       fullWidth
                       label="Role"
@@ -442,7 +442,7 @@ const SettingsPage: React.FC = () => {
                     />
                   </Grid>
 
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <Chip 
                       label="Premium Account" 
                       color="primary" 
@@ -467,7 +467,7 @@ const SettingsPage: React.FC = () => {
       {/* Trading & APIs Tab */}
       {activeTab === 1 && (
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -475,7 +475,7 @@ const SettingsPage: React.FC = () => {
                 </Typography>
                 
                 <Grid container spacing={2}>
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <FormControl fullWidth>
                       <InputLabel>Default Trading Mode</InputLabel>
                       <Select
@@ -490,7 +490,7 @@ const SettingsPage: React.FC = () => {
                     </FormControl>
                   </Grid>
 
-                  <Grid size={{ xs: 12, sm: 6 }}>
+                  <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
                       label="Max Concurrent Bots"
@@ -500,7 +500,7 @@ const SettingsPage: React.FC = () => {
                     />
                   </Grid>
 
-                  <Grid size={{ xs: 12, sm: 6 }}>
+                  <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
                       label="Max Daily Loss ($)"
@@ -510,7 +510,7 @@ const SettingsPage: React.FC = () => {
                     />
                   </Grid>
 
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <FormControlLabel
                       control={
                         <Switch
@@ -522,7 +522,7 @@ const SettingsPage: React.FC = () => {
                     />
                   </Grid>
 
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <FormControlLabel
                       control={
                         <Switch
@@ -548,7 +548,7 @@ const SettingsPage: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -561,7 +561,7 @@ const SettingsPage: React.FC = () => {
                   </AccordionSummary>
                   <AccordionDetails>
                     <Grid container spacing={2}>
-                      <Grid size={12}>
+                      <Grid item xs={12}>
                         <TextField
                           fullWidth
                           label="API Key"
@@ -571,7 +571,7 @@ const SettingsPage: React.FC = () => {
                           placeholder="Enter Alpha Vantage API key"
                         />
                       </Grid>
-                      <Grid size={12}>
+                      <Grid item xs={12}>
                         <Button
                           variant="outlined"
                           onClick={() => testApiConnection('alphavantage')}
@@ -590,7 +590,7 @@ const SettingsPage: React.FC = () => {
                   </AccordionSummary>
                   <AccordionDetails>
                     <Grid container spacing={2}>
-                      <Grid size={12}>
+                      <Grid item xs={12}>
                         <TextField
                           fullWidth
                           label="API Key"
@@ -599,7 +599,7 @@ const SettingsPage: React.FC = () => {
                           onChange={(e) => setApiSettings({...apiSettings, binanceApiKey: e.target.value})}
                         />
                       </Grid>
-                      <Grid size={12}>
+                      <Grid item xs={12}>
                         <TextField
                           fullWidth
                           label="API Secret"
@@ -608,7 +608,7 @@ const SettingsPage: React.FC = () => {
                           onChange={(e) => setApiSettings({...apiSettings, binanceApiSecret: e.target.value})}
                         />
                       </Grid>
-                      <Grid size={12}>
+                      <Grid item xs={12}>
                         <Button
                           variant="outlined"
                           onClick={() => testApiConnection('binance')}
@@ -639,7 +639,7 @@ const SettingsPage: React.FC = () => {
       {/* Security Tab */}
       {activeTab === 2 && (
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -647,7 +647,7 @@ const SettingsPage: React.FC = () => {
                 </Typography>
                 
                 <Grid container spacing={2}>
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <FormControlLabel
                       control={
                         <Switch
@@ -659,7 +659,7 @@ const SettingsPage: React.FC = () => {
                     />
                   </Grid>
 
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <TextField
                       fullWidth
                       label="Session Timeout (minutes)"
@@ -669,7 +669,7 @@ const SettingsPage: React.FC = () => {
                     />
                   </Grid>
 
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <FormControlLabel
                       control={
                         <Switch
@@ -681,7 +681,7 @@ const SettingsPage: React.FC = () => {
                     />
                   </Grid>
 
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <TextField
                       fullWidth
                       label="IP Whitelist (comma separated)"
@@ -691,7 +691,7 @@ const SettingsPage: React.FC = () => {
                     />
                   </Grid>
 
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <FormControlLabel
                       control={
                         <Switch
@@ -717,7 +717,7 @@ const SettingsPage: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -768,7 +768,7 @@ const SettingsPage: React.FC = () => {
       {/* System Tab */}
       {activeTab === 3 && (
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -776,31 +776,31 @@ const SettingsPage: React.FC = () => {
                 </Typography>
                 
                 <Grid container spacing={2}>
-                  <Grid size={6}>
+                  <Grid item xs={6}>
                     <Typography variant="body2" color="text.secondary">Version:</Typography>
                     <Typography fontWeight="bold">{systemInfo.version}</Typography>
                   </Grid>
-                  <Grid size={6}>
+                  <Grid item xs={6}>
                     <Typography variant="body2" color="text.secondary">Uptime:</Typography>
                     <Typography fontWeight="bold">{systemInfo.uptime}</Typography>
                   </Grid>
-                  <Grid size={6}>
+                  <Grid item xs={6}>
                     <Typography variant="body2" color="text.secondary">Last Backup:</Typography>
                     <Typography fontWeight="bold">{systemInfo.lastBackup}</Typography>
                   </Grid>
-                  <Grid size={6}>
+                  <Grid item xs={6}>
                     <Typography variant="body2" color="text.secondary">Database Size:</Typography>
                     <Typography fontWeight="bold">{systemInfo.databaseSize}</Typography>
                   </Grid>
-                  <Grid size={6}>
+                  <Grid item xs={6}>
                     <Typography variant="body2" color="text.secondary">Active Sessions:</Typography>
                     <Typography fontWeight="bold">{systemInfo.activeSessions}</Typography>
                   </Grid>
-                  <Grid size={6}>
+                  <Grid item xs={6}>
                     <Typography variant="body2" color="text.secondary">API Calls Today:</Typography>
                     <Typography fontWeight="bold">{systemInfo.apiCalls}</Typography>
                   </Grid>
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <Typography variant="body2" color="text.secondary">System Health:</Typography>
                     <Chip 
                       label={systemInfo.systemHealth}
@@ -824,7 +824,7 @@ const SettingsPage: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -832,7 +832,7 @@ const SettingsPage: React.FC = () => {
                 </Typography>
 
                 <Grid container spacing={2}>
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <Button
                       variant="contained"
                       onClick={backupDatabase}
@@ -844,7 +844,7 @@ const SettingsPage: React.FC = () => {
                     </Button>
                   </Grid>
                   
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <Button
                       variant="outlined"
                       onClick={exportData}
@@ -855,7 +855,7 @@ const SettingsPage: React.FC = () => {
                     </Button>
                   </Grid>
 
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <Alert severity="info" sx={{ mt: 2 }}>
                       Regular backups are created automatically every 24 hours.
                       Export your data to download all your trading history and bot configurations.
@@ -866,7 +866,7 @@ const SettingsPage: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid size={{ xs: 12 }}>
+          <Grid item xs={12}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -874,7 +874,7 @@ const SettingsPage: React.FC = () => {
                 </Typography>
                 
                 <Grid container spacing={2}>
-                  <Grid size={{ xs: 12, sm: 6 }}>
+                  <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
                       label="Server Port"
@@ -886,7 +886,7 @@ const SettingsPage: React.FC = () => {
                     />
                   </Grid>
 
-                  <Grid size={{ xs: 12, sm: 6 }}>
+                  <Grid item xs={12} sm={6}>
                     <FormControl fullWidth disabled={user?.role !== 'admin'}>
                       <InputLabel>Environment</InputLabel>
                       <Select
@@ -901,7 +901,7 @@ const SettingsPage: React.FC = () => {
                     </FormControl>
                   </Grid>
 
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <TextField
                       fullWidth
                       label="Frontend URL"
@@ -912,7 +912,7 @@ const SettingsPage: React.FC = () => {
                     />
                   </Grid>
 
-                  <Grid size={12}>
+                  <Grid item xs={12}>
                     <TextField
                       fullWidth
                       label="Database Path"
@@ -923,7 +923,7 @@ const SettingsPage: React.FC = () => {
                     />
                   </Grid>
 
-                  <Grid size={{ xs: 12, sm: 6 }}>
+                  <Grid item xs={12} sm={6}>
                     <FormControl fullWidth disabled={user?.role !== 'admin'}>
                       <InputLabel>Log Level</InputLabel>
                       <Select
@@ -939,7 +939,7 @@ const SettingsPage: React.FC = () => {
                     </FormControl>
                   </Grid>
 
-                  <Grid size={{ xs: 12, sm: 6 }}>
+                  <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
                       label="JWT Expiration"
@@ -1001,7 +1001,7 @@ const SettingsPage: React.FC = () => {
           </Alert>
 
           <Grid container spacing={2}>
-            <Grid size={12}>
+            <Grid item xs={12}>
               <Typography variant="subtitle2" gutterBottom>
                 Current API Keys Status:
               </Typography>

@@ -98,7 +98,7 @@ const PnLChartTooltip: React.FC<PnLChartTooltipProps> = ({ children, botId, curr
       
       <Grid container spacing={2}>
         {/* Current Stats */}
-        <Grid size={{ xs: 12 }}>
+        <Grid item xs={12}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
             <Box>
               <Typography variant="body2" color="text.secondary">Current P&L:</Typography>
@@ -129,7 +129,7 @@ const PnLChartTooltip: React.FC<PnLChartTooltipProps> = ({ children, botId, curr
         </Grid>
 
         {/* Mini Chart */}
-        <Grid size={{ xs: 12 }}>
+        <Grid item xs={12}>
           <Box sx={{ height: 200, mb: 2 }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
@@ -173,7 +173,7 @@ const PnLChartTooltip: React.FC<PnLChartTooltipProps> = ({ children, botId, curr
         </Grid>
 
         {/* Performance Metrics */}
-        <Grid size={{ xs: 12 }}>
+        <Grid item xs={12}>
           <Box sx={{ 
             display: 'flex', 
             justifyContent: 'space-between',
