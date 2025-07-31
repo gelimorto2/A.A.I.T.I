@@ -122,6 +122,7 @@ const initializeMiddleware = () => {
 
   // Health check endpoint
   app.get('/api/health', (req, res) => {
+    const versionInfo = dashboard.versionInfo || { version: '1.1.0', buildNumber: '1' };
     const healthData = { 
       status: 'healthy', 
       timestamp: new Date().toISOString(),
@@ -129,8 +130,12 @@ const initializeMiddleware = () => {
       memory: process.memoryUsage(),
       config: {
         nodeEnv: config.nodeEnv,
-        version: '1.0.0',
-        port: config.port
+        version: versionInfo.version,
+        build: versionInfo.buildNumber,
+        port: config.port,
+        nodeVersion: process.version,
+        platform: process.platform,
+        architecture: process.arch
       },
       marketData: {
         provider: 'CoinGecko',
@@ -141,6 +146,7 @@ const initializeMiddleware = () => {
     logger.debug('Health check requested', { 
       uptime: healthData.uptime,
       memoryUsage: healthData.memory,
+      version: versionInfo.version,
       service: 'aaiti-backend'
     });
     
@@ -289,8 +295,10 @@ const initializeSocketHandlers = (io) => {
 const startServer = async () => {
   try {
     const serverStartTime = Date.now();
+    const versionInfo = dashboard.versionInfo || { version: '1.1.0', buildNumber: '1' };
     logger.info('🚀 Starting AAITI Backend Server...', { 
-      version: '1.0.0',
+      version: versionInfo.version,
+      build: versionInfo.buildNumber,
       nodeVersion: process.version,
       platform: process.platform,
       service: 'aaiti-backend'

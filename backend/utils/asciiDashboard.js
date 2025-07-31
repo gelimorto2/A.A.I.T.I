@@ -1,4 +1,6 @@
 const os = require('os');
+const fs = require('fs');
+const path = require('path');
 
 class ASCIIDashboard {
   constructor() {
@@ -18,6 +20,25 @@ class ASCIIDashboard {
     this.lastUpdate = Date.now();
     this.logs = [];
     this.maxLogs = 10; // Keep last 10 log entries
+    this.versionInfo = this.loadVersionInfo();
+  }
+
+  loadVersionInfo() {
+    try {
+      const versionPath = path.join(__dirname, '../../version.json');
+      if (fs.existsSync(versionPath)) {
+        return JSON.parse(fs.readFileSync(versionPath, 'utf8'));
+      }
+    } catch (error) {
+      console.warn('Could not load version info:', error.message);
+    }
+    return {
+      version: '1.1.0',
+      name: 'AAITI',
+      description: 'Auto AI Trading Interface',
+      buildNumber: '1',
+      environment: 'production'
+    };
   }
 
   updateStats(updates) {
@@ -90,8 +111,9 @@ class ASCIIDashboard {
     
     const header = `
 ╔${border}╗
-║${this.centerText('🚀 A.A.I.T.I v1.0 - NEURAL COMMAND DECK', width)}║
-║${this.centerText('Auto AI Trading Interface - Live Status', width)}║
+║${this.centerText(`🚀 ${this.versionInfo.name} v${this.versionInfo.version} - NEURAL COMMAND DECK`, width)}║
+║${this.centerText(`${this.versionInfo.description} - Build #${this.versionInfo.buildNumber}`, width)}║
+║${this.centerText(`Production Environment - Node.js ${process.version}`, width)}║
 ╚${border}╝`;
 
     const systemBorder = this.createBorder(width, '─');
@@ -101,6 +123,14 @@ class ASCIIDashboard {
 │ Database:         ${this.getStatusColor(this.stats.dbStatus)}${this.stats.dbStatus.padEnd(12)}\x1b[0m │ Memory: ${this.formatMemory(memUsage.heapUsed).padEnd(15)} │
 │ Market Data:      ${this.getStatusColor(this.stats.marketDataStatus)}${this.stats.marketDataStatus.padEnd(12)}\x1b[0m │ CPU Cores: ${cpuCount.toString().padEnd(12)} │
 └${systemBorder}┘`;
+
+    const deploymentBorder = this.createBorder(width, '─');
+    const deploymentInfo = `
+┌─ DEPLOYMENT INFO ${deploymentBorder.substring(18)}┐
+│ Version:          v${this.versionInfo.version.padEnd(10)} │ Build: #${this.versionInfo.buildNumber.padEnd(15)} │ Environment: ${this.versionInfo.environment.toUpperCase().padEnd(8)} │
+│ Node.js:          ${process.version.padEnd(10)} │ Platform: ${process.platform.padEnd(13)} │ Architecture: ${process.arch.padEnd(7)} │
+│ PID:              ${process.pid.toString().padEnd(10)} │ Working Dir: ${process.cwd().split('/').pop().padEnd(11)} │ Heap Size: ${this.formatMemory(memUsage.heapTotal).padEnd(7)} │
+└${deploymentBorder}┘`;
 
     const connectionBorder = this.createBorder(width, '─');
     const connectionInfo = `
@@ -146,12 +176,13 @@ class ASCIIDashboard {
     const controlsBorder = this.createBorder(width, '─');
     const footer = `
 ┌─ CONTROLS ${controlsBorder.substring(11)}┐
-│ Press Ctrl+C to stop • View Dashboard: http://localhost:3000 • API: :5000      │
+│ Press Ctrl+C to stop • Dashboard: http://localhost:3000 • API: :5000 • v${this.versionInfo.version}    │
 └${controlsBorder}┘
-${this.centerText(`Last Update: ${new Date().toLocaleTimeString()}`, width)}`;
+${this.centerText(`Last Update: ${new Date().toLocaleTimeString()} • Production Environment`, width)}`;
 
     console.log('\x1b[36m' + header + '\x1b[0m');
     console.log('\x1b[37m' + systemInfo + '\x1b[0m');
+    console.log('\x1b[90m' + deploymentInfo + '\x1b[0m');
     console.log('\x1b[37m' + connectionInfo + '\x1b[0m');
     console.log('\x1b[37m' + liveStatus + '\x1b[0m');
     console.log('\x1b[37m' + logsSection + '\x1b[0m');
