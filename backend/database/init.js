@@ -308,6 +308,19 @@ const initializeDatabase = async () => {
           profit_correlation REAL,
           FOREIGN KEY (model_id) REFERENCES ml_models (id)
         )
+      `);
+
+      // Portfolio optimizations table
+      database.run(`
+        CREATE TABLE IF NOT EXISTS portfolio_optimizations (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          method TEXT NOT NULL,
+          assets TEXT NOT NULL,
+          result TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )
       `, (err) => {
         if (err) {
           logger.error('Error creating tables:', err);

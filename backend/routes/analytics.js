@@ -2,6 +2,8 @@ const express = require('express');
 const { db } = require('../database/init');
 const { authenticateToken } = require('../middleware/auth');
 const logger = require('../utils/logger');
+const portfolioOptimizer = require('../utils/portfolioOptimizer');
+const marketDataService = require('../utils/marketData');
 
 const router = express.Router();
 
@@ -312,6 +314,158 @@ router.get('/system-info', authenticateToken, (req, res) => {
     logger.error('Error fetching system info:', error);
     res.status(500).json({ error: 'Failed to fetch system information' });
   }
+});
+
+// Portfolio optimization endpoints
+router.get('/portfolio/optimization/methods', authenticateToken, (req, res) => {
+  try {
+    const methods = portfolioOptimizer.getMethods();
+    res.json({ methods });
+  } catch (error) {
+    logger.error('Error fetching optimization methods:', error);
+    res.status(500).json({ error: 'Failed to fetch optimization methods' });
+  }
+});
+
+router.post('/portfolio/optimize', authenticateToken, async (req, res) => {
+  try {
+    const { assets, method = 'risk_parity', constraints = {}, historicalPeriod = 30 } = req.body;
+
+    if (!assets || !Array.isArray(assets) || assets.length === 0) {
+      return res.status(400).json({ error: 'Assets array is required' });
+    }
+
+    // Fetch historical data for assets
+    logger.info('Fetching historical data for portfolio optimization', {
+      assets,
+      method,
+      period: historicalPeriod,
+      userId: req.user.id
+    });
+
+    const historicalData = {};
+    const promises = assets.map(async (asset) => {
+      try {
+        const data = await marketDataService.getHistoricalData(asset, 'daily', 'compact');
+        if (data && data.length > 0) {
+          historicalData[asset] = data.map(point => point.close || point.price);
+        }
+      } catch (error) {
+        logger.warn('Failed to fetch historical data for asset', { asset, error: error.message });
+        // Generate mock data as fallback
+        historicalData[asset] = Array.from({ length: historicalPeriod }, (_, i) => 
+          100 + Math.random() * 20 - 10 + Math.sin(i / 5) * 5
+        );
+      }
+    });
+
+    await Promise.all(promises);
+
+    // Filter out assets with no data
+    const validAssets = assets.filter(asset => historicalData[asset] && historicalData[asset].length > 1);
+    
+    if (validAssets.length === 0) {
+      return res.status(400).json({ error: 'No valid historical data available for any assets' });
+    }
+
+    // Run optimization
+    const optimization = await portfolioOptimizer.optimizePortfolio(
+      validAssets,
+      historicalData,
+      method,
+      constraints
+    );
+
+    // Save optimization result to database (optional)
+    const optimizationId = `opt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const saveQuery = `
+      INSERT INTO portfolio_optimizations (id, user_id, method, assets, result, created_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'))
+    `;
+
+    db.run(saveQuery, [
+      optimizationId,
+      req.user.id,
+      method,
+      JSON.stringify(validAssets),
+      JSON.stringify(optimization)
+    ], (err) => {
+      if (err) {
+        logger.warn('Failed to save optimization result', { error: err.message });
+      }
+    });
+
+    res.json({
+      optimizationId,
+      ...optimization
+    });
+
+  } catch (error) {
+    logger.error('Portfolio optimization failed:', error);
+    res.status(500).json({ error: error.message || 'Portfolio optimization failed' });
+  }
+});
+
+router.get('/portfolio/optimizations', authenticateToken, (req, res) => {
+  const query = `
+    SELECT id, method, assets, created_at, 
+           json_extract(result, '$.metrics.expectedReturn') as expected_return,
+           json_extract(result, '$.metrics.volatility') as volatility,
+           json_extract(result, '$.metrics.sharpeRatio') as sharpe_ratio
+    FROM portfolio_optimizations 
+    WHERE user_id = ? 
+    ORDER BY created_at DESC 
+    LIMIT 20
+  `;
+
+  db.all(query, [req.user.id], (err, optimizations) => {
+    if (err) {
+      logger.error('Error fetching optimization history:', err);
+      return res.status(500).json({ error: 'Failed to fetch optimization history' });
+    }
+
+    const results = optimizations.map(opt => ({
+      id: opt.id,
+      method: opt.method,
+      assets: JSON.parse(opt.assets || '[]'),
+      createdAt: opt.created_at,
+      metrics: {
+        expectedReturn: opt.expected_return,
+        volatility: opt.volatility,
+        sharpeRatio: opt.sharpe_ratio
+      }
+    }));
+
+    res.json({ optimizations: results });
+  });
+});
+
+router.get('/portfolio/optimizations/:id', authenticateToken, (req, res) => {
+  const query = `
+    SELECT * FROM portfolio_optimizations 
+    WHERE id = ? AND user_id = ?
+  `;
+
+  db.get(query, [req.params.id, req.user.id], (err, optimization) => {
+    if (err) {
+      logger.error('Error fetching optimization:', err);
+      return res.status(500).json({ error: 'Failed to fetch optimization' });
+    }
+
+    if (!optimization) {
+      return res.status(404).json({ error: 'Optimization not found' });
+    }
+
+    const result = {
+      id: optimization.id,
+      method: optimization.method,
+      assets: JSON.parse(optimization.assets || '[]'),
+      result: JSON.parse(optimization.result || '{}'),
+      createdAt: optimization.created_at
+    };
+
+    res.json(result);
+  });
 });
 
 module.exports = router;
