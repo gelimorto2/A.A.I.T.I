@@ -302,4 +302,12 @@ export const mlAPI = {
   },
 };
 
+// System Health API
+export const healthAPI = {
+  getSystemHealth: async () => {
+    const response = await apiClient.get('/health');
+    return response.data;
+  },
+};
+
 export default apiClient;

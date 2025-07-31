@@ -280,3 +280,30 @@ export interface BacktestConfig {
   takeProfit?: number;
   maxPositions?: number;
 }
+
+export interface SystemHealthData {
+  status: string;
+  timestamp: string;
+  uptime: number;
+  memory: {
+    rss: number;
+    heapTotal: number;
+    heapUsed: number;
+    external: number;
+    arrayBuffers: number;
+  };
+  config: {
+    nodeEnv: string;
+    version: string;
+    port: number;
+  };
+  marketData: {
+    provider: string;
+    cacheStats: {
+      hits: number;
+      misses: number;
+      cacheSize: number;
+      lastUpdate: string;
+    };
+  };
+}

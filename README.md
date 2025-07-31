@@ -12,13 +12,17 @@
 - **Live Market Data** - Real-time cryptocurrency data via CoinGecko API
 - **WebSocket Communications** - Live updates for all metrics and market data
 - **Advanced Authentication** - JWT-based security with role management
+- **🆕 Interactive Health Tooltips** - Hover over system health for detailed metrics
+- **🆕 P&L Chart Tooltips** - Mini performance charts on hover showing 30-day trends
+- **🆕 Real-time System Monitoring** - Live memory usage, uptime, and cache statistics
 
 ### 🚀 **Production-Ready Operations** 
 - **Single Command Startup** - `npm start` launches the complete application
 - **ASCII Status Dashboard** - Real-time system monitoring in terminal
 - **Advanced Build System** - Optimized production builds
-- **Enhanced Installer** - Multiple installation options with clean setup
+- **🆕 Enhanced NPM Scripts** - Comprehensive commands replacing install.sh
 - **Zero Configuration** - UI-based settings management, no manual config files
+- **🆕 System Health API** - Detailed health endpoint with metrics
 
 ### 🔧 **Developer Experience**
 - **Hot Reload Development** - `npm run dev` for development with live reload
@@ -36,6 +40,9 @@
 - **Multi-Module Navigation** - Command Center, AI Agents, ML Models, Live Trading, Analytics, Settings
 - **Live Status Indicators** - Real-time connection status and system health
 - **User Role Management** - Trader, Admin, Viewer permissions
+- **🆕 Enhanced Tooltips** - Detailed system health information on hover
+- **🆕 Interactive P&L Charts** - Mini charts showing historical performance on hover
+- **🆕 Real-time Health Monitoring** - Live system metrics with memory usage, uptime, and cache stats
 
 ### 🔧 **ASCII System Dashboard** 
 ```
@@ -130,17 +137,26 @@ npm start
 ### Advanced Installation Options
 
 ```bash
-# Clean installation from scratch
-./install.sh clean
+# Complete setup with all dependencies and build
+npm run setup
+
+# Clean installation from scratch  
+npm run install:clean
 
 # Production-only installation
-./install.sh production  
+npm run install:production
 
 # Development mode with hot reload
 npm run dev
 
 # Build for production deployment
 npm run build:all
+
+# System health check
+npm run health
+
+# System requirements check
+npm run check
 ```
 
 ### 🎨 **What You'll See**
@@ -222,19 +238,22 @@ A.A.I.T.I/
 
 ### Main Commands
 ```bash
-npm start          # 🚀 Start complete production application (ONE COMMAND)
-npm run dev        # 🔧 Development mode with hot reload
-npm run build:all  # 📦 Build and optimize for production  
-npm run clean      # 🧹 Clean all dependencies and builds
+npm start                # 🚀 Start complete production application (ONE COMMAND)
+npm run dev              # 🔧 Development mode with hot reload
+npm run build:all        # 📦 Build and optimize for production  
+npm run setup            # 🛠 Complete setup with dependencies and build
+npm run clean            # 🧹 Clean all dependencies and builds
+npm run health           # 🏥 Check backend health status
+npm run check            # ✅ Check system requirements
 ```
 
 ### Installation Commands  
 ```bash
-./install.sh              # Standard installation
-./install.sh clean        # Clean installation from scratch
-./install.sh production   # Production-ready installation with optimizations
-./install.sh build        # Install dependencies and build for production
-./install.sh check        # Check system requirements only
+npm run install:all         # Standard dependency installation
+npm run install:clean       # Clean installation from scratch
+npm run install:production  # Production-ready installation with optimizations
+npm run clean:all           # Remove all files including lock files
+npm run clean:cache         # Clear npm cache for all packages
 ```
 
 ### Individual Service Commands
