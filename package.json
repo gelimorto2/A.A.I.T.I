@@ -12,18 +12,21 @@
     "dev:frontend": "cd frontend && npm start",
     "build": "cd frontend && npm run build",
     "build:production": "cd frontend && npm run build && echo '✅ Production build complete - optimized for deployment'",
-    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
-    "install:production": "npm run clean && npm install --omit=dev --silent && cd backend && npm install --omit=dev --silent && cd ../frontend && npm install --silent && echo '✅ Production dependencies installed'",
+    "install:all": "echo '📦 Installing dependencies...' && npm install --prefer-offline --no-fund --no-audit && cd backend && npm install --prefer-offline --no-fund --no-audit && cd ../frontend && npm install --prefer-offline --no-fund --no-audit && echo '✅ All dependencies installed'",
+    "install:production": "npm run clean && echo '📦 Installing production dependencies...' && npm install --omit=dev --prefer-offline --no-fund --no-audit --silent && cd backend && npm install --omit=dev --prefer-offline --no-fund --no-audit --silent && cd ../frontend && npm install --prefer-offline --no-fund --no-audit --silent && echo '✅ Production dependencies installed'",
     "install:clean": "npm run clean && npm run install:all",
-    "clean": "rm -rf node_modules backend/node_modules frontend/node_modules && rm -rf frontend/build",
-    "clean:cache": "npm cache clean --force && cd backend && npm cache clean --force && cd ../frontend && npm cache clean --force",
+    "install:fast": "echo '⚡ Fast install with cache...' && npm ci --prefer-offline --no-fund --no-audit && cd backend && npm ci --prefer-offline --no-fund --no-audit && cd ../frontend && npm ci --prefer-offline --no-fund --no-audit && echo '✅ Fast install complete'",
+    "clean": "echo '🧹 Cleaning build artifacts...' && rm -rf node_modules backend/node_modules frontend/node_modules && rm -rf frontend/build",
+    "clean:cache": "echo '🧹 Cleaning npm cache...' && npm cache clean --force && cd backend && npm cache clean --force && cd ../frontend && npm cache clean --force",
     "clean:all": "npm run clean && npm run clean:cache && rm -f package-lock.json backend/package-lock.json frontend/package-lock.json",
+    "fix:security": "echo '🔒 Fixing security vulnerabilities...' && npm audit fix --force && cd backend && npm audit fix --force && cd ../frontend && npm audit fix --force && echo '✅ Security vulnerabilities fixed'",
     "health": "curl -s http://localhost:5000/api/health | python3 -m json.tool || echo '🔴 Backend not running - start with: npm start'",
     "check": "node --version && npm --version && echo '✅ System check complete'",
     "version:show": "node -e \"console.log('🚀 AAITI v' + require('./version.json').version + ' - ' + require('./version.json').description)\"",
     "version:bump": "node -e \"const fs=require('fs'); const v=require('./version.json'); v.buildNumber=(parseInt(v.buildNumber)+1).toString(); v.releaseDate=new Date().toISOString().split('T')[0]; fs.writeFileSync('./version.json', JSON.stringify(v,null,2))\"",
     "release": "npm run version:bump && npm run setup && echo '🎉 New release ready for deployment!'",
     "setup": "npm run install:production && npm run build:production && npm run version:show && echo '🎉 Setup complete - ready for production!'",
+    "setup:dev": "npm run install:all && npm run version:show && echo '🎉 Development setup complete!'",
     "status": "npm run version:show && npm run health",
     "test": "echo \"✅ All systems operational - run 'npm run health' to check backend status\""
   },
@@ -38,6 +41,9 @@
   "license": "ISC",
   "devDependencies": {
     "concurrently": "^8.2.2",
+    "serve": "^14.2.4"
+  },
+  "overrides": {
     "serve": "^14.2.4"
   }
 }

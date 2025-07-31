@@ -7,13 +7,86 @@ class MarketDataService {
     this.credentials = getCredentials('trading');
     this.cache = new Map();
     this.cacheTimeout = 60000; // 1 minute cache
+    this.rateLimitDelay = 1200; // 1.2 seconds between requests (CoinGecko free tier allows 50/min)
+    this.lastRequestTime = 0;
+    this.requestQueue = [];
+    this.isProcessingQueue = false;
+    this.maxRetries = 3;
     this.symbols = ['bitcoin', 'ethereum', 'binancecoin', 'cardano', 'solana', 'polkadot', 'dogecoin', 'chainlink', 'polygon'];
     this.baseUrl = 'https://api.coingecko.com/api/v3';
-    logger.info('MarketDataService initialized with CoinGecko API', { 
+    
+    logger.info('MarketDataService initialized with enhanced rate limiting', { 
       service: 'market-data',
       cacheTimeout: this.cacheTimeout,
+      rateLimitDelay: this.rateLimitDelay,
       supportedSymbols: this.symbols.length 
     });
+  }
+
+  /**
+   * Rate-limited request wrapper
+   */
+  async makeRateLimitedRequest(requestFunction) {
+    return new Promise((resolve, reject) => {
+      this.requestQueue.push({ requestFunction, resolve, reject });
+      this.processQueue();
+    });
+  }
+
+  /**
+   * Process request queue with rate limiting
+   */
+  async processQueue() {
+    if (this.isProcessingQueue || this.requestQueue.length === 0) {
+      return;
+    }
+
+    this.isProcessingQueue = true;
+
+    while (this.requestQueue.length > 0) {
+      const { requestFunction, resolve, reject } = this.requestQueue.shift();
+      
+      try {
+        // Ensure rate limit compliance
+        const timeSinceLastRequest = Date.now() - this.lastRequestTime;
+        if (timeSinceLastRequest < this.rateLimitDelay) {
+          await new Promise(resolve => setTimeout(resolve, this.rateLimitDelay - timeSinceLastRequest));
+        }
+
+        this.lastRequestTime = Date.now();
+        const result = await requestFunction();
+        resolve(result);
+      } catch (error) {
+        reject(error);
+      }
+
+      // Small delay between requests
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    this.isProcessingQueue = false;
+  }
+
+  /**
+   * Enhanced retry mechanism with exponential backoff
+   */
+  async retryRequest(requestFunction, retries = 0) {
+    try {
+      return await requestFunction();
+    } catch (error) {
+      if (retries < this.maxRetries && (error.response?.status === 429 || error.code === 'ECONNRESET')) {
+        const delay = Math.pow(2, retries) * 1000; // Exponential backoff
+        logger.warn(`Request failed, retrying in ${delay}ms`, { 
+          retries, 
+          error: error.message,
+          service: 'market-data'
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return this.retryRequest(requestFunction, retries + 1);
+      }
+      throw error;
+    }
   }
 
   /**
@@ -46,7 +119,7 @@ class MarketDataService {
   }
 
   /**
-   * Fetch real-time quote data from CoinGecko
+   * Fetch real-time quote data from CoinGecko with rate limiting
    */
   async getQuote(symbol) {
     try {
@@ -72,16 +145,24 @@ class MarketDataService {
         return cached.data;
       }
 
-      // CoinGecko simple price endpoint (no API key required)
-      const response = await axios.get(`${this.baseUrl}/simple/price`, {
-        params: {
-          ids: convertedSymbol,
-          vs_currencies: 'usd',
-          include_24hr_change: 'true',
-          include_24hr_vol: 'true',
-          include_last_updated_at: 'true'
-        },
-        timeout: 10000
+      // Make rate-limited request
+      const response = await this.makeRateLimitedRequest(async () => {
+        return this.retryRequest(async () => {
+          return axios.get(`${this.baseUrl}/simple/price`, {
+            params: {
+              ids: convertedSymbol,
+              vs_currencies: 'usd',
+              include_24hr_change: 'true',
+              include_24hr_vol: 'true',
+              include_last_updated_at: 'true'
+            },
+            timeout: 15000,
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'AAITI-Trading-Bot/1.1.0'
+            }
+          });
+        });
       });
 
       const data = response.data[convertedSymbol];
@@ -102,7 +183,7 @@ class MarketDataService {
         change: data.usd_24h_change || 0,
         changePercent: data.usd_24h_change || 0,
         volume: data.usd_24h_vol || 0,
-        lastUpdated: new Date(data.last_updated_at * 1000).toISOString(),
+        lastUpdated: new Date(data.last_updated_at ? data.last_updated_at * 1000 : Date.now()).toISOString(),
         lastRefreshed: new Date().toISOString(),
         provider: 'CoinGecko',
         isReal: true
@@ -128,6 +209,7 @@ class MarketDataService {
       logger.error('Error fetching quote data', { 
         symbol, 
         error: error.message,
+        status: error.response?.status,
         stack: error.stack,
         service: 'market-data'
       });
