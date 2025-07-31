@@ -1,10 +1,10 @@
-# A.A.I.T.I v1.0 - Auto AI Trading Interface 🚀
+# A.A.I.T.I v1.1.0 - Auto AI Trading Interface 🚀
 
 ![AAITI Dashboard](https://github.com/user-attachments/assets/02041a91-eaaa-4593-9cd2-1538e23cf6f4)
 
-🧠 **AAITI v1.0** is a production-ready, mission-critical environment for deploying, supervising, and evolving AI-powered trading agents in live crypto markets. This isn't just a dashboard—it's a Neural Command Deck for professional trading operations.
+🧠 **AAITI v1.1.0** is a production-ready, mission-critical environment for deploying, supervising, and evolving AI-powered trading agents in live crypto markets. This isn't just a dashboard—it's a Neural Command Deck for professional trading operations.
 
-## 🎯 Production Features (v1.0)
+## 🎯 Production Features (v1.1.0)
 
 ### ✅ **Complete Trading Interface**
 - **Real-time Dashboard** - Professional dark theme with mission-critical design
@@ -18,11 +18,12 @@
 
 ### 🚀 **Production-Ready Operations** 
 - **Single Command Startup** - `npm start` launches the complete application
-- **ASCII Status Dashboard** - Real-time system monitoring in terminal
-- **Advanced Build System** - Optimized production builds
-- **🆕 Enhanced NPM Scripts** - Comprehensive commands replacing install.sh
+- **Enhanced ASCII Dashboard** - Real-time system monitoring with version info, deployment details
+- **Advanced Build System** - Optimized production builds with React 18 compatibility
+- **🆕 Version Management System** - Comprehensive version tracking with build numbers and changelogs
+- **🆕 Dependency Optimization** - Fixed React peer dependency conflicts and updated deprecated packages
 - **Zero Configuration** - UI-based settings management, no manual config files
-- **🆕 System Health API** - Detailed health endpoint with metrics
+- **🆕 System Health API** - Detailed health endpoint with metrics and deployment info
 
 ### 🔧 **Developer Experience**
 - **Hot Reload Development** - `npm run dev` for development with live reload
@@ -44,12 +45,25 @@
 - **🆕 Interactive P&L Charts** - Mini charts showing historical performance on hover
 - **🆕 Real-time Health Monitoring** - Live system metrics with memory usage, uptime, and cache stats
 
-### 🔧 **ASCII System Dashboard** 
+### 🔧 **Enhanced ASCII System Dashboard** 
 ```
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║                    🚀 A.A.I.T.I v1.0 - NEURAL COMMAND DECK                  ║
-║                     Auto AI Trading Interface - Live Status                  ║  
-╚═══════════════════════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                           🚀 AAITI - Auto AI Trading Interface v1.1.0 - NEURAL COMMAND DECK                            ║
+║                         Production-Ready Neural Command Deck for AI-Powered Trading - Build #3                         ║
+║                                       Production Environment - Node.js v20.19.4                                        ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+┌─ SYSTEM STATUS ──────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ Server Status:    ONLINE       │ Uptime: 2m 30s         │
+│ Database:         CONNECTED    │ Memory: 45MB           │ 
+│ Market Data:      ACTIVE       │ CPU Cores: 8           │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ DEPLOYMENT INFO ────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ Version:          v1.1.0      │ Build: #3               │ Environment: PRODUCTION │
+│ Node.js:          v20.19.4   │ Platform: linux         │ Architecture: x64     │
+│ PID:              1234       │ Working Dir: backend     │ Heap Size: 32MB    │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 - **Real-Time Monitoring** - Live system status in terminal
@@ -240,11 +254,20 @@ A.A.I.T.I/
 ```bash
 npm start                # 🚀 Start complete production application (ONE COMMAND)
 npm run dev              # 🔧 Development mode with hot reload
-npm run build:all        # 📦 Build and optimize for production  
+npm run build:production # 📦 Build and optimize for production  
 npm run setup            # 🛠 Complete setup with dependencies and build
+npm run release          # 🎉 Bump version and prepare new release
 npm run clean            # 🧹 Clean all dependencies and builds
 npm run health           # 🏥 Check backend health status
+npm run status           # 📊 Show version and health status
 npm run check            # ✅ Check system requirements
+```
+
+### Version Management
+```bash
+npm run version:show     # Display current version information
+npm run version:bump     # Increment build number and update release date
+npm run release          # Complete release process with version bump
 ```
 
 ### Installation Commands  
@@ -402,6 +425,16 @@ All configuration is managed through the application's Settings UI. The system a
 
 ## 🔮 Roadmap & Status
 
+### ✅ **v1.1.0 Production Enhancement - COMPLETED**
+- [x] **Fixed React Version Conflicts** - Resolved peer dependency issues with React 18.3.1
+- [x] **Updated Deprecated Packages** - Modernized dependencies to eliminate warnings
+- [x] **Enhanced CLI Dashboard** - Added version info, build numbers, deployment details
+- [x] **Version Management System** - Comprehensive version tracking and release management
+- [x] **Production Build Optimization** - Streamlined build process with cleaner output
+- [x] **Dependency Cleanup** - Fixed security vulnerabilities and compatibility issues
+- [x] **Enhanced Scripts** - Added release management and status checking commands
+- [x] **Improved Documentation** - Updated with new features and version information
+
 ### ✅ **v1.0 Production Release - COMPLETED**
 - [x] **Complete Trading Interface** - Professional dashboard with real-time data
 - [x] **ASCII Status Dashboard** - Real-time system monitoring in terminal
@@ -436,13 +469,14 @@ All configuration is managed through the application's Settings UI. The system a
 - [ ] **Regulatory Compliance** - Trade reporting and compliance tools
 - [ ] **Professional Support** - Enterprise support and training
 
-### 📈 **Current Status: Production Ready v1.0**
+### 📈 **Current Status: Production Ready v1.1.0**
 - ✅ **Fully Functional** - Complete trading interface operational
 - ✅ **Production Deployment** - Single command startup and deployment
-- ✅ **Professional Monitoring** - ASCII dashboard and performance tracking
-- ✅ **Security Hardened** - Enterprise-grade security measures
+- ✅ **Professional Monitoring** - Enhanced ASCII dashboard with version info
+- ✅ **Security Hardened** - Enterprise-grade security measures with updated dependencies
 - ✅ **Documentation Complete** - Comprehensive setup and usage guides
 - ✅ **User Tested** - Verified working dashboard and authentication
+- ✅ **Version Management** - Complete versioning system with build tracking
 
 ## 🛠 Troubleshooting
 
@@ -525,7 +559,7 @@ ISC License - see LICENSE file for details.
 
 **A.A.I.T.I v1.0**: Neural Command Deck for AI-Powered Trading • Production-Ready • Real-Time • Mission-Critical
 
-## 🎯 Project Status: **PRODUCTION READY v1.0** ✅
+## 🎯 Project Status: **PRODUCTION READY v1.1.0** ✅
 
 ### 🚀 **Fully Operational Production System**
 - ✅ **Complete Dashboard Interface** - Professional Neural Command Deck accessible via web browser
