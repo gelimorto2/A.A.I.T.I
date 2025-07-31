@@ -34,9 +34,7 @@ import {
 import {
   Add,
   PlayArrow,
-  Stop,
   Delete,
-  Edit,
   TrendingUp,
   Assessment,
   Science,

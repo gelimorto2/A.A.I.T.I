@@ -1,15 +1,19 @@
 {
   "name": "aaiti",
   "version": "1.0.0",
-  "description": "Auto AI Trading Interface - Mission-Critical Trading Command Deck",
+  "description": "A.A.I.T.I v1.0 - Auto AI Trading Interface: Production-Ready Neural Command Deck for AI-Powered Trading",
   "main": "index.js",
   "scripts": {
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm run build && npx serve -s build -l 3000",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm start",
     "build": "cd frontend && npm run build",
-    "start:backend": "cd backend && npm start",
+    "build:all": "npm run build && echo 'Build complete - ready for production'",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "clean": "rm -rf node_modules backend/node_modules frontend/node_modules && rm -rf frontend/build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -22,6 +26,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "serve": "^14.2.4"
   }
 }
