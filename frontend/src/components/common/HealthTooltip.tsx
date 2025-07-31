@@ -64,7 +64,7 @@ const HealthTooltip: React.FC<HealthTooltipProps> = ({ children }) => {
       
       <Grid container spacing={2}>
         {/* Status */}
-        <Grid size={{ xs: 12 }}>
+        <Grid item xs={12}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <CloudDone sx={{ mr: 1, color: '#00ff88' }} />
             <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Status:</Typography>
@@ -78,7 +78,7 @@ const HealthTooltip: React.FC<HealthTooltipProps> = ({ children }) => {
         </Grid>
 
         {/* Uptime */}
-        <Grid size={{ xs: 12 }}>
+        <Grid item xs={12}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <Schedule sx={{ mr: 1, color: '#00ff88' }} />
             <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Uptime:</Typography>
@@ -89,7 +89,7 @@ const HealthTooltip: React.FC<HealthTooltipProps> = ({ children }) => {
         </Grid>
 
         {/* Memory Usage */}
-        <Grid size={{ xs: 12 }}>
+        <Grid item xs={12}>
           <Box sx={{ mb: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
               <Memory sx={{ mr: 1, color: '#ffaa00' }} />
@@ -117,7 +117,7 @@ const HealthTooltip: React.FC<HealthTooltipProps> = ({ children }) => {
         </Grid>
 
         {/* Market Data Cache */}
-        <Grid size={{ xs: 12 }}>
+        <Grid item xs={12}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <DataArray sx={{ mr: 1, color: '#00aaff' }} />
             <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Market Data:</Typography>
@@ -138,7 +138,7 @@ const HealthTooltip: React.FC<HealthTooltipProps> = ({ children }) => {
         </Grid>
 
         {/* System Info */}
-        <Grid size={{ xs: 12 }}>
+        <Grid item xs={12}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <Speed sx={{ mr: 1, color: '#aa00ff' }} />
             <Typography variant="body2" sx={{ fontWeight: 'bold' }}>System Info:</Typography>
