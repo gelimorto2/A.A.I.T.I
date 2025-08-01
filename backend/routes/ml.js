@@ -61,7 +61,9 @@ router.post('/models', authenticateToken, auditLog('create_ml_model'), async (re
       'linear_regression',
       'polynomial_regression', 
       'random_forest',
+      'svm',
       'naive_bayes',
+      'lstm',
       'moving_average',
       'technical_indicators'
     ];
@@ -115,9 +117,9 @@ router.post('/models', authenticateToken, auditLog('create_ml_model'), async (re
       trainedModel.model,
       'trained',
       trainedModel.performanceMetrics.r2 || 0,
-      trainedModel.performanceMetrics.directionalAccuracy || 0,
-      0, // recall_score (placeholder)
-      0, // f1_score (placeholder)
+      trainedModel.performanceMetrics.precision || 0,
+      trainedModel.performanceMetrics.recall || 0,
+      trainedModel.performanceMetrics.f1Score || 0,
       new Date().toISOString(),
       new Date().toISOString()
     ], function(err) {

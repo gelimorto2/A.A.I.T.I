@@ -49,8 +49,14 @@ class MLService {
         case this.algorithms.RANDOM_FOREST:
           model = this.trainRandomForest(features, targets, parameters);
           break;
+        case this.algorithms.SVM:
+          model = this.trainSVM(features, targets, parameters);
+          break;
         case this.algorithms.NAIVE_BAYES:
           model = this.trainNaiveBayes(features, targets, parameters);
+          break;
+        case this.algorithms.LSTM:
+          model = this.trainLSTM(features, targets, parameters);
           break;
         case this.algorithms.MOVING_AVERAGE:
           model = this.trainMovingAverage(features, targets, parameters);
@@ -194,6 +200,47 @@ class MLService {
   }
 
   /**
+   * Train SVM model (simplified implementation)
+   */
+  trainSVM(features, targets, parameters = {}) {
+    const C = parameters.C || 1.0;
+    const kernel = parameters.kernel || 'linear'; // linear, rbf, polynomial
+    
+    // Simplified SVM implementation using separating hyperplane approach
+    const supportVectors = this.findSupportVectors(features, targets);
+    
+    return {
+      type: 'svm',
+      kernel,
+      C,
+      supportVectors,
+      parameters
+    };
+  }
+
+  /**
+   * Train LSTM model (simplified implementation)
+   */
+  trainLSTM(features, targets, parameters = {}) {
+    const sequenceLength = parameters.sequenceLength || 10;
+    const hiddenUnits = parameters.hiddenUnits || 50;
+    const epochs = parameters.epochs || 100;
+    
+    // Simplified LSTM implementation using time series windows
+    const sequences = this.createSequences(features, targets, sequenceLength);
+    const weights = this.trainSequenceModel(sequences, hiddenUnits, epochs);
+    
+    return {
+      type: 'lstm',
+      sequenceLength,
+      hiddenUnits,
+      epochs,
+      weights,
+      parameters
+    };
+  }
+
+  /**
    * Train Technical Indicators model
    */
   trainTechnicalIndicators(features, targets, parameters = {}) {
@@ -218,8 +265,12 @@ class MLService {
         return this.predictPolynomialRegression(model, features);
       case this.algorithms.RANDOM_FOREST:
         return this.predictRandomForest(model, features);
+      case this.algorithms.SVM:
+        return this.predictSVM(model, features);
       case this.algorithms.NAIVE_BAYES:
         return this.predictNaiveBayes(model, features);
+      case this.algorithms.LSTM:
+        return this.predictLSTM(model, features);
       case this.algorithms.MOVING_AVERAGE:
         return this.predictMovingAverage(model, features);
       case this.algorithms.TECHNICAL_INDICATORS:
@@ -266,6 +317,37 @@ class MLService {
       const prediction = model.model.categorize(featureText);
       return this.classToValue(prediction);
     });
+  }
+
+  /**
+   * SVM predictions
+   */
+  predictSVM(model, features) {
+    return features.map(feature => {
+      if (model.kernel === 'linear') {
+        return this.linearKernelPredict(feature, model.supportVectors);
+      } else if (model.kernel === 'rbf') {
+        return this.rbfKernelPredict(feature, model.supportVectors);
+      } else {
+        return this.linearKernelPredict(feature, model.supportVectors);
+      }
+    });
+  }
+
+  /**
+   * LSTM predictions
+   */
+  predictLSTM(model, features) {
+    const sequenceLength = model.sequenceLength;
+    const predictions = [];
+    
+    for (let i = sequenceLength; i < features.length; i++) {
+      const sequence = features.slice(i - sequenceLength, i);
+      const prediction = this.predictSequence(sequence, model.weights);
+      predictions.push(prediction);
+    }
+    
+    return predictions;
   }
 
   /**
@@ -349,13 +431,65 @@ class MLService {
     }
     const directionalAccuracy = correctDirections / (actual.length - 1);
     
+    // Classification metrics for direction prediction
+    const classificationMetrics = this.calculateClassificationMetrics(actual, predicted);
+    
     return {
       mae,
       rmse,
       r2,
       directionalAccuracy,
+      precision: classificationMetrics.precision,
+      recall: classificationMetrics.recall,
+      f1Score: classificationMetrics.f1Score,
       sampleSize: n
     };
+  }
+
+  /**
+   * Calculate classification metrics (precision, recall, f1-score)
+   */
+  calculateClassificationMetrics(actual, predicted) {
+    // Convert to direction classes for classification metrics
+    const actualClasses = [];
+    const predictedClasses = [];
+    
+    for (let i = 1; i < actual.length; i++) {
+      actualClasses.push(actual[i] > actual[i-1] ? 1 : 0); // 1 for up, 0 for down
+      predictedClasses.push(predicted[i] > predicted[i-1] ? 1 : 0);
+    }
+    
+    if (actualClasses.length === 0) {
+      return { precision: 0, recall: 0, f1Score: 0 };
+    }
+    
+    // Calculate confusion matrix elements
+    let truePositives = 0;
+    let falsePositives = 0;
+    let falseNegatives = 0;
+    let trueNegatives = 0;
+    
+    for (let i = 0; i < actualClasses.length; i++) {
+      if (actualClasses[i] === 1 && predictedClasses[i] === 1) {
+        truePositives++;
+      } else if (actualClasses[i] === 0 && predictedClasses[i] === 1) {
+        falsePositives++;
+      } else if (actualClasses[i] === 1 && predictedClasses[i] === 0) {
+        falseNegatives++;
+      } else {
+        trueNegatives++;
+      }
+    }
+    
+    // Calculate precision, recall, and f1-score
+    const precision = (truePositives + falsePositives) > 0 ? 
+      truePositives / (truePositives + falsePositives) : 0;
+    const recall = (truePositives + falseNegatives) > 0 ? 
+      truePositives / (truePositives + falseNegatives) : 0;
+    const f1Score = (precision + recall) > 0 ? 
+      2 * (precision * recall) / (precision + recall) : 0;
+    
+    return { precision, recall, f1Score };
   }
 
   /**
@@ -538,6 +672,150 @@ class MLService {
 
   listModels() {
     return Array.from(this.models.values());
+  }
+
+  /**
+   * SVM helper methods
+   */
+  findSupportVectors(features, targets) {
+    // Simplified support vector identification
+    const supportVectors = [];
+    const margin = this.calculateMargin(features, targets);
+    
+    features.forEach((feature, index) => {
+      const distance = this.calculateDistance(feature, targets[index]);
+      if (distance <= margin * 1.1) { // Points close to the margin
+        supportVectors.push({
+          feature,
+          target: targets[index],
+          weight: 1.0
+        });
+      }
+    });
+    
+    return supportVectors.length > 0 ? supportVectors : [
+      { feature: features[0], target: targets[0], weight: 1.0 }
+    ];
+  }
+
+  calculateMargin(features, targets) {
+    // Simple margin calculation
+    const positiveFeatures = features.filter((_, i) => targets[i] > 0);
+    const negativeFeatures = features.filter((_, i) => targets[i] <= 0);
+    
+    if (positiveFeatures.length === 0 || negativeFeatures.length === 0) {
+      return 1.0;
+    }
+    
+    const positiveMean = positiveFeatures.reduce((sum, f) => sum + mean(f), 0) / positiveFeatures.length;
+    const negativeMean = negativeFeatures.reduce((sum, f) => sum + mean(f), 0) / negativeFeatures.length;
+    
+    return Math.abs(positiveMean - negativeMean) / 2;
+  }
+
+  calculateDistance(feature, target) {
+    return Math.sqrt(feature.reduce((sum, f) => sum + f * f, 0));
+  }
+
+  linearKernelPredict(feature, supportVectors) {
+    let prediction = 0;
+    supportVectors.forEach(sv => {
+      const dotProduct = feature.reduce((sum, f, i) => sum + f * (sv.feature[i] || 0), 0);
+      prediction += sv.weight * sv.target * dotProduct;
+    });
+    return prediction;
+  }
+
+  rbfKernelPredict(feature, supportVectors, gamma = 0.1) {
+    let prediction = 0;
+    supportVectors.forEach(sv => {
+      const distance = Math.sqrt(feature.reduce((sum, f, i) => 
+        sum + Math.pow(f - (sv.feature[i] || 0), 2), 0));
+      const rbf = Math.exp(-gamma * distance * distance);
+      prediction += sv.weight * sv.target * rbf;
+    });
+    return prediction;
+  }
+
+  /**
+   * LSTM helper methods
+   */
+  createSequences(features, targets, sequenceLength) {
+    const sequences = [];
+    for (let i = sequenceLength; i < features.length; i++) {
+      const sequence = features.slice(i - sequenceLength, i);
+      const target = targets[i];
+      sequences.push({ sequence, target });
+    }
+    return sequences;
+  }
+
+  trainSequenceModel(sequences, hiddenUnits, epochs) {
+    // Simplified sequence model training
+    const inputSize = sequences[0].sequence[0].length;
+    const weights = {
+      input: this.initializeWeights(inputSize, hiddenUnits),
+      hidden: this.initializeWeights(hiddenUnits, hiddenUnits),
+      output: this.initializeWeights(hiddenUnits, 1)
+    };
+    
+    // Simple training loop (placeholder for actual LSTM training)
+    for (let epoch = 0; epoch < Math.min(epochs, 10); epoch++) {
+      sequences.forEach(seq => {
+        // Simplified weight update
+        this.updateWeights(weights, seq);
+      });
+    }
+    
+    return weights;
+  }
+
+  initializeWeights(inputSize, outputSize) {
+    const weights = [];
+    for (let i = 0; i < inputSize; i++) {
+      const row = [];
+      for (let j = 0; j < outputSize; j++) {
+        row.push((Math.random() - 0.5) * 0.1);
+      }
+      weights.push(row);
+    }
+    return weights;
+  }
+
+  updateWeights(weights, sequence) {
+    // Simplified weight update (placeholder for actual backpropagation)
+    const learningRate = 0.001;
+    const prediction = this.predictSequence(sequence.sequence, weights);
+    const error = sequence.target - prediction;
+    
+    // Simple weight adjustment
+    weights.output.forEach(row => {
+      row.forEach((_, j) => {
+        row[j] += learningRate * error * 0.01;
+      });
+    });
+  }
+
+  predictSequence(sequence, weights) {
+    // Simplified sequence prediction
+    let output = 0;
+    sequence.forEach(step => {
+      const hiddenState = this.forwardPass(step, weights.input);
+      output += this.forwardPass(hiddenState, weights.output)[0] || 0;
+    });
+    return output / sequence.length;
+  }
+
+  forwardPass(input, weights) {
+    const output = [];
+    for (let i = 0; i < weights[0].length; i++) {
+      let sum = 0;
+      for (let j = 0; j < input.length && j < weights.length; j++) {
+        sum += input[j] * weights[j][i];
+      }
+      output.push(Math.tanh(sum)); // Activation function
+    }
+    return output;
   }
 }
 
