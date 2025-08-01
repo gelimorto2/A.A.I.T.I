@@ -4,6 +4,8 @@ const { db } = require('../database/init');
 const { authenticateToken, auditLog } = require('../middleware/auth');
 const mlService = require('../utils/mlService');
 const backtestingService = require('../utils/backtestingService');
+const tradingStrategyFactory = require('../utils/tradingStrategyFactory');
+const advancedIndicators = require('../utils/advancedIndicators');
 const logger = require('../utils/logger');
 
 const router = express.Router();
@@ -65,7 +67,11 @@ router.post('/models', authenticateToken, auditLog('create_ml_model'), async (re
       'naive_bayes',
       'lstm',
       'moving_average',
-      'technical_indicators'
+      'technical_indicators',
+      // New advanced algorithms
+      'ensemble_gradient_boost',
+      'deep_neural_network',
+      'reinforcement_learning'
     ];
 
     if (!validAlgorithms.includes(algorithmType)) {
@@ -817,6 +823,272 @@ function calculateRSI(prices, period = 14) {
   const rs = avgGain / avgLoss;
   
   return 100 - (100 / (1 + rs));
+}
+
+// Enhanced real-time prediction endpoint
+router.post('/models/:id/realtime/start', authenticateToken, async (req, res) => {
+  const { symbols = [], intervalSeconds = 30 } = req.body;
+
+  try {
+    const model = await new Promise((resolve, reject) => {
+      db.get(
+        'SELECT * FROM ml_models WHERE id = ? AND user_id = ?',
+        [req.params.id, req.user.id],
+        (err, row) => err ? reject(err) : resolve(row)
+      );
+    });
+
+    if (!model) {
+      return res.status(404).json({ error: 'ML model not found' });
+    }
+
+    const targetSymbols = symbols.length > 0 ? symbols : JSON.parse(model.symbols);
+    
+    const intervalId = await mlService.startRealtimePredictions(
+      req.params.id,
+      targetSymbols,
+      (predictions) => {
+        // In a real implementation, this would use WebSocket to push predictions
+        logger.info(`Real-time predictions generated for ${predictions.length} symbols`);
+      }
+    );
+
+    res.json({
+      success: true,
+      message: 'Real-time predictions started',
+      intervalId: intervalId.toString(),
+      symbols: targetSymbols,
+      interval: intervalSeconds
+    });
+
+  } catch (error) {
+    logger.error('Error starting real-time predictions:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/models/:id/realtime/stop', authenticateToken, (req, res) => {
+  const { intervalId } = req.body;
+
+  try {
+    mlService.stopRealtimePredictions(parseInt(intervalId));
+    res.json({ success: true, message: 'Real-time predictions stopped' });
+  } catch (error) {
+    logger.error('Error stopping real-time predictions:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Model performance tracking
+router.post('/models/:id/performance/track', authenticateToken, (req, res) => {
+  const { actualValues, predictedValues } = req.body;
+
+  if (!actualValues || !predictedValues || actualValues.length !== predictedValues.length) {
+    return res.status(400).json({ error: 'actualValues and predictedValues must be arrays of equal length' });
+  }
+
+  try {
+    const trackingResult = mlService.trackModelPerformance(
+      req.params.id,
+      actualValues,
+      predictedValues
+    );
+
+    res.json({
+      success: true,
+      performance: trackingResult.performance,
+      isDrifting: trackingResult.isDrifting,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('Error tracking model performance:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/models/:id/performance/history', authenticateToken, (req, res) => {
+  try {
+    const history = mlService.getModelPerformanceHistory(req.params.id);
+    res.json({ history });
+  } catch (error) {
+    logger.error('Error fetching performance history:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Advanced indicators endpoint
+router.post('/indicators/calculate', authenticateToken, (req, res) => {
+  const { ohlcv, indicators = 'all' } = req.body;
+
+  if (!ohlcv || !ohlcv.closes || ohlcv.closes.length < 50) {
+    return res.status(400).json({ error: 'OHLCV data with at least 50 data points required' });
+  }
+
+  try {
+    let result;
+    
+    if (indicators === 'all') {
+      result = advancedIndicators.calculateAllIndicators(ohlcv);
+    } else {
+      result = advancedIndicators.generateMLFeatures(ohlcv);
+    }
+
+    res.json({
+      success: true,
+      indicators: result,
+      dataPoints: ohlcv.closes.length
+    });
+
+  } catch (error) {
+    logger.error('Error calculating indicators:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Trading strategies endpoints
+router.post('/strategies', authenticateToken, auditLog('create_trading_strategy'), async (req, res) => {
+  try {
+    const strategy = await tradingStrategyFactory.createStrategy(req.body);
+    
+    res.json({ strategy });
+  } catch (error) {
+    logger.error('Error creating trading strategy:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/strategies', authenticateToken, (req, res) => {
+  try {
+    const strategies = tradingStrategyFactory.listStrategies();
+    res.json({ strategies });
+  } catch (error) {
+    logger.error('Error fetching trading strategies:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/strategies/:id/execute', authenticateToken, async (req, res) => {
+  const { marketData } = req.body;
+
+  if (!marketData || !Array.isArray(marketData)) {
+    return res.status(400).json({ error: 'Market data array required' });
+  }
+
+  try {
+    const signals = await tradingStrategyFactory.executeStrategy(req.params.id, marketData);
+    res.json({ 
+      signals,
+      count: signals.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('Error executing trading strategy:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/strategies/:id/activate', authenticateToken, (req, res) => {
+  try {
+    const success = tradingStrategyFactory.activateStrategy(req.params.id);
+    if (success) {
+      res.json({ success: true, message: 'Strategy activated' });
+    } else {
+      res.status(404).json({ error: 'Strategy not found' });
+    }
+  } catch (error) {
+    logger.error('Error activating strategy:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/strategies/:id/deactivate', authenticateToken, (req, res) => {
+  try {
+    const success = tradingStrategyFactory.deactivateStrategy(req.params.id);
+    if (success) {
+      res.json({ success: true, message: 'Strategy deactivated' });
+    } else {
+      res.status(404).json({ error: 'Strategy not found' });
+    }
+  } catch (error) {
+    logger.error('Error deactivating strategy:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Helper functions
+
+async function generateTrainingData(symbols, timeframe, periodDays) {
+  // Enhanced training data generation with advanced indicators
+  const trainingData = [];
+  const endDate = new Date();
+  const startDate = new Date(endDate.getTime() - (periodDays * 24 * 60 * 60 * 1000));
+
+  for (const symbol of symbols) {
+    let currentDate = new Date(startDate);
+    let price = 100 + Math.random() * 50;
+    const ohlcvData = {
+      highs: [],
+      lows: [],
+      opens: [],
+      closes: [],
+      volumes: []
+    };
+
+    // Generate OHLCV data
+    while (currentDate <= endDate) {
+      const dailyChange = (Math.random() - 0.5) * 0.1;
+      const open = price;
+      const close = price * (1 + dailyChange);
+      const high = Math.max(open, close) * (1 + Math.random() * 0.02);
+      const low = Math.min(open, close) * (1 - Math.random() * 0.02);
+      const volume = 1000000 + Math.random() * 500000;
+      
+      ohlcvData.opens.push(open);
+      ohlcvData.highs.push(high);
+      ohlcvData.lows.push(low);
+      ohlcvData.closes.push(close);
+      ohlcvData.volumes.push(volume);
+      
+      price = close;
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    // Generate advanced features using the new indicators
+    if (ohlcvData.closes.length >= 50) {
+      const features = advancedIndicators.generateMLFeatures(ohlcvData);
+      
+      // Create training samples with targets
+      for (let i = 1; i < ohlcvData.closes.length - 1; i++) {
+        if (features.length > 0) {
+          const target = (ohlcvData.closes[i+1] - ohlcvData.closes[i]) / ohlcvData.closes[i];
+          const sampleDate = new Date(startDate.getTime() + (i * 24 * 60 * 60 * 1000));
+          
+          trainingData.push({
+            features: JSON.stringify({ ohlcv: ohlcvData, advanced: features }),
+            target,
+            timestamp: sampleDate.toISOString(),
+            symbol
+          });
+        }
+      }
+    }
+  }
+
+  return trainingData;
+}
+
+async function generateRealtimeFeatures(symbol, timeframe) {
+  // Enhanced real-time feature generation
+  const mockOHLCV = {
+    highs: Array.from({ length: 50 }, () => 100 + Math.random() * 20),
+    lows: Array.from({ length: 50 }, () => 90 + Math.random() * 20),
+    opens: Array.from({ length: 50 }, () => 95 + Math.random() * 20),
+    closes: Array.from({ length: 50 }, () => 95 + Math.random() * 20),
+    volumes: Array.from({ length: 50 }, () => 1000000 + Math.random() * 500000)
+  };
+  
+  return advancedIndicators.generateMLFeatures(mockOHLCV);
 }
 
 module.exports = router;
