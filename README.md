@@ -1,10 +1,26 @@
-# A.A.I.T.I v1.1.0 - Auto AI Trading Interface 🚀
+# A.A.I.T.I v1.2.0 - Docker-First Auto AI Trading Interface 🐳🚀
 
 ![AAITI Dashboard](https://github.com/user-attachments/assets/02041a91-eaaa-4593-9cd2-1538e23cf6f4)
 
-🧠 **AAITI v1.1.0** is a production-ready, mission-critical environment for deploying, supervising, and evolving AI-powered trading agents in live crypto markets. This isn't just a dashboard—it's a Neural Command Deck for professional trading operations.
+🧠 **AAITI v1.2.0** is now a **Docker-first, production-ready, mission-critical environment** for deploying, supervising, and evolving AI-powered trading agents in live crypto markets. This complete transformation provides a containerized Neural Command Deck for professional trading operations with enterprise-grade performance and monitoring.
 
-## 🎯 Production Features (v1.1.0)
+## 🎯 Docker-First Features (v1.2.0)
+
+### 🐳 **Container-Native Architecture** 
+- **Multi-Stage Docker Builds** - Optimized production containers with minimal attack surface
+- **Docker Compose Orchestration** - Flexible deployment profiles for any scenario
+- **One-Command Installation** - `./install-docker.sh` for complete setup
+- **Performance Optimized** - Advanced caching, compression, and resource management
+- **Security Hardened** - Non-root containers, minimal dependencies, security headers
+- **Health Monitoring** - Built-in health checks and auto-recovery
+- **Makefile Automation** - 25+ commands for simplified operations
+
+### 📊 **Advanced Monitoring & Metrics**
+- **Prometheus Integration** - Native `/api/metrics` endpoint with comprehensive metrics
+- **Grafana Dashboards** - Real-time monitoring with custom visualizations  
+- **Performance Tracking** - Request response times, success rates, resource usage
+- **Health Assessment** - Intelligent status evaluation based on performance thresholds
+- **Container Orchestration** - Full stack deployment with monitoring, caching, and proxy
 
 ### ✅ **Complete Trading Interface**
 - **Real-time Dashboard** - Professional dark theme with mission-critical design
@@ -616,10 +632,32 @@ sudo lsof -ti:5000 | xargs sudo kill -9
 
 ### Getting Help
 
-1. Check the browser console for frontend errors (F12 → Console)
-2. Check backend logs in terminal for API errors
-3. Verify settings through the application's Settings UI
-4. Ensure all dependencies are installed with correct versions
+1. **Docker Issues**: Check [DOCKER.md](DOCKER.md) for comprehensive Docker guide
+2. **Quick Start**: Run `./quick-start.sh` for guided setup
+3. **Build Test**: Run `./test-docker.sh` to verify Docker build
+4. **Logs**: Use `make logs` or `docker compose logs -f` to view application logs
+5. **Health Check**: Visit http://localhost:5000/api/health for status
+6. **Metrics**: Visit http://localhost:5000/api/metrics for performance data
+
+### Docker-First Commands
+
+```bash
+# Installation and management
+./install-docker.sh          # Interactive installation
+make help                   # Show all available commands
+make install               # Production deployment
+make dev                  # Development environment
+make monitor              # With monitoring stack
+make full                # Complete enterprise setup
+
+# Operations
+make status               # Show service status
+make logs                # View application logs  
+make shell               # Access container shell
+make restart             # Restart services
+make clean               # Clean containers and volumes
+make backup              # Create data backup
+```
 
 ## ⚠️ Disclaimer
 
@@ -636,46 +674,62 @@ ISC License - see LICENSE file for details.
 
 ---
 
-**A.A.I.T.I v1.0**: Neural Command Deck for AI-Powered Trading • Production-Ready • Real-Time • Mission-Critical
+**A.A.I.T.I v1.2.0**: Docker-First Neural Command Deck for AI-Powered Trading • Container-Native • Enterprise-Ready • Performance-Optimized
 
-## 🎯 Project Status: **PRODUCTION READY v1.1.0** ✅
+## 🎯 Project Status: **DOCKER-FIRST v1.2.0** ✅
 
-### 🚀 **Fully Operational Production System**
-- ✅ **Complete Dashboard Interface** - Professional Neural Command Deck accessible via web browser
-- ✅ **Single Command Startup** - `npm start` launches the complete production application
-- ✅ **ASCII System Monitoring** - Real-time status dashboard in terminal with live metrics
-- ✅ **Enhanced Security** - JWT authentication, rate limiting, secure headers
-- ✅ **Zero Configuration** - UI-based settings management, no manual setup required
-- ✅ **Professional Installer** - Multiple installation options with clean setup process
+### 🐳 **Fully Containerized Production System**
+- ✅ **Docker-First Architecture** - Complete migration to container-based deployment and scaling
+- ✅ **Multi-Stage Builds** - Optimized production containers with security hardening
+- ✅ **Container Orchestration** - Flexible Docker Compose profiles for any deployment scenario
+- ✅ **Performance Optimized** - Advanced performance tuning and resource management
+- ✅ **Enterprise Monitoring** - Prometheus, Grafana, and comprehensive metrics collection
+- ✅ **Production Security** - Non-root containers, minimal attack surface, security headers
+- ✅ **Automated Operations** - Makefile with 25+ commands for simplified management
 
-### 🎨 **Enterprise-Grade Features**
-- ✅ **Real-Time Trading Interface** - Live cryptocurrency data and WebSocket updates
-- ✅ **Multi-Bot Management** - Deploy and manage multiple AI trading agents
-- ✅ **Advanced Authentication** - Role-based access control (Admin/Trader/Viewer)
-- ✅ **Performance Monitoring** - Memory, CPU, connection, and API call tracking
-- ✅ **Production Build System** - Optimized static files and deployment process
-- ✅ **Comprehensive Logging** - Structured logging with detailed performance metrics
+### 🚀 **Enterprise-Grade Capabilities**
+- ✅ **One-Command Installation** - Interactive Docker installer with system requirements checking
+- ✅ **Advanced Performance Monitoring** - Real-time metrics, health checks, and alerting
+- ✅ **Container Health Management** - Auto-recovery, health checks, and monitoring integration
+- ✅ **Scalable Architecture** - Multi-service orchestration ready for horizontal scaling
+- ✅ **Production Deployment** - Nginx reverse proxy, SSL/TLS support, load balancing ready
+- ✅ **Development Workflow** - Hot-reload development containers with debugging support
 
-### 🔧 **Developer Experience**
-- ✅ **Modern Tech Stack** - React 19, Node.js, TypeScript, Material-UI v7
-- ✅ **Hot Reload Development** - `npm run dev` for development with live reload
-- ✅ **Production Deployment** - Single command deployment and build process
-- ✅ **Clean Code Architecture** - Well-organized project structure and documentation
+### 📊 **Monitoring & Operations**
+- ✅ **Prometheus Integration** - Native /api/metrics endpoint with comprehensive application metrics
+- ✅ **Grafana Dashboards** - Real-time monitoring with custom visualizations
+- ✅ **Performance Analytics** - Request tracking, resource monitoring, database metrics
+- ✅ **Health Assessment** - Intelligent status evaluation and automated alerting
+- ✅ **Container Management** - Full lifecycle management with backup and restore capabilities
 
-### 📊 **Verified Working Components**
-- ✅ **User Registration & Login** - Complete authentication flow operational
-- ✅ **Dashboard Navigation** - All modules accessible (Command Center, AI Agents, ML Models, Live Trading, Analytics, Settings)
-- ✅ **Real-Time Data Feeds** - Live cryptocurrency market data via CoinGecko API
-- ✅ **WebSocket Communication** - Real-time updates for system status and market data
-- ✅ **Database Operations** - SQLite database with proper initialization and queries
-- ✅ **Security Systems** - Rate limiting, JWT tokens, secure headers all functional
+### 🔧 **Developer & Operations Experience**
+- ✅ **Docker-First Documentation** - Comprehensive guides and troubleshooting
+- ✅ **Multiple Deployment Options** - Development, production, monitoring, and full-stack profiles
+- ✅ **Simplified Operations** - Interactive scripts and automation tools
+- ✅ **Performance Tuning** - 100+ configurable parameters for optimization
 
-**Ready for production deployment and live trading operations!** 🎯
+**Ready for enterprise Docker deployment and container orchestration!** 🎯
 
 ### 🎬 **Quick Demo**
 ```bash
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
-npm start  # 🚀 Everything starts automatically!
-# Visit http://localhost:3000 to see the Neural Command Deck
+./install-docker.sh  # 🐳 Docker-first installation!
+# Or use: make install
+# Visit http://localhost:5000 to see the Neural Command Deck
 ```
+
+## 📊 Enterprise Deployment Options
+
+| Deployment | Command | Services | Use Case |
+|------------|---------|----------|----------|
+| **Production** | `make install` | AAITI | Basic production deployment |
+| **Development** | `make dev` | AAITI + Hot Reload | Development and testing |
+| **Monitoring** | `make monitor` | AAITI + Prometheus + Grafana | Production with monitoring |
+| **Full Stack** | `make full` | All services | Complete enterprise setup |
+
+### 🌐 **Access Points**
+- **AAITI Application**: http://localhost:5000
+- **Prometheus Metrics**: http://localhost:9090  
+- **Grafana Dashboards**: http://localhost:3001 (admin/admin)
+- **Nginx Proxy**: http://localhost (with nginx profile)
