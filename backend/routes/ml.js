@@ -68,7 +68,12 @@ router.post('/models', authenticateToken, auditLog('create_ml_model'), async (re
       'lstm',
       'moving_average',
       'technical_indicators',
-      // New advanced algorithms
+      // Time Series Forecasting Models
+      'arima',
+      'sarima',
+      'sarimax',
+      'prophet',
+      // Advanced algorithms
       'ensemble_gradient_boost',
       'deep_neural_network',
       'reinforcement_learning'

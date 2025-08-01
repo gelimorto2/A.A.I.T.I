@@ -20,7 +20,12 @@ class MLService {
       LSTM: 'lstm',
       MOVING_AVERAGE: 'moving_average',
       TECHNICAL_INDICATORS: 'technical_indicators',
-      // New sophisticated algorithms
+      // Time Series Forecasting Models
+      ARIMA: 'arima',
+      SARIMA: 'sarima',
+      SARIMAX: 'sarimax',
+      PROPHET: 'prophet',
+      // Advanced algorithms
       ENSEMBLE_GRADIENT_BOOST: 'ensemble_gradient_boost',
       DEEP_NEURAL_NETWORK: 'deep_neural_network',
       REINFORCEMENT_LEARNING: 'reinforcement_learning'
@@ -72,6 +77,18 @@ class MLService {
           break;
         case this.algorithms.TECHNICAL_INDICATORS:
           model = this.trainTechnicalIndicators(features, targets, parameters);
+          break;
+        case this.algorithms.ARIMA:
+          model = this.trainARIMA(features, targets, parameters);
+          break;
+        case this.algorithms.SARIMA:
+          model = this.trainSARIMA(features, targets, parameters);
+          break;
+        case this.algorithms.SARIMAX:
+          model = this.trainSARIMAX(features, targets, parameters);
+          break;
+        case this.algorithms.PROPHET:
+          model = this.trainProphet(features, targets, parameters);
           break;
         case this.algorithms.ENSEMBLE_GRADIENT_BOOST:
           model = this.trainEnsembleGradientBoost(features, targets, parameters);
@@ -428,6 +445,205 @@ class MLService {
   }
 
   /**
+   * Train ARIMA (AutoRegressive Integrated Moving Average) model
+   * Simplified ARIMA implementation for time series forecasting
+   */
+  trainARIMA(features, targets, parameters = {}) {
+    const p = parameters.p || 1; // autoregressive order
+    const d = parameters.d || 1; // differencing order
+    const q = parameters.q || 1; // moving average order
+    
+    logger.info(`Training ARIMA(${p},${d},${q}) model`);
+    
+    // Use targets as time series (ARIMA works on univariate time series)
+    const timeSeries = targets.slice();
+    
+    // Apply differencing
+    let diffSeries = timeSeries.slice();
+    for (let diff = 0; diff < d; diff++) {
+      const newSeries = [];
+      for (let i = 1; i < diffSeries.length; i++) {
+        newSeries.push(diffSeries[i] - diffSeries[i - 1]);
+      }
+      diffSeries = newSeries;
+    }
+    
+    // Estimate AR parameters using least squares
+    const arParams = this.estimateARParameters(diffSeries, p);
+    const maParams = this.estimateMAParameters(diffSeries, q, arParams);
+    
+    const residuals = this.calculateResiduals(diffSeries, arParams, maParams, p, q);
+    const variance = this.calculateVariance(residuals);
+    
+    return {
+      type: 'arima',
+      p, d, q,
+      arParams,
+      maParams,
+      originalSeries: timeSeries,
+      diffSeries,
+      residuals,
+      variance,
+      aic: this.calculateAIC(residuals.length, p + q + 1, residuals)
+    };
+  }
+
+  /**
+   * Train SARIMA (Seasonal ARIMA) model
+   * Extends ARIMA with seasonal components
+   */
+  trainSARIMA(features, targets, parameters = {}) {
+    const p = parameters.p || 1;
+    const d = parameters.d || 1;
+    const q = parameters.q || 1;
+    const P = parameters.P || 1; // seasonal AR order
+    const D = parameters.D || 1; // seasonal differencing order
+    const Q = parameters.Q || 1; // seasonal MA order
+    const s = parameters.s || 12; // seasonal period
+    
+    logger.info(`Training SARIMA(${p},${d},${q})(${P},${D},${Q})[${s}] model`);
+    
+    const timeSeries = targets.slice();
+    
+    // Apply regular differencing
+    let diffSeries = timeSeries.slice();
+    for (let diff = 0; diff < d; diff++) {
+      const newSeries = [];
+      for (let i = 1; i < diffSeries.length; i++) {
+        newSeries.push(diffSeries[i] - diffSeries[i - 1]);
+      }
+      diffSeries = newSeries;
+    }
+    
+    // Apply seasonal differencing
+    for (let diff = 0; diff < D; diff++) {
+      const newSeries = [];
+      for (let i = s; i < diffSeries.length; i++) {
+        newSeries.push(diffSeries[i] - diffSeries[i - s]);
+      }
+      diffSeries = newSeries;
+    }
+    
+    // Estimate parameters (simplified approach)
+    const arParams = this.estimateARParameters(diffSeries, p);
+    const maParams = this.estimateMAParameters(diffSeries, q, arParams);
+    const sarParams = this.estimateSeasonalARParameters(diffSeries, P, s);
+    const smaParams = this.estimateSeasonalMAParameters(diffSeries, Q, s);
+    
+    const residuals = this.calculateSARIMAResiduals(diffSeries, arParams, maParams, sarParams, smaParams, p, q, P, Q, s);
+    
+    return {
+      type: 'sarima',
+      p, d, q, P, D, Q, s,
+      arParams,
+      maParams,
+      sarParams,
+      smaParams,
+      originalSeries: timeSeries,
+      diffSeries,
+      residuals,
+      variance: this.calculateVariance(residuals),
+      aic: this.calculateAIC(residuals.length, p + q + P + Q + 1, residuals)
+    };
+  }
+
+  /**
+   * Train SARIMAX (SARIMA with eXogenous variables) model
+   * Extends SARIMA to include external regressors
+   */
+  trainSARIMAX(features, targets, parameters = {}) {
+    const p = parameters.p || 1;
+    const d = parameters.d || 1;
+    const q = parameters.q || 1;
+    const P = parameters.P || 1;
+    const D = parameters.D || 1;
+    const Q = parameters.Q || 1;
+    const s = parameters.s || 12;
+    
+    logger.info(`Training SARIMAX(${p},${d},${q})(${P},${D},${Q})[${s}] model with exogenous variables`);
+    
+    // First train the SARIMA component
+    const sarimaModel = this.trainSARIMA(features, targets, { p, d, q, P, D, Q, s });
+    
+    // Add regression component for exogenous variables
+    const exogCoefficients = [];
+    if (features.length > 0 && features[0].length > 0) {
+      // Simple regression for each exogenous variable
+      for (let j = 0; j < features[0].length; j++) {
+        const exogVariable = features.map(f => f[j]);
+        const correlation = this.calculateCorrelation(exogVariable, targets);
+        exogCoefficients.push(correlation * 0.1); // Simplified coefficient estimation
+      }
+    }
+    
+    return {
+      type: 'sarimax',
+      ...sarimaModel,
+      exogCoefficients,
+      numExogVars: features.length > 0 ? features[0].length : 0
+    };
+  }
+
+  /**
+   * Train Prophet model
+   * Simplified implementation of Facebook's Prophet algorithm
+   */
+  trainProphet(features, targets, parameters = {}) {
+    const seasonalityMode = parameters.seasonality_mode || 'additive';
+    const yearlySeasonality = parameters.yearly_seasonality !== false;
+    const weeklySeasonality = parameters.weekly_seasonality !== false;
+    const dailySeasonality = parameters.daily_seasonality || false;
+    const changePointPriorScale = parameters.changepoint_prior_scale || 0.05;
+    
+    logger.info(`Training Prophet model with ${seasonalityMode} seasonality`);
+    
+    const timeSeries = targets.slice();
+    const n = timeSeries.length;
+    
+    // Create time index (assuming daily data)
+    const timeIndex = Array.from({ length: n }, (_, i) => i);
+    
+    // Detect trend changepoints
+    const changePoints = this.detectChangePoints(timeSeries, changePointPriorScale);
+    
+    // Fit trend component (piecewise linear)
+    const trendParams = this.fitPiecewiseLinearTrend(timeIndex, timeSeries, changePoints);
+    
+    // Fit seasonal components
+    const seasonalComponents = {};
+    
+    if (yearlySeasonality && n >= 365) {
+      seasonalComponents.yearly = this.fitSeasonalComponent(timeSeries, 365, seasonalityMode);
+    }
+    
+    if (weeklySeasonality && n >= 14) {
+      seasonalComponents.weekly = this.fitSeasonalComponent(timeSeries, 7, seasonalityMode);
+    }
+    
+    if (dailySeasonality && n >= 2) {
+      seasonalComponents.daily = this.fitSeasonalComponent(timeSeries, 1, seasonalityMode);
+    }
+    
+    // Calculate residuals
+    const predictions = this.generateProphetPredictions(timeIndex, trendParams, seasonalComponents, seasonalityMode);
+    const residuals = timeSeries.map((actual, i) => actual - predictions[i]);
+    
+    return {
+      type: 'prophet',
+      seasonalityMode,
+      trendParams,
+      seasonalComponents,
+      changePoints,
+      originalSeries: timeSeries,
+      residuals,
+      variance: this.calculateVariance(residuals),
+      yearlySeasonality,
+      weeklySeasonality,
+      dailySeasonality
+    };
+  }
+
+  /**
    * Make predictions using a trained model
    */
   predict(model, features, algorithmType) {
@@ -448,6 +664,14 @@ class MLService {
         return this.predictMovingAverage(model, features);
       case this.algorithms.TECHNICAL_INDICATORS:
         return this.predictTechnicalIndicators(model, features);
+      case this.algorithms.ARIMA:
+        return this.predictARIMA(model, features);
+      case this.algorithms.SARIMA:
+        return this.predictSARIMA(model, features);
+      case this.algorithms.SARIMAX:
+        return this.predictSARIMAX(model, features);
+      case this.algorithms.PROPHET:
+        return this.predictProphet(model, features);
       case this.algorithms.ENSEMBLE_GRADIENT_BOOST:
         return this.predictEnsembleGradientBoost(model, features);
       case this.algorithms.DEEP_NEURAL_NETWORK:
@@ -609,6 +833,165 @@ class MLService {
       }
       return 0; // Default to hold
     });
+  }
+
+  /**
+   * ARIMA predictions
+   */
+  predictARIMA(model, features) {
+    const { arParams, maParams, originalSeries, p, d, q, residuals } = model;
+    const n = originalSeries.length;
+    const numPredictions = features.length;
+    const predictions = [];
+    
+    // Use the last values from the original series for forecasting
+    let currentSeries = [...originalSeries];
+    
+    for (let i = 0; i < numPredictions; i++) {
+      let forecast = 0;
+      
+      // AR component
+      for (let j = 0; j < p && j < currentSeries.length; j++) {
+        if (arParams[j] !== undefined) {
+          forecast += arParams[j] * currentSeries[currentSeries.length - 1 - j];
+        }
+      }
+      
+      // MA component (using last residuals)
+      for (let j = 0; j < q && j < residuals.length; j++) {
+        if (maParams[j] !== undefined) {
+          forecast += maParams[j] * residuals[residuals.length - 1 - j];
+        }
+      }
+      
+      predictions.push(forecast);
+      currentSeries.push(forecast); // Add prediction to series for next iteration
+    }
+    
+    return predictions;
+  }
+
+  /**
+   * SARIMA predictions
+   */
+  predictSARIMA(model, features) {
+    const { arParams, maParams, sarParams, smaParams, originalSeries, p, d, q, P, D, Q, s } = model;
+    const numPredictions = features.length;
+    const predictions = [];
+    
+    let currentSeries = [...originalSeries];
+    
+    for (let i = 0; i < numPredictions; i++) {
+      let forecast = 0;
+      
+      // Regular AR component
+      for (let j = 0; j < p && j < currentSeries.length; j++) {
+        if (arParams[j] !== undefined) {
+          forecast += arParams[j] * currentSeries[currentSeries.length - 1 - j];
+        }
+      }
+      
+      // Seasonal AR component
+      for (let j = 0; j < P && (j + 1) * s < currentSeries.length; j++) {
+        if (sarParams[j] !== undefined) {
+          forecast += sarParams[j] * currentSeries[currentSeries.length - 1 - (j + 1) * s];
+        }
+      }
+      
+      // MA and SMA components (simplified)
+      const avgResidual = model.residuals && model.residuals.length > 0 ? 
+        model.residuals.reduce((a, b) => a + b, 0) / model.residuals.length : 0;
+      
+      for (let j = 0; j < q; j++) {
+        if (maParams[j] !== undefined) {
+          forecast += maParams[j] * avgResidual;
+        }
+      }
+      
+      predictions.push(forecast);
+      currentSeries.push(forecast);
+    }
+    
+    return predictions;
+  }
+
+  /**
+   * SARIMAX predictions
+   */
+  predictSARIMAX(model, features) {
+    // Start with SARIMA predictions
+    const sarimaPredictions = this.predictSARIMA(model, features);
+    
+    // Add exogenous variable effects
+    const { exogCoefficients, numExogVars } = model;
+    
+    if (exogCoefficients && features.length > 0) {
+      return sarimaPredictions.map((pred, i) => {
+        let exogEffect = 0;
+        const featureSet = features[i] || [];
+        
+        for (let j = 0; j < Math.min(numExogVars, featureSet.length); j++) {
+          if (exogCoefficients[j] !== undefined) {
+            exogEffect += exogCoefficients[j] * featureSet[j];
+          }
+        }
+        
+        return pred + exogEffect;
+      });
+    }
+    
+    return sarimaPredictions;
+  }
+
+  /**
+   * Prophet predictions
+   */
+  predictProphet(model, features) {
+    const { trendParams, seasonalComponents, seasonalityMode, originalSeries } = model;
+    const numPredictions = features.length;
+    const predictions = [];
+    const n = originalSeries.length;
+    
+    for (let i = 0; i < numPredictions; i++) {
+      const timeIndex = n + i; // Continue from last time point
+      
+      // Trend component
+      let trend = this.evaluatePiecewiseLinearTrend(timeIndex, trendParams);
+      
+      // Seasonal components
+      let seasonal = 0;
+      Object.keys(seasonalComponents).forEach(seasonType => {
+        const component = seasonalComponents[seasonType];
+        let period;
+        
+        switch (seasonType) {
+          case 'yearly': period = 365; break;
+          case 'weekly': period = 7; break;
+          case 'daily': period = 1; break;
+          default: period = 1;
+        }
+        
+        const seasonalValue = this.evaluateSeasonalComponent(timeIndex, component, period);
+        
+        if (seasonalityMode === 'multiplicative') {
+          seasonal = seasonal === 0 ? seasonalValue : seasonal * seasonalValue;
+        } else {
+          seasonal += seasonalValue;
+        }
+      });
+      
+      // Combine trend and seasonal
+      let prediction;
+      if (seasonalityMode === 'multiplicative') {
+        prediction = trend * (1 + seasonal);
+      } else {
+        prediction = trend + seasonal;
+      }
+      
+      predictions.push(prediction);
+    }
+    
+    return predictions;
   }
 
   /**
@@ -1255,6 +1638,376 @@ class MLService {
 
   getModelPerformanceHistory(modelId) {
     return this.modelPerformanceTracking.get(modelId) || [];
+  }
+
+  // Time Series Helper Methods
+
+  /**
+   * Estimate AR parameters using least squares
+   */
+  estimateARParameters(series, p) {
+    if (series.length <= p) return new Array(p).fill(0);
+    
+    const params = [];
+    for (let i = 0; i < p; i++) {
+      let numerator = 0;
+      let denominator = 0;
+      
+      for (let t = p; t < series.length; t++) {
+        numerator += series[t] * series[t - i - 1];
+        denominator += series[t - i - 1] * series[t - i - 1];
+      }
+      
+      params.push(denominator !== 0 ? numerator / denominator : 0);
+    }
+    
+    return params;
+  }
+
+  /**
+   * Estimate MA parameters (simplified approach)
+   */
+  estimateMAParameters(series, q, arParams) {
+    if (series.length <= q) return new Array(q).fill(0);
+    
+    // Calculate residuals from AR model
+    const residuals = [];
+    for (let t = arParams.length; t < series.length; t++) {
+      let arComponent = 0;
+      for (let i = 0; i < arParams.length; i++) {
+        arComponent += arParams[i] * series[t - i - 1];
+      }
+      residuals.push(series[t] - arComponent);
+    }
+    
+    // Estimate MA parameters
+    const params = [];
+    for (let i = 0; i < q; i++) {
+      let correlation = 0;
+      let count = 0;
+      
+      for (let t = i + 1; t < residuals.length; t++) {
+        correlation += residuals[t] * residuals[t - i - 1];
+        count++;
+      }
+      
+      params.push(count > 0 ? correlation / count : 0);
+    }
+    
+    return params;
+  }
+
+  /**
+   * Estimate seasonal AR parameters
+   */
+  estimateSeasonalARParameters(series, P, s) {
+    if (series.length <= P * s) return new Array(P).fill(0);
+    
+    const params = [];
+    for (let i = 0; i < P; i++) {
+      let numerator = 0;
+      let denominator = 0;
+      
+      for (let t = (i + 1) * s; t < series.length; t++) {
+        numerator += series[t] * series[t - (i + 1) * s];
+        denominator += series[t - (i + 1) * s] * series[t - (i + 1) * s];
+      }
+      
+      params.push(denominator !== 0 ? numerator / denominator : 0);
+    }
+    
+    return params;
+  }
+
+  /**
+   * Estimate seasonal MA parameters
+   */
+  estimateSeasonalMAParameters(series, Q, s) {
+    return new Array(Q).fill(0.1); // Simplified approach
+  }
+
+  /**
+   * Calculate residuals for ARIMA model
+   */
+  calculateResiduals(series, arParams, maParams, p, q) {
+    const residuals = [];
+    const maxLag = Math.max(p, q);
+    
+    for (let t = maxLag; t < series.length; t++) {
+      let predicted = 0;
+      
+      // AR component
+      for (let i = 0; i < p; i++) {
+        predicted += arParams[i] * series[t - i - 1];
+      }
+      
+      // MA component (using previous residuals)
+      for (let i = 0; i < q && i < residuals.length; i++) {
+        predicted += maParams[i] * residuals[residuals.length - i - 1];
+      }
+      
+      residuals.push(series[t] - predicted);
+    }
+    
+    return residuals;
+  }
+
+  /**
+   * Calculate residuals for SARIMA model
+   */
+  calculateSARIMAResiduals(series, arParams, maParams, sarParams, smaParams, p, q, P, Q, s) {
+    const residuals = [];
+    const maxLag = Math.max(p, q, P * s, Q * s);
+    
+    for (let t = maxLag; t < series.length; t++) {
+      let predicted = 0;
+      
+      // Regular AR component
+      for (let i = 0; i < p; i++) {
+        predicted += arParams[i] * series[t - i - 1];
+      }
+      
+      // Seasonal AR component
+      for (let i = 0; i < P; i++) {
+        if (t > (i + 1) * s) {
+          predicted += sarParams[i] * series[t - (i + 1) * s];
+        }
+      }
+      
+      // MA components (simplified)
+      const avgResidual = residuals.length > 0 ? 
+        residuals.reduce((a, b) => a + b, 0) / residuals.length : 0;
+      
+      for (let i = 0; i < q; i++) {
+        predicted += maParams[i] * avgResidual;
+      }
+      
+      residuals.push(series[t] - predicted);
+    }
+    
+    return residuals;
+  }
+
+  /**
+   * Calculate variance of residuals
+   */
+  calculateVariance(residuals) {
+    if (residuals.length === 0) return 0;
+    
+    const mean = residuals.reduce((a, b) => a + b, 0) / residuals.length;
+    const variance = residuals.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / residuals.length;
+    
+    return variance;
+  }
+
+  /**
+   * Calculate AIC (Akaike Information Criterion)
+   */
+  calculateAIC(n, k, residuals) {
+    if (residuals.length === 0) return Infinity;
+    
+    const variance = this.calculateVariance(residuals);
+    if (variance <= 0) return Infinity;
+    
+    return n * Math.log(variance) + 2 * k;
+  }
+
+  /**
+   * Calculate correlation coefficient
+   */
+  calculateCorrelation(x, y) {
+    if (x.length !== y.length || x.length === 0) return 0;
+    
+    const n = x.length;
+    const meanX = x.reduce((a, b) => a + b, 0) / n;
+    const meanY = y.reduce((a, b) => a + b, 0) / n;
+    
+    let numerator = 0;
+    let denomX = 0;
+    let denomY = 0;
+    
+    for (let i = 0; i < n; i++) {
+      const dx = x[i] - meanX;
+      const dy = y[i] - meanY;
+      numerator += dx * dy;
+      denomX += dx * dx;
+      denomY += dy * dy;
+    }
+    
+    const denominator = Math.sqrt(denomX * denomY);
+    return denominator !== 0 ? numerator / denominator : 0;
+  }
+
+  /**
+   * Detect changepoints in time series for Prophet model
+   */
+  detectChangePoints(series, priorScale) {
+    const changePoints = [];
+    const n = series.length;
+    const windowSize = Math.max(5, Math.floor(n * 0.1));
+    
+    for (let i = windowSize; i < n - windowSize; i++) {
+      const before = series.slice(i - windowSize, i);
+      const after = series.slice(i, i + windowSize);
+      
+      const meanBefore = before.reduce((a, b) => a + b, 0) / before.length;
+      const meanAfter = after.reduce((a, b) => a + b, 0) / after.length;
+      
+      const change = Math.abs(meanAfter - meanBefore);
+      const threshold = priorScale * standardDeviation(series);
+      
+      if (change > threshold) {
+        changePoints.push(i);
+      }
+    }
+    
+    return changePoints;
+  }
+
+  /**
+   * Fit piecewise linear trend for Prophet model
+   */
+  fitPiecewiseLinearTrend(timeIndex, series, changePoints) {
+    const segments = [];
+    let startIdx = 0;
+    
+    for (const changePoint of changePoints) {
+      if (changePoint > startIdx) {
+        const segmentTime = timeIndex.slice(startIdx, changePoint);
+        const segmentValues = series.slice(startIdx, changePoint);
+        
+        if (segmentTime.length > 1) {
+          const slope = this.calculateSlope(segmentTime, segmentValues);
+          const intercept = segmentValues[0] - slope * segmentTime[0];
+          segments.push({ start: startIdx, end: changePoint, slope, intercept });
+        }
+        
+        startIdx = changePoint;
+      }
+    }
+    
+    // Add final segment
+    if (startIdx < series.length) {
+      const segmentTime = timeIndex.slice(startIdx);
+      const segmentValues = series.slice(startIdx);
+      
+      if (segmentTime.length > 1) {
+        const slope = this.calculateSlope(segmentTime, segmentValues);
+        const intercept = segmentValues[0] - slope * segmentTime[0];
+        segments.push({ start: startIdx, end: series.length, slope, intercept });
+      }
+    }
+    
+    return segments;
+  }
+
+  /**
+   * Calculate slope for linear regression
+   */
+  calculateSlope(x, y) {
+    if (x.length !== y.length || x.length < 2) return 0;
+    
+    const n = x.length;
+    const meanX = x.reduce((a, b) => a + b, 0) / n;
+    const meanY = y.reduce((a, b) => a + b, 0) / n;
+    
+    let numerator = 0;
+    let denominator = 0;
+    
+    for (let i = 0; i < n; i++) {
+      numerator += (x[i] - meanX) * (y[i] - meanY);
+      denominator += (x[i] - meanX) * (x[i] - meanX);
+    }
+    
+    return denominator !== 0 ? numerator / denominator : 0;
+  }
+
+  /**
+   * Fit seasonal component for Prophet model
+   */
+  fitSeasonalComponent(series, period, mode) {
+    const seasonalPattern = new Array(period).fill(0);
+    const counts = new Array(period).fill(0);
+    
+    for (let i = 0; i < series.length; i++) {
+      const seasonalIndex = i % period;
+      seasonalPattern[seasonalIndex] += series[i];
+      counts[seasonalIndex]++;
+    }
+    
+    // Average by count
+    for (let i = 0; i < period; i++) {
+      if (counts[i] > 0) {
+        seasonalPattern[i] /= counts[i];
+      }
+    }
+    
+    // Center the seasonal pattern
+    const meanSeasonal = seasonalPattern.reduce((a, b) => a + b, 0) / period;
+    return seasonalPattern.map(val => val - meanSeasonal);
+  }
+
+  /**
+   * Evaluate piecewise linear trend at given time
+   */
+  evaluatePiecewiseLinearTrend(timeIndex, trendParams) {
+    for (const segment of trendParams) {
+      if (timeIndex >= segment.start && timeIndex < segment.end) {
+        return segment.slope * timeIndex + segment.intercept;
+      }
+    }
+    
+    // Default to last segment if beyond range
+    if (trendParams.length > 0) {
+      const lastSegment = trendParams[trendParams.length - 1];
+      return lastSegment.slope * timeIndex + lastSegment.intercept;
+    }
+    
+    return 0;
+  }
+
+  /**
+   * Evaluate seasonal component at given time
+   */
+  evaluateSeasonalComponent(timeIndex, component, period) {
+    const seasonalIndex = Math.floor(timeIndex % period);
+    return component[seasonalIndex] || 0;
+  }
+
+  /**
+   * Generate Prophet predictions for given time indices
+   */
+  generateProphetPredictions(timeIndex, trendParams, seasonalComponents, seasonalityMode) {
+    return timeIndex.map(t => {
+      const trend = this.evaluatePiecewiseLinearTrend(t, trendParams);
+      
+      let seasonal = 0;
+      Object.keys(seasonalComponents).forEach(seasonType => {
+        const component = seasonalComponents[seasonType];
+        let period;
+        
+        switch (seasonType) {
+          case 'yearly': period = 365; break;
+          case 'weekly': period = 7; break;
+          case 'daily': period = 1; break;
+          default: period = 1;
+        }
+        
+        const seasonalValue = this.evaluateSeasonalComponent(t, component, period);
+        
+        if (seasonalityMode === 'multiplicative') {
+          seasonal = seasonal === 0 ? seasonalValue : seasonal * seasonalValue;
+        } else {
+          seasonal += seasonalValue;
+        }
+      });
+      
+      if (seasonalityMode === 'multiplicative') {
+        return trend * (1 + seasonal);
+      } else {
+        return trend + seasonal;
+      }
+    });
   }
 }
 
