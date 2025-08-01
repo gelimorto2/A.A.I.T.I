@@ -2,10 +2,12 @@ const { v4: uuidv4 } = require('uuid');
 const { mean } = require('simple-statistics');
 const logger = require('./logger');
 const mlService = require('./mlService');
+const advancedIndicators = require('./advancedIndicators');
 
 class BacktestingService {
   constructor() {
     this.activeBacktests = new Map();
+    logger.info('Enhanced BacktestingService initialized with walk-forward optimization and Monte Carlo simulation');
   }
 
   /**
@@ -731,6 +733,538 @@ class BacktestingService {
    */
   deleteBacktest(backtestId) {
     return this.activeBacktests.delete(backtestId);
+  }
+
+  /**
+   * Walk-Forward Optimization
+   * Optimizes model parameters over rolling time windows
+   */
+  async runWalkForwardOptimization(optimizationConfig) {
+    const {
+      modelId,
+      symbols,
+      startDate,
+      endDate,
+      trainingWindow = 252, // 1 year
+      testingWindow = 63,   // 3 months
+      stepSize = 21,        // 1 month
+      parameterRanges = {}
+    } = optimizationConfig;
+
+    try {
+      logger.info('Starting walk-forward optimization', {
+        modelId,
+        trainingWindow,
+        testingWindow,
+        stepSize
+      });
+
+      const results = [];
+      const totalData = await this.getHistoricalData(symbols, startDate, endDate);
+      const dataByDate = this.groupDataByDate(totalData);
+      const dates = Object.keys(dataByDate).sort();
+
+      let currentIndex = trainingWindow;
+      
+      while (currentIndex + testingWindow < dates.length) {
+        // Define training and testing periods
+        const trainStartIdx = currentIndex - trainingWindow;
+        const trainEndIdx = currentIndex;
+        const testStartIdx = currentIndex;
+        const testEndIdx = Math.min(currentIndex + testingWindow, dates.length);
+
+        const trainingData = this.getDataForPeriod(totalData, dates, trainStartIdx, trainEndIdx);
+        const testingData = this.getDataForPeriod(totalData, dates, testStartIdx, testEndIdx);
+
+        logger.info(`Walk-forward window: training ${dates[trainStartIdx]} to ${dates[trainEndIdx]}, testing ${dates[testStartIdx]} to ${dates[testEndIdx]}`);
+
+        // Optimize parameters on training data
+        const optimalParams = await this.optimizeParameters(
+          modelId,
+          trainingData,
+          parameterRanges
+        );
+
+        // Test on out-of-sample data
+        const backtestResult = await this.runBacktest({
+          modelId,
+          symbols,
+          startDate: dates[testStartIdx],
+          endDate: dates[testEndIdx],
+          initialCapital: 100000,
+          parameters: optimalParams
+        });
+
+        results.push({
+          trainPeriod: {
+            start: dates[trainStartIdx],
+            end: dates[trainEndIdx]
+          },
+          testPeriod: {
+            start: dates[testStartIdx],
+            end: dates[testEndIdx]
+          },
+          optimalParams,
+          performance: backtestResult.performanceMetrics,
+          totalReturn: backtestResult.totalReturn,
+          sharpeRatio: backtestResult.sharpeRatio,
+          maxDrawdown: backtestResult.maxDrawdown
+        });
+
+        currentIndex += stepSize;
+      }
+
+      // Aggregate results
+      const aggregateMetrics = this.aggregateWalkForwardResults(results);
+
+      logger.info('Walk-forward optimization completed', {
+        windows: results.length,
+        avgReturn: aggregateMetrics.avgReturn,
+        avgSharpe: aggregateMetrics.avgSharpe
+      });
+
+      return {
+        id: uuidv4(),
+        type: 'walk_forward_optimization',
+        modelId,
+        results,
+        aggregateMetrics,
+        createdAt: new Date().toISOString()
+      };
+
+    } catch (error) {
+      logger.error('Walk-forward optimization failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Monte Carlo Simulation for backtesting
+   */
+  async runMonteCarloSimulation(simulationConfig) {
+    const {
+      backtestResults,
+      numSimulations = 1000,
+      confidenceLevel = 0.95,
+      randomSeed = null
+    } = simulationConfig;
+
+    try {
+      logger.info(`Starting Monte Carlo simulation with ${numSimulations} runs`);
+
+      if (randomSeed) {
+        Math.seedrandom(randomSeed); // Would need to implement or use library
+      }
+
+      const { trades } = backtestResults;
+      if (!trades || trades.length === 0) {
+        throw new Error('No trades found in backtest results');
+      }
+
+      // Extract trade returns
+      const tradeReturns = trades
+        .filter(t => t.status === 'closed' && t.pnl)
+        .map(t => t.pnl / (t.quantity * t.entryPrice)); // Percentage return
+
+      if (tradeReturns.length === 0) {
+        throw new Error('No closed trades with P&L data');
+      }
+
+      const simulations = [];
+      
+      for (let sim = 0; sim < numSimulations; sim++) {
+        const simulatedTrades = this.simulateRandomTrades(tradeReturns, trades.length);
+        const simulatedMetrics = this.calculateSimulationMetrics(simulatedTrades, backtestResults.initialCapital);
+        
+        simulations.push(simulatedMetrics);
+      }
+
+      // Calculate confidence intervals
+      const sortedReturns = simulations.map(s => s.totalReturn).sort((a, b) => a - b);
+      const sortedSharpe = simulations.map(s => s.sharpeRatio).sort((a, b) => a - b);
+      const sortedDrawdown = simulations.map(s => s.maxDrawdown).sort((a, b) => a - b);
+
+      const alpha = 1 - confidenceLevel;
+      const lowerIndex = Math.floor(alpha / 2 * numSimulations);
+      const upperIndex = Math.floor((1 - alpha / 2) * numSimulations);
+
+      const confidenceIntervals = {
+        totalReturn: {
+          lower: sortedReturns[lowerIndex],
+          upper: sortedReturns[upperIndex],
+          median: sortedReturns[Math.floor(numSimulations / 2)]
+        },
+        sharpeRatio: {
+          lower: sortedSharpe[lowerIndex],
+          upper: sortedSharpe[upperIndex],
+          median: sortedSharpe[Math.floor(numSimulations / 2)]
+        },
+        maxDrawdown: {
+          lower: sortedDrawdown[lowerIndex],
+          upper: sortedDrawdown[upperIndex],
+          median: sortedDrawdown[Math.floor(numSimulations / 2)]
+        }
+      };
+
+      // Risk metrics
+      const riskMetrics = {
+        probabilityOfLoss: simulations.filter(s => s.totalReturn < 0).length / numSimulations,
+        valueAtRisk: sortedReturns[Math.floor(0.05 * numSimulations)], // 5% VaR
+        conditionalVaR: mean(sortedReturns.slice(0, Math.floor(0.05 * numSimulations))), // Expected shortfall
+        maxDrawdownExceeded: simulations.filter(s => s.maxDrawdown > backtestResults.maxDrawdown).length / numSimulations
+      };
+
+      logger.info('Monte Carlo simulation completed', {
+        simulations: numSimulations,
+        probabilityOfLoss: riskMetrics.probabilityOfLoss,
+        var95: riskMetrics.valueAtRisk
+      });
+
+      return {
+        id: uuidv4(),
+        type: 'monte_carlo_simulation',
+        numSimulations,
+        confidenceLevel,
+        originalBacktest: {
+          totalReturn: backtestResults.totalReturn,
+          sharpeRatio: backtestResults.sharpeRatio,
+          maxDrawdown: backtestResults.maxDrawdown
+        },
+        confidenceIntervals,
+        riskMetrics,
+        simulations: simulations.slice(0, 100), // Store first 100 for analysis
+        createdAt: new Date().toISOString()
+      };
+
+    } catch (error) {
+      logger.error('Monte Carlo simulation failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Advanced Performance Metrics
+   */
+  calculateAdvancedMetrics(trades, equityCurve, initialCapital) {
+    const returns = [];
+    for (let i = 1; i < equityCurve.length; i++) {
+      returns.push((equityCurve[i] - equityCurve[i-1]) / equityCurve[i-1]);
+    }
+
+    const closedTrades = trades.filter(t => t.status === 'closed' && t.pnl !== undefined);
+    const profits = closedTrades.filter(t => t.pnl > 0).map(t => t.pnl);
+    const losses = closedTrades.filter(t => t.pnl < 0).map(t => Math.abs(t.pnl));
+
+    // Advanced metrics
+    return {
+      // Ratios
+      calmarRatio: this.calculateCalmarRatio(returns, this.calculateMaxDrawdown(equityCurve)),
+      sortinoRatio: this.calculateSortinoRatio(returns),
+      informationRatio: this.calculateInformationRatio(returns),
+      
+      // Risk metrics
+      valueAtRisk: this.calculateVaR(returns, 0.05),
+      conditionalVaR: this.calculateCVaR(returns, 0.05),
+      maximumAdverseExcursion: this.calculateMAE(closedTrades),
+      maximumFavorableExcursion: this.calculateMFE(closedTrades),
+      
+      // Trade analysis
+      profitFactor: losses.length > 0 ? profits.reduce((a, b) => a + b, 0) / losses.reduce((a, b) => a + b, 0) : Infinity,
+      payoffRatio: profits.length > 0 && losses.length > 0 ? mean(profits) / mean(losses) : 0,
+      winLossRatio: losses.length > 0 ? profits.length / losses.length : Infinity,
+      
+      // Consistency metrics
+      monthlyReturns: this.calculateMonthlyReturns(equityCurve, returns),
+      rollingMaxDrawdown: this.calculateRollingDrawdown(equityCurve),
+      consecutiveWins: this.calculateConsecutiveWins(closedTrades),
+      consecutiveLosses: this.calculateConsecutiveLosses(closedTrades)
+    };
+  }
+
+  /**
+   * Helper methods for advanced backtesting
+   */
+  async optimizeParameters(modelId, trainingData, parameterRanges) {
+    // Simplified parameter optimization - grid search
+    const parameters = Object.keys(parameterRanges);
+    if (parameters.length === 0) return {};
+
+    let bestParams = {};
+    let bestScore = -Infinity;
+
+    // Generate parameter combinations (simplified to 2 parameters max)
+    const param1 = parameters[0];
+    const param2 = parameters[1];
+    
+    const range1 = parameterRanges[param1] || [0.1];
+    const range2 = param2 ? parameterRanges[param2] || [0.1] : [null];
+
+    for (const val1 of range1) {
+      for (const val2 of range2) {
+        const testParams = { [param1]: val1 };
+        if (param2 && val2 !== null) testParams[param2] = val2;
+
+        try {
+          // Quick backtest on training data
+          const quickResult = await this.runQuickBacktest(modelId, trainingData, testParams);
+          const score = quickResult.sharpeRatio || 0;
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestParams = { ...testParams };
+          }
+        } catch (error) {
+          logger.warn('Parameter optimization iteration failed:', error);
+        }
+      }
+    }
+
+    return bestParams;
+  }
+
+  async runQuickBacktest(modelId, data, parameters) {
+    // Simplified backtesting for parameter optimization
+    const model = mlService.getModel(modelId);
+    if (!model) throw new Error(`Model ${modelId} not found`);
+
+    const backtestState = this.initializeBacktestState(uuidv4(), 100000, 0.001, 0.0005, 5);
+    const trades = [];
+
+    const dataByDate = this.groupDataByDate(data);
+    const dates = Object.keys(dataByDate).sort();
+
+    for (let i = 30; i < dates.length; i++) {
+      const currentData = dataByDate[dates[i]];
+      
+      for (const symbolData of currentData) {
+        const features = this.extractFeaturesForPrediction(data, symbolData.symbol, i);
+        if (features.length === 0) continue;
+
+        const prediction = mlService.predict(
+          mlService.deserializeModel(model.model).modelData,
+          [features],
+          model.algorithmType
+        )[0];
+
+        // Simple trading logic
+        if (Math.abs(prediction) > 0.6) {
+          const signal = {
+            symbol: symbolData.symbol,
+            signal: prediction > 0 ? 'buy' : 'sell',
+            confidence: Math.abs(prediction),
+            price: symbolData.close,
+            timestamp: symbolData.timestamp,
+            prediction
+          };
+
+          const trade = await this.executeSignal(signal, backtestState, 'percentage', 0.02, 0.05, 0.10);
+          if (trade) trades.push(trade);
+        }
+      }
+
+      this.updateEquityCurve(backtestState, dates[i]);
+    }
+
+    const performance = this.calculateBacktestPerformance(trades, backtestState, 100000);
+    return performance;
+  }
+
+  getDataForPeriod(data, dates, startIdx, endIdx) {
+    const startDate = dates[startIdx];
+    const endDate = dates[endIdx];
+    
+    return data.filter(d => d.timestamp >= startDate && d.timestamp <= endDate);
+  }
+
+  aggregateWalkForwardResults(results) {
+    const returns = results.map(r => r.totalReturn);
+    const sharpeRatios = results.map(r => r.sharpeRatio);
+    const drawdowns = results.map(r => r.maxDrawdown);
+
+    return {
+      avgReturn: mean(returns),
+      avgSharpe: mean(sharpeRatios),
+      avgDrawdown: mean(drawdowns),
+      winRate: results.filter(r => r.totalReturn > 0).length / results.length,
+      bestPeriod: results.reduce((best, current) => 
+        current.totalReturn > best.totalReturn ? current : best),
+      worstPeriod: results.reduce((worst, current) => 
+        current.totalReturn < worst.totalReturn ? current : worst),
+      consistency: 1 - (Math.sqrt(mean(returns.map(r => Math.pow(r - mean(returns), 2)))) / Math.abs(mean(returns)))
+    };
+  }
+
+  simulateRandomTrades(tradeReturns, numTrades) {
+    const simulatedReturns = [];
+    
+    for (let i = 0; i < numTrades; i++) {
+      const randomIndex = Math.floor(Math.random() * tradeReturns.length);
+      simulatedReturns.push(tradeReturns[randomIndex]);
+    }
+    
+    return simulatedReturns;
+  }
+
+  calculateSimulationMetrics(tradeReturns, initialCapital) {
+    let capital = initialCapital;
+    const equityCurve = [capital];
+    let peakCapital = capital;
+    let maxDrawdown = 0;
+
+    for (const returnPct of tradeReturns) {
+      capital *= (1 + returnPct);
+      equityCurve.push(capital);
+      
+      if (capital > peakCapital) {
+        peakCapital = capital;
+      } else {
+        const drawdown = (peakCapital - capital) / peakCapital;
+        if (drawdown > maxDrawdown) {
+          maxDrawdown = drawdown;
+        }
+      }
+    }
+
+    const totalReturn = (capital - initialCapital) / initialCapital;
+    const avgReturn = mean(tradeReturns);
+    const stdReturn = Math.sqrt(mean(tradeReturns.map(r => Math.pow(r - avgReturn, 2))));
+    const sharpeRatio = stdReturn === 0 ? 0 : avgReturn / stdReturn * Math.sqrt(252);
+
+    return {
+      totalReturn,
+      sharpeRatio,
+      maxDrawdown,
+      finalCapital: capital
+    };
+  }
+
+  // Advanced metric calculations
+  calculateCalmarRatio(returns, maxDrawdown) {
+    const annualReturn = mean(returns) * 252;
+    return maxDrawdown === 0 ? 0 : annualReturn / maxDrawdown;
+  }
+
+  calculateSortinoRatio(returns, targetReturn = 0) {
+    const excessReturns = returns.map(r => r - targetReturn);
+    const downside = excessReturns.filter(r => r < 0);
+    
+    if (downside.length === 0) return Infinity;
+    
+    const downsideDeviation = Math.sqrt(mean(downside.map(r => r * r)));
+    return mean(excessReturns) / downsideDeviation * Math.sqrt(252);
+  }
+
+  calculateInformationRatio(returns, benchmarkReturns = null) {
+    if (!benchmarkReturns) benchmarkReturns = new Array(returns.length).fill(0);
+    
+    const activeReturns = returns.map((r, i) => r - (benchmarkReturns[i] || 0));
+    const trackingError = Math.sqrt(mean(activeReturns.map(r => r * r)));
+    
+    return trackingError === 0 ? 0 : mean(activeReturns) / trackingError * Math.sqrt(252);
+  }
+
+  calculateVaR(returns, alpha = 0.05) {
+    const sortedReturns = returns.slice().sort((a, b) => a - b);
+    const index = Math.floor(alpha * sortedReturns.length);
+    return sortedReturns[index] || 0;
+  }
+
+  calculateCVaR(returns, alpha = 0.05) {
+    const valueAtRisk = this.calculateVaR(returns, alpha);
+    const tailReturns = returns.filter(r => r <= valueAtRisk);
+    return tailReturns.length > 0 ? mean(tailReturns) : 0;
+  }
+
+  calculateMAE(trades) {
+    // Maximum Adverse Excursion - would need tick data
+    return 0; // Placeholder
+  }
+
+  calculateMFE(trades) {
+    // Maximum Favorable Excursion - would need tick data
+    return 0; // Placeholder
+  }
+
+  calculateMonthlyReturns(equityCurve, returns) {
+    // Simplified monthly returns calculation
+    const monthlyReturns = [];
+    const monthSize = Math.floor(returns.length / 12);
+    
+    for (let i = 0; i < 12; i++) {
+      const start = i * monthSize;
+      const end = Math.min((i + 1) * monthSize, returns.length);
+      const monthReturns = returns.slice(start, end);
+      
+      if (monthReturns.length > 0) {
+        monthlyReturns.push(mean(monthReturns));
+      }
+    }
+    
+    return monthlyReturns;
+  }
+
+  calculateRollingDrawdown(equityCurve, window = 252) {
+    const drawdowns = [];
+    
+    for (let i = window; i < equityCurve.length; i++) {
+      const windowData = equityCurve.slice(i - window, i);
+      const peak = Math.max(...windowData);
+      const current = windowData[windowData.length - 1];
+      const drawdown = (peak - current) / peak;
+      drawdowns.push(drawdown);
+    }
+    
+    return drawdowns;
+  }
+
+  calculateConsecutiveWins(trades) {
+    let maxWins = 0;
+    let currentWins = 0;
+    
+    for (const trade of trades) {
+      if (trade.pnl > 0) {
+        currentWins++;
+        maxWins = Math.max(maxWins, currentWins);
+      } else {
+        currentWins = 0;
+      }
+    }
+    
+    return maxWins;
+  }
+
+  calculateConsecutiveLosses(trades) {
+    let maxLosses = 0;
+    let currentLosses = 0;
+    
+    for (const trade of trades) {
+      if (trade.pnl < 0) {
+        currentLosses++;
+        maxLosses = Math.max(maxLosses, currentLosses);
+      } else {
+        currentLosses = 0;
+      }
+    }
+    
+    return maxLosses;
+  }
+
+  calculateMaxDrawdown(equityCurve) {
+    let maxDrawdown = 0;
+    let peak = equityCurve[0];
+    
+    for (const value of equityCurve) {
+      if (value > peak) {
+        peak = value;
+      } else {
+        const drawdown = (peak - value) / peak;
+        if (drawdown > maxDrawdown) {
+          maxDrawdown = drawdown;
+        }
+      }
+    }
+    
+    return maxDrawdown;
   }
 }
 

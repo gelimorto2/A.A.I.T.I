@@ -39,9 +39,6 @@ server.requestTimeout = performanceConfig.server.requestTimeout;
 // Initialize ASCII Dashboard
 const dashboard = new ASCIIDashboard();
 
-// Initialize ASCII Dashboard
-const dashboard = new ASCIIDashboard();
-
 // Connect logger to dashboard
 logger.setDashboard(dashboard);
 

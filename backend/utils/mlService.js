@@ -4,10 +4,13 @@ const { mean, standardDeviation, median } = require('simple-statistics');
 const Bayes = require('bayes');
 const { v4: uuidv4 } = require('uuid');
 const logger = require('./logger');
+const advancedIndicators = require('./advancedIndicators');
 
 class MLService {
   constructor() {
     this.models = new Map();
+    this.realtimePredictions = new Map();
+    this.modelPerformanceTracking = new Map();
     this.algorithms = {
       LINEAR_REGRESSION: 'linear_regression',
       POLYNOMIAL_REGRESSION: 'polynomial_regression',
@@ -16,8 +19,14 @@ class MLService {
       NAIVE_BAYES: 'naive_bayes',
       LSTM: 'lstm',
       MOVING_AVERAGE: 'moving_average',
-      TECHNICAL_INDICATORS: 'technical_indicators'
+      TECHNICAL_INDICATORS: 'technical_indicators',
+      // New sophisticated algorithms
+      ENSEMBLE_GRADIENT_BOOST: 'ensemble_gradient_boost',
+      DEEP_NEURAL_NETWORK: 'deep_neural_network',
+      REINFORCEMENT_LEARNING: 'reinforcement_learning'
     };
+    
+    logger.info('Enhanced MLService initialized with advanced algorithms and real-time capabilities');
   }
 
   /**
@@ -63,6 +72,15 @@ class MLService {
           break;
         case this.algorithms.TECHNICAL_INDICATORS:
           model = this.trainTechnicalIndicators(features, targets, parameters);
+          break;
+        case this.algorithms.ENSEMBLE_GRADIENT_BOOST:
+          model = this.trainEnsembleGradientBoost(features, targets, parameters);
+          break;
+        case this.algorithms.DEEP_NEURAL_NETWORK:
+          model = this.trainDeepNeuralNetwork(features, targets, parameters);
+          break;
+        case this.algorithms.REINFORCEMENT_LEARNING:
+          model = this.trainReinforcementLearning(features, targets, parameters);
           break;
         default:
           throw new Error(`Unsupported algorithm type: ${algorithmType}`);
@@ -255,6 +273,161 @@ class MLService {
   }
 
   /**
+   * Train Ensemble Gradient Boost model (simplified implementation)
+   */
+  trainEnsembleGradientBoost(features, targets, parameters = {}) {
+    const numTrees = parameters.numTrees || 50;
+    const learningRate = parameters.learningRate || 0.1;
+    const maxDepth = parameters.maxDepth || 6;
+    
+    const models = [];
+    let residuals = [...targets];
+    
+    logger.info(`Training Gradient Boost ensemble with ${numTrees} trees`);
+    
+    for (let i = 0; i < numTrees; i++) {
+      // Train weak learner on residuals
+      const tree = this.buildDecisionTree(features, residuals, maxDepth);
+      const predictions = features.map(feature => this.predictDecisionTree(tree, feature));
+      
+      // Update residuals
+      residuals = residuals.map((target, idx) => target - learningRate * predictions[idx]);
+      
+      models.push({
+        tree,
+        weight: learningRate
+      });
+    }
+    
+    return {
+      type: 'ensemble_gradient_boost',
+      models,
+      numTrees,
+      learningRate,
+      maxDepth
+    };
+  }
+
+  /**
+   * Train Deep Neural Network (simplified multi-layer implementation)
+   */
+  trainDeepNeuralNetwork(features, targets, parameters = {}) {
+    const hiddenLayers = parameters.hiddenLayers || [32, 16, 8];
+    const epochs = parameters.epochs || 100;
+    const learningRate = parameters.learningRate || 0.001;
+    const activationFunction = parameters.activation || 'relu';
+    
+    logger.info(`Training Deep Neural Network with layers: [${features[0].length}, ${hiddenLayers.join(', ')}, 1]`);
+    
+    // Initialize network weights
+    const network = this.initializeNeuralNetwork(features[0].length, hiddenLayers, 1);
+    
+    // Training loop
+    const trainingHistory = [];
+    for (let epoch = 0; epoch < Math.min(epochs, 50); epoch++) { // Limit to prevent long training
+      let totalLoss = 0;
+      
+      for (let i = 0; i < features.length; i++) {
+        const prediction = this.forwardPassDNN(features[i], network, activationFunction);
+        const loss = Math.pow(targets[i] - prediction, 2);
+        totalLoss += loss;
+        
+        // Simplified backpropagation
+        this.backwardPassDNN(features[i], targets[i], prediction, network, learningRate);
+      }
+      
+      const avgLoss = totalLoss / features.length;
+      trainingHistory.push(avgLoss);
+      
+      if (epoch % 10 === 0) {
+        logger.debug(`DNN Epoch ${epoch}, Loss: ${avgLoss.toFixed(6)}`);
+      }
+    }
+    
+    return {
+      type: 'deep_neural_network',
+      network,
+      hiddenLayers,
+      activationFunction,
+      trainingHistory,
+      epochs: Math.min(epochs, 50)
+    };
+  }
+
+  /**
+   * Train Reinforcement Learning model (Q-Learning for trading)
+   */
+  trainReinforcementLearning(features, targets, parameters = {}) {
+    const actions = parameters.actions || ['buy', 'sell', 'hold'];
+    const learningRate = parameters.learningRate || 0.1;
+    const discountFactor = parameters.discountFactor || 0.95;
+    const epsilon = parameters.epsilon || 0.1;
+    const episodes = parameters.episodes || 100;
+    
+    logger.info(`Training RL model with ${actions.length} actions for ${episodes} episodes`);
+    
+    // Initialize Q-table (simplified state representation)
+    const qTable = new Map();
+    const stateSize = Math.min(features[0].length, 10); // Limit state complexity
+    
+    // Training episodes
+    const rewards = [];
+    for (let episode = 0; episode < Math.min(episodes, 20); episode++) { // Limit episodes
+      let totalReward = 0;
+      
+      for (let i = 1; i < features.length - 1; i++) {
+        const state = this.discretizeState(features[i], stateSize);
+        const stateKey = state.join(',');
+        
+        if (!qTable.has(stateKey)) {
+          qTable.set(stateKey, new Array(actions.length).fill(0));
+        }
+        
+        // Epsilon-greedy action selection
+        let action;
+        if (Math.random() < epsilon) {
+          action = Math.floor(Math.random() * actions.length);
+        } else {
+          const qValues = qTable.get(stateKey);
+          action = qValues.indexOf(Math.max(...qValues));
+        }
+        
+        // Calculate reward based on next price movement
+        const currentReturn = targets[i];
+        let reward = 0;
+        if (actions[action] === 'buy' && currentReturn > 0) reward = currentReturn;
+        else if (actions[action] === 'sell' && currentReturn < 0) reward = -currentReturn;
+        else if (actions[action] === 'hold') reward = 0;
+        
+        totalReward += reward;
+        
+        // Update Q-value
+        const nextState = this.discretizeState(features[i + 1], stateSize);
+        const nextStateKey = nextState.join(',');
+        if (!qTable.has(nextStateKey)) {
+          qTable.set(nextStateKey, new Array(actions.length).fill(0));
+        }
+        
+        const maxNextQ = Math.max(...qTable.get(nextStateKey));
+        const currentQ = qTable.get(stateKey);
+        currentQ[action] += learningRate * (reward + discountFactor * maxNextQ - currentQ[action]);
+      }
+      
+      rewards.push(totalReward);
+    }
+    
+    return {
+      type: 'reinforcement_learning',
+      qTable: Array.from(qTable.entries()),
+      actions,
+      learningRate,
+      discountFactor,
+      stateSize,
+      trainingRewards: rewards
+    };
+  }
+
+  /**
    * Make predictions using a trained model
    */
   predict(model, features, algorithmType) {
@@ -275,6 +448,12 @@ class MLService {
         return this.predictMovingAverage(model, features);
       case this.algorithms.TECHNICAL_INDICATORS:
         return this.predictTechnicalIndicators(model, features);
+      case this.algorithms.ENSEMBLE_GRADIENT_BOOST:
+        return this.predictEnsembleGradientBoost(model, features);
+      case this.algorithms.DEEP_NEURAL_NETWORK:
+        return this.predictDeepNeuralNetwork(model, features);
+      case this.algorithms.REINFORCEMENT_LEARNING:
+        return this.predictReinforcementLearning(model, features);
       default:
         throw new Error(`Prediction not implemented for: ${algorithmType}`);
     }
@@ -388,11 +567,63 @@ class MLService {
   }
 
   /**
-   * Extract features from training data
+   * Ensemble Gradient Boost predictions
+   */
+  predictEnsembleGradientBoost(model, features) {
+    return features.map(feature => {
+      let prediction = 0;
+      model.models.forEach(weakLearner => {
+        const treePrediction = this.predictDecisionTree(weakLearner.tree, feature);
+        prediction += weakLearner.weight * treePrediction;
+      });
+      return prediction;
+    });
+  }
+
+  /**
+   * Deep Neural Network predictions
+   */
+  predictDeepNeuralNetwork(model, features) {
+    return features.map(feature => {
+      return this.forwardPassDNN(feature, model.network, model.activationFunction);
+    });
+  }
+
+  /**
+   * Reinforcement Learning predictions
+   */
+  predictReinforcementLearning(model, features) {
+    const qTable = new Map(model.qTable);
+    
+    return features.map(feature => {
+      const state = this.discretizeState(feature, model.stateSize);
+      const stateKey = state.join(',');
+      
+      if (qTable.has(stateKey)) {
+        const qValues = qTable.get(stateKey);
+        const bestAction = qValues.indexOf(Math.max(...qValues));
+        
+        // Convert action to prediction value
+        const actionMap = { 0: 1, 1: -1, 2: 0 }; // buy: 1, sell: -1, hold: 0
+        return actionMap[bestAction] || 0;
+      }
+      return 0; // Default to hold
+    });
+  }
+
+  /**
+   * Extract features from training data with advanced indicators
    */
   extractFeatures(trainingData) {
     return trainingData.map(sample => {
       const features = JSON.parse(sample.features);
+      
+      // If features is OHLCV data, generate advanced features
+      if (features.ohlcv) {
+        const advancedFeatures = advancedIndicators.generateMLFeatures(features.ohlcv);
+        return advancedFeatures.length > 0 ? advancedFeatures : [features];
+      }
+      
       return Array.isArray(features) ? features : [features];
     });
   }
@@ -816,6 +1047,214 @@ class MLService {
       output.push(Math.tanh(sum)); // Activation function
     }
     return output;
+  }
+
+  /**
+   * Deep Neural Network helper methods
+   */
+  initializeNeuralNetwork(inputSize, hiddenLayers, outputSize) {
+    const layers = [inputSize, ...hiddenLayers, outputSize];
+    const network = [];
+    
+    for (let i = 1; i < layers.length; i++) {
+      const layer = {
+        weights: this.initializeWeights(layers[i - 1], layers[i]),
+        biases: new Array(layers[i]).fill(0).map(() => (Math.random() - 0.5) * 0.1)
+      };
+      network.push(layer);
+    }
+    
+    return network;
+  }
+
+  forwardPassDNN(input, network, activationFunction = 'relu') {
+    let activation = [...input];
+    
+    for (let i = 0; i < network.length; i++) {
+      const layer = network[i];
+      const newActivation = [];
+      
+      for (let j = 0; j < layer.weights[0].length; j++) {
+        let sum = layer.biases[j];
+        for (let k = 0; k < activation.length && k < layer.weights.length; k++) {
+          sum += activation[k] * layer.weights[k][j];
+        }
+        
+        // Apply activation function
+        if (activationFunction === 'relu' && i < network.length - 1) {
+          newActivation.push(Math.max(0, sum));
+        } else if (activationFunction === 'tanh' && i < network.length - 1) {
+          newActivation.push(Math.tanh(sum));
+        } else {
+          newActivation.push(sum); // Linear for output layer
+        }
+      }
+      
+      activation = newActivation;
+    }
+    
+    return activation[0] || 0;
+  }
+
+  backwardPassDNN(input, target, prediction, network, learningRate) {
+    // Simplified backpropagation - just adjust output layer
+    const outputLayer = network[network.length - 1];
+    const error = target - prediction;
+    
+    // Update output layer weights and biases
+    for (let i = 0; i < outputLayer.weights.length; i++) {
+      for (let j = 0; j < outputLayer.weights[i].length; j++) {
+        outputLayer.weights[i][j] += learningRate * error * (input[i] || 0);
+      }
+    }
+    
+    for (let j = 0; j < outputLayer.biases.length; j++) {
+      outputLayer.biases[j] += learningRate * error;
+    }
+  }
+
+  /**
+   * Reinforcement Learning helper methods
+   */
+  discretizeState(features, stateSize) {
+    // Discretize continuous features into bins
+    const discretized = [];
+    const numBins = 5; // 5 bins per feature
+    
+    for (let i = 0; i < Math.min(features.length, stateSize); i++) {
+      const feature = features[i];
+      const bin = Math.max(0, Math.min(numBins - 1, Math.floor((feature + 1) * numBins / 2)));
+      discretized.push(bin);
+    }
+    
+    return discretized;
+  }
+
+  /**
+   * Real-time prediction methods
+   */
+  async startRealtimePredictions(modelId, symbols, callback) {
+    logger.info(`Starting real-time predictions for model ${modelId}`, { symbols });
+    
+    const model = this.getModel(modelId);
+    if (!model) {
+      throw new Error(`Model ${modelId} not found`);
+    }
+    
+    const predictionInterval = setInterval(async () => {
+      try {
+        const predictions = [];
+        
+        for (const symbol of symbols) {
+          // In real implementation, this would fetch live market data
+          const liveFeatures = await this.generateLiveFeatures(symbol);
+          
+          if (liveFeatures && liveFeatures.length > 0) {
+            const prediction = this.predict(
+              this.deserializeModel(model.model).modelData,
+              [liveFeatures],
+              model.algorithmType
+            )[0];
+            
+            predictions.push({
+              symbol,
+              prediction,
+              confidence: Math.min(Math.abs(prediction), 1),
+              timestamp: new Date().toISOString()
+            });
+          }
+        }
+        
+        if (predictions.length > 0) {
+          this.realtimePredictions.set(modelId, predictions);
+          callback(predictions);
+        }
+      } catch (error) {
+        logger.error('Error in real-time prediction:', error);
+      }
+    }, 30000); // 30 second intervals
+    
+    return predictionInterval;
+  }
+
+  stopRealtimePredictions(intervalId) {
+    if (intervalId) {
+      clearInterval(intervalId);
+      logger.info('Stopped real-time predictions');
+    }
+  }
+
+  async generateLiveFeatures(symbol) {
+    // Mock implementation - in reality would fetch live market data
+    const mockOHLCV = {
+      highs: Array.from({ length: 50 }, () => 100 + Math.random() * 20),
+      lows: Array.from({ length: 50 }, () => 90 + Math.random() * 20),
+      opens: Array.from({ length: 50 }, () => 95 + Math.random() * 20),
+      closes: Array.from({ length: 50 }, () => 95 + Math.random() * 20),
+      volumes: Array.from({ length: 50 }, () => 1000000 + Math.random() * 500000)
+    };
+    
+    return advancedIndicators.generateMLFeatures(mockOHLCV);
+  }
+
+  /**
+   * Model performance tracking and drift detection
+   */
+  trackModelPerformance(modelId, actualValues, predictedValues) {
+    const performance = this.calculatePerformanceMetrics(actualValues, predictedValues);
+    
+    if (!this.modelPerformanceTracking.has(modelId)) {
+      this.modelPerformanceTracking.set(modelId, []);
+    }
+    
+    const history = this.modelPerformanceTracking.get(modelId);
+    history.push({
+      timestamp: new Date().toISOString(),
+      ...performance
+    });
+    
+    // Keep only last 100 performance records
+    if (history.length > 100) {
+      history.splice(0, history.length - 100);
+    }
+    
+    // Check for model drift
+    const isDrifting = this.detectModelDrift(history);
+    if (isDrifting) {
+      logger.warn(`Model drift detected for ${modelId}`, { 
+        recentPerformance: performance,
+        driftIndicators: this.getDriftIndicators(history)
+      });
+    }
+    
+    return { performance, isDrifting };
+  }
+
+  detectModelDrift(performanceHistory) {
+    if (performanceHistory.length < 20) return false;
+    
+    const recent = performanceHistory.slice(-10);
+    const older = performanceHistory.slice(-20, -10);
+    
+    const recentAvgAccuracy = mean(recent.map(p => p.directionalAccuracy));
+    const olderAvgAccuracy = mean(older.map(p => p.directionalAccuracy));
+    
+    // Drift detected if recent accuracy dropped by more than 10%
+    return (olderAvgAccuracy - recentAvgAccuracy) > 0.1;
+  }
+
+  getDriftIndicators(performanceHistory) {
+    const recent = performanceHistory.slice(-10);
+    return {
+      avgAccuracy: mean(recent.map(p => p.directionalAccuracy)),
+      avgMAE: mean(recent.map(p => p.mae)),
+      trend: recent.length > 5 ? 
+        (recent[recent.length - 1].directionalAccuracy - recent[0].directionalAccuracy) : 0
+    };
+  }
+
+  getModelPerformanceHistory(modelId) {
+    return this.modelPerformanceTracking.get(modelId) || [];
   }
 }
 
