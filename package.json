@@ -1,7 +1,7 @@
 {
   "name": "aaiti",
-  "version": "1.1.0",
-  "description": "A.A.I.T.I v1.0 - Auto AI Trading Interface: Production-Ready Neural Command Deck for AI-Powered Trading",
+  "version": "1.2.0",
+  "description": "A.A.I.T.I v1.2.0 - Auto AI Trading Interface: Docker-First Neural Command Deck for AI-Powered Trading",
   "main": "index.js",
   "scripts": {
     "start": "npm run install:production && npm run build:production && echo '🚀 Starting production server...' && concurrently --kill-others-on-fail \"npm run start:backend\" \"npm run start:frontend\"",

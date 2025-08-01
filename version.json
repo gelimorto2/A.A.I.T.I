@@ -1,27 +1,48 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "name": "AAITI - Auto AI Trading Interface",
-  "description": "Production-Ready Neural Command Deck for AI-Powered Trading",
-  "releaseDate": "2025-07-31",
-  "buildNumber": "4",
+  "description": "Docker-First Neural Command Deck for AI-Powered Trading",
+  "releaseDate": "2025-01-08",
+  "buildNumber": "5",
   "environment": "production",
   "features": [
-    "Major performance and installation optimizations",
-    "Advanced API rate limiting and error handling",
-    "Complete webhook system with retry logic",
-    "Email notification system with HTML templates", 
-    "Portfolio optimization engine (5 methods)",
-    "Docker containerization support",
-    "Interactive installation script",
-    "Enhanced security vulnerability fixes",
-    "Fast installation with improved caching",
-    "Advanced notification and integration APIs"
+    "Docker-first installation and deployment",
+    "Advanced performance optimizations and tuning",
+    "Multi-stage Docker builds with security hardening",
+    "Docker Compose profiles for flexible deployments",
+    "Nginx reverse proxy with SSL/TLS support",
+    "Prometheus and Grafana monitoring integration",
+    "Redis caching support for enhanced performance",
+    "Comprehensive performance configuration system",
+    "Container health monitoring and auto-recovery",
+    "Non-root container security with minimal attack surface",
+    "Makefile automation for simplified operations",
+    "Interactive Docker-only installation script"
   ],
   "requirements": {
-    "node": ">=16.0.0",
-    "npm": ">=8.0.0"
+    "docker": ">=20.0.0",
+    "docker_compose": ">=2.0.0",
+    "memory": "4GB (recommended)",
+    "disk": "5GB (recommended)"
   },
   "changelog": {
+    "1.2.0": {
+      "date": "2025-01-08",
+      "changes": [
+        "🐳 DOCKER-FIRST TRANSFORMATION - Complete migration to container-based deployment",
+        "⚡ Advanced performance optimizations with comprehensive tuning configurations",
+        "🔐 Multi-stage Docker builds with security hardening and minimal attack surface",
+        "🎯 Docker Compose profiles for flexible deployment scenarios (dev/prod/monitoring)",
+        "🌐 Nginx reverse proxy configuration with SSL/TLS support and performance tuning",
+        "📊 Prometheus and Grafana monitoring stack integration with custom dashboards",
+        "💾 Redis caching support with configurable memory policies and performance optimization",
+        "⚙️ Comprehensive performance configuration system with 100+ tunable parameters",
+        "🏥 Advanced container health monitoring with auto-recovery and alerting",
+        "🛡️ Security hardening with non-root containers and optimized dependency management",
+        "🛠️ Makefile automation with 25+ commands for simplified Docker operations",
+        "🚀 Interactive Docker-only installation script with system requirements checking"
+      ]
+    },
     "1.1.0": {
       "date": "2025-07-31", 
       "changes": [
