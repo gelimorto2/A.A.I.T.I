@@ -52,3 +52,24 @@ coverage/
 # Cache
 .cache/
 .parcel-cache/
+
+# Docker
+.env.local
+docker-compose.override.yml
+.dockerignore
+
+# Backups
+backups/
+*.backup
+*.bak
+
+# SSL certificates
+docker/ssl/
+ssl/
+*.pem
+*.key
+*.crt
+
+# Data volumes (when mounted locally)
+data/
+volumes/
