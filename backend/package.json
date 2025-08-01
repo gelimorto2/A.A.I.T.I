@@ -31,6 +31,7 @@
     "ml-matrix": "^6.12.1",
     "ml-regression": "^6.3.0",
     "morgan": "^1.10.0",
+    "nodemailer": "^6.10.1",
     "simple-statistics": "^7.8.8",
     "socket.io": "^4.8.1",
     "sqlite3": "^5.1.7",

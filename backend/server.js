@@ -14,6 +14,7 @@ const tradingRoutes = require('./routes/trading');
 const analyticsRoutes = require('./routes/analytics');
 const userRoutes = require('./routes/users');
 const mlRoutes = require('./routes/ml');
+const notificationRoutes = require('./routes/notifications');
 
 const { initializeDatabase } = require('./database/init');
 const { authenticateSocket } = require('./middleware/auth');
@@ -117,6 +118,7 @@ const initializeMiddleware = () => {
   app.use('/api/analytics', analyticsRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/ml', mlRoutes);
+  app.use('/api/notifications', notificationRoutes);
 
   logger.info('🏥 Setting up health check endpoint...', { service: 'aaiti-backend' });
 

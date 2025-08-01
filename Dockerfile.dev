@@ -1,0 +1,34 @@
+# Docker Development Environment
+FROM node:20-alpine
+
+# Install development dependencies
+RUN apk add --no-cache python3 make g++ sqlite curl
+
+# Set working directory
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup -g 1001 -S aaiti && adduser -S aaiti -u 1001
+
+# Copy package files
+COPY package*.json ./
+COPY backend/package*.json ./backend/
+COPY frontend/package*.json ./frontend/
+
+# Install all dependencies (including devDependencies)
+RUN npm install --prefer-offline --no-fund --no-audit
+RUN cd backend && npm install --prefer-offline --no-fund --no-audit  
+RUN cd frontend && npm install --prefer-offline --no-fund --no-audit
+
+# Change ownership
+RUN chown -R aaiti:aaiti /app
+USER aaiti
+
+# Expose ports
+EXPOSE 5000 3000
+
+# Set environment
+ENV NODE_ENV=development
+
+# Start development servers
+CMD ["npm", "run", "dev"]
