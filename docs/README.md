@@ -25,7 +25,7 @@ Welcome to the comprehensive documentation for A.A.I.T.I (Auto AI Trading Interf
 - [Trading Interface](features/trading.md) - Trading bots and strategy management
 - [Analytics & Reporting](features/analytics.md) - Performance tracking and analysis
 - [Notifications](features/notifications.md) - Webhook and email alert system
-- [Portfolio Optimization](features/portfolio.md) - Advanced portfolio management
+- [Portfolio Management](features/portfolio.md) - Advanced portfolio management
 
 ## 🎯 Version Information
 
