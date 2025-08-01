@@ -1,0 +1,54 @@
+# Simple Dockerfile for testing and development
+FROM node:20-alpine
+
+# Install essential packages
+RUN apk add --update --no-cache \
+    python3 \
+    make \
+    g++ \
+    sqlite \
+    curl
+
+# Set working directory
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup -g 1001 -S aaiti && \
+    adduser -S aaiti -u 1001 -G aaiti
+
+# Copy package files
+COPY --chown=aaiti:aaiti package*.json ./
+COPY --chown=aaiti:aaiti backend/package*.json ./backend/
+COPY --chown=aaiti:aaiti frontend/package*.json ./frontend/
+
+# Install dependencies as root
+RUN npm install --prefer-offline
+RUN cd backend && npm install --prefer-offline
+RUN cd frontend && npm install --prefer-offline
+
+# Copy application code
+COPY --chown=aaiti:aaiti . .
+
+# Build frontend
+RUN cd frontend && npm run build
+
+# Create data directories
+RUN mkdir -p ./data ./logs ./cache && \
+    chown -R aaiti:aaiti ./data ./logs ./cache
+
+# Switch to non-root user
+USER aaiti
+
+# Expose port
+EXPOSE 5000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:5000/api/health || exit 1
+
+# Set environment
+ENV NODE_ENV=production
+ENV PORT=5000
+
+# Start application
+CMD ["node", "backend/server.js"]

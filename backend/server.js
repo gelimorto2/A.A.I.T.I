@@ -15,6 +15,7 @@ const analyticsRoutes = require('./routes/analytics');
 const userRoutes = require('./routes/users');
 const mlRoutes = require('./routes/ml');
 const notificationRoutes = require('./routes/notifications');
+const { router: metricsRoutes, collectRequestMetrics } = require('./routes/metrics');
 
 const { initializeDatabase } = require('./database/init');
 const { authenticateSocket } = require('./middleware/auth');
@@ -23,8 +24,20 @@ const marketDataService = require('./utils/marketData');
 const logger = require('./utils/logger');
 const ASCIIDashboard = require('./utils/asciiDashboard');
 
+// Performance configuration
+const performanceConfig = require('./config/performance');
+
 const app = express();
 const server = http.createServer(app);
+
+// Apply performance configurations to server
+server.maxConnections = performanceConfig.server.maxConnections;
+server.keepAliveTimeout = performanceConfig.server.keepAliveTimeout;
+server.headersTimeout = performanceConfig.server.headersTimeout;
+server.requestTimeout = performanceConfig.server.requestTimeout;
+
+// Initialize ASCII Dashboard
+const dashboard = new ASCIIDashboard();
 
 // Initialize ASCII Dashboard
 const dashboard = new ASCIIDashboard();
@@ -72,7 +85,15 @@ const initializeSocketIO = () => {
       origin: config.frontendUrl,
       methods: ["GET", "POST"],
       credentials: true
-    }
+    },
+    // Performance optimizations from config
+    transports: performanceConfig.websocket.socketIO.transports,
+    pingTimeout: performanceConfig.websocket.socketIO.pingTimeout,
+    pingInterval: performanceConfig.websocket.socketIO.pingInterval,
+    upgradeTimeout: performanceConfig.websocket.socketIO.upgradeTimeout,
+    maxHttpBufferSize: performanceConfig.websocket.socketIO.maxHttpBufferSize,
+    compression: performanceConfig.websocket.socketIO.compression,
+    perMessageDeflate: performanceConfig.websocket.socketIO.perMessageDeflate
   });
 };
 
@@ -88,15 +109,19 @@ const initializeMiddleware = () => {
   }));
 
   logger.info('⚡ Configuring rate limiting...', { 
-    windowMs: '15 minutes',
-    maxRequests: 100,
+    windowMs: performanceConfig.api.rateLimit.windowMs / 1000 / 60 + ' minutes',
+    maxRequests: performanceConfig.api.rateLimit.max,
     service: 'aaiti-backend'
   });
 
-  // Rate limiting
+  // Rate limiting with performance configuration
   const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100 // limit each IP to 100 requests per windowMs
+    windowMs: performanceConfig.api.rateLimit.windowMs,
+    max: performanceConfig.api.rateLimit.max,
+    standardHeaders: performanceConfig.api.rateLimit.standardHeaders,
+    legacyHeaders: performanceConfig.api.rateLimit.legacyHeaders,
+    skipSuccessfulRequests: performanceConfig.api.rateLimit.skipSuccessfulRequests,
+    skipFailedRequests: performanceConfig.api.rateLimit.skipFailedRequests
   });
   app.use(limiter);
 
@@ -105,9 +130,17 @@ const initializeMiddleware = () => {
   // Logging
   app.use(morgan('combined'));
 
-  // Body parsing
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ extended: true }));
+  // Body parsing with performance configuration
+  app.use(express.json({ 
+    limit: performanceConfig.server.bodyLimit 
+  }));
+  app.use(express.urlencoded({ 
+    extended: true,
+    parameterLimit: performanceConfig.server.parameterLimit
+  }));
+
+  // Performance metrics middleware (before routes)
+  app.use(collectRequestMetrics);
 
   logger.info('🛣️ Registering API routes...', { service: 'aaiti-backend' });
 
@@ -119,6 +152,9 @@ const initializeMiddleware = () => {
   app.use('/api/users', userRoutes);
   app.use('/api/ml', mlRoutes);
   app.use('/api/notifications', notificationRoutes);
+  
+  // Metrics routes (for monitoring)
+  app.use('/api', metricsRoutes);
 
   logger.info('🏥 Setting up health check endpoint...', { service: 'aaiti-backend' });
 
