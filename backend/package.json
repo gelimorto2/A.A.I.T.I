@@ -1,7 +1,7 @@
 {
   "name": "aaiti-backend",
-  "version": "1.2.0",
-  "description": "A.A.I.T.I v1.2.0 Backend - Auto AI Trading Interface API Server with Docker-First Architecture",
+  "version": "1.2.1",
+  "description": "A.A.I.T.I v1.2.1 Backend - Auto AI Trading Interface API Server with Docker-First Architecture",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

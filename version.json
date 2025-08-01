@@ -1,9 +1,9 @@
 {
-  "version": "1.2.0",
+  "version": "1.2.1",
   "name": "AAITI - Auto AI Trading Interface",
   "description": "Docker-First Neural Command Deck for AI-Powered Trading",
   "releaseDate": "2025-01-08",
-  "buildNumber": "5",
+  "buildNumber": "6",
   "environment": "production",
   "features": [
     "Docker-first installation and deployment",
@@ -17,7 +17,9 @@
     "Container health monitoring and auto-recovery",
     "Non-root container security with minimal attack surface",
     "Makefile automation for simplified operations",
-    "Interactive Docker-only installation script"
+    "Interactive Docker-only installation script",
+    "Complete ML algorithms with SVM and LSTM support",
+    "Advanced ML performance metrics with precision, recall, and F1-score"
   ],
   "requirements": {
     "docker": ">=20.0.0",
@@ -26,6 +28,17 @@
     "disk": "5GB (recommended)"
   },
   "changelog": {
+    "1.2.1": {
+      "date": "2025-01-08",
+      "changes": [
+        "📚 README cleanup - Removed repetitive Docker-First content and streamlined documentation",
+        "🧠 Completed ML functions - Added missing recall_score and f1_score calculations",
+        "🔬 Enhanced ML algorithms - Implemented SVM and LSTM with proper prediction methods",
+        "📊 Advanced ML metrics - Added classification metrics calculation for better model evaluation",
+        "🛠️ Code completion - Finalized all incomplete functions and removed placeholder values",
+        "🎯 Version preparation - Updated version info and build number for next release"
+      ]
+    },
     "1.2.0": {
       "date": "2025-01-08",
       "changes": [
