@@ -16,6 +16,7 @@ const userRoutes = require('./routes/users');
 const mlRoutes = require('./routes/ml');
 const notificationRoutes = require('./routes/notifications');
 const advancedPortfolioRoutes = require('./routes/advancedPortfolio');
+const advancedTradingRoutes = require('./routes/advancedTrading');
 const { router: metricsRoutes, collectRequestMetrics } = require('./routes/metrics');
 
 const { initializeDatabase } = require('./database/init');
@@ -151,6 +152,7 @@ const initializeMiddleware = () => {
   app.use('/api/ml', mlRoutes);
   app.use('/api/notifications', notificationRoutes);
   app.use('/api/portfolio', advancedPortfolioRoutes);
+  app.use('/api/advanced-trading', advancedTradingRoutes);
   
   // Metrics routes (for monitoring)
   app.use('/api', metricsRoutes);

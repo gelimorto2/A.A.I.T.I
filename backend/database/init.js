@@ -391,6 +391,64 @@ const initializeDatabase = async () => {
           FOREIGN KEY (portfolio_id) REFERENCES portfolios (id),
           FOREIGN KEY (user_id) REFERENCES users (id)
         )
+      `);
+
+      // Advanced Orders table
+      database.run(`
+        CREATE TABLE IF NOT EXISTS advanced_orders (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          symbol TEXT NOT NULL,
+          side TEXT NOT NULL,
+          type TEXT NOT NULL,
+          quantity REAL NOT NULL,
+          price REAL,
+          stop_price REAL,
+          status TEXT DEFAULT 'PENDING',
+          parameters TEXT,
+          executions TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+      `);
+
+      // Arbitrage Trades table
+      database.run(`
+        CREATE TABLE IF NOT EXISTS arbitrage_trades (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          symbol TEXT NOT NULL,
+          buy_exchange TEXT NOT NULL,
+          sell_exchange TEXT NOT NULL,
+          buy_price REAL NOT NULL,
+          sell_price REAL NOT NULL,
+          quantity REAL NOT NULL,
+          expected_profit REAL NOT NULL,
+          actual_profit REAL,
+          status TEXT DEFAULT 'PENDING',
+          executed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+      `);
+
+      // Position Risk Tracking table
+      database.run(`
+        CREATE TABLE IF NOT EXISTS position_risk_tracking (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          symbol TEXT NOT NULL,
+          position_size REAL NOT NULL,
+          entry_price REAL NOT NULL,
+          stop_price REAL,
+          risk_amount REAL NOT NULL,
+          var_1d REAL,
+          position_value REAL,
+          risk_percentage REAL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )
       `, (err) => {
         if (err) {
           logger.error('Error creating tables:', err);
