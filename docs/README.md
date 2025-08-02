@@ -17,6 +17,7 @@ Welcome to the comprehensive documentation for A.A.I.T.I (Auto AI Trading Interf
 
 ### Development & Maintenance
 - [Development Guide](development.md) - Developer setup and contribution guidelines
+- [TODO Roadmap](../TODO-ROADMAP.md) - Next release roadmap and planned features
 - [Troubleshooting](troubleshooting.md) - Common issues and solutions
 - [Performance Tuning](performance.md) - Optimization and configuration
 - [Security Guide](security.md) - Security best practices and hardening

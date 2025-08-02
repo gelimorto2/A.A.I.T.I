@@ -82,6 +82,7 @@ We've created detailed documentation for every aspect of A.A.I.T.I:
 
 ### 🛠 Development & Maintenance
 - **[💻 Development Guide](docs/development.md)** - Developer setup and contributions
+- **[🚀 TODO Roadmap](TODO-ROADMAP.md)** - Next release roadmap and planned features
 - **[🆘 Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
 - **[⚡ Performance Tuning](docs/performance.md)** - Optimization and configuration
 - **[🔒 Security Guide](docs/security.md)** - Security best practices
