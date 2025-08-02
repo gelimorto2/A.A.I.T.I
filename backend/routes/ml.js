@@ -6,6 +6,8 @@ const mlService = require('../utils/mlService');
 const backtestingService = require('../utils/backtestingService');
 const tradingStrategyFactory = require('../utils/tradingStrategyFactory');
 const advancedIndicators = require('../utils/advancedIndicators');
+const realtimeModelAdaptation = require('../utils/realtimeModelAdaptation');
+const enhancedTimeSeriesAnalysis = require('../utils/enhancedTimeSeriesAnalysis');
 const logger = require('../utils/logger');
 
 const router = express.Router();
@@ -1095,5 +1097,312 @@ async function generateRealtimeFeatures(symbol, timeframe) {
   
   return advancedIndicators.generateMLFeatures(mockOHLCV);
 }
+
+// =====================================
+// ADVANCED ML FEATURES - NEW ENDPOINTS
+// =====================================
+
+// Real-time Model Adaptation endpoints
+router.post('/adaptation/start', authenticateToken, auditLog('start_model_adaptation'), (req, res) => {
+  try {
+    realtimeModelAdaptation.start();
+    
+    logger.info('Real-time model adaptation started', { userId: req.user.id });
+    
+    res.json({
+      success: true,
+      message: 'Real-time model adaptation system started',
+      status: realtimeModelAdaptation.getAdaptationStatus()
+    });
+  } catch (error) {
+    logger.error('Error starting model adaptation:', error);
+    res.status(500).json({ error: 'Failed to start model adaptation system' });
+  }
+});
+
+router.post('/adaptation/stop', authenticateToken, auditLog('stop_model_adaptation'), (req, res) => {
+  try {
+    realtimeModelAdaptation.stop();
+    
+    logger.info('Real-time model adaptation stopped', { userId: req.user.id });
+    
+    res.json({
+      success: true,
+      message: 'Real-time model adaptation system stopped'
+    });
+  } catch (error) {
+    logger.error('Error stopping model adaptation:', error);
+    res.status(500).json({ error: 'Failed to stop model adaptation system' });
+  }
+});
+
+router.get('/adaptation/status', authenticateToken, (req, res) => {
+  try {
+    const status = realtimeModelAdaptation.getAdaptationStatus();
+    res.json({ status });
+  } catch (error) {
+    logger.error('Error getting adaptation status:', error);
+    res.status(500).json({ error: 'Failed to get adaptation status' });
+  }
+});
+
+router.post('/adaptation/register-model/:modelId', authenticateToken, auditLog('register_model_adaptation'), (req, res) => {
+  const { modelId } = req.params;
+  
+  // Get model from database
+  db.get(
+    'SELECT * FROM ml_models WHERE id = ? AND user_id = ?',
+    [modelId, req.user.id],
+    (err, model) => {
+      if (err) {
+        logger.error('Error fetching model for adaptation registration:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+
+      if (!model) {
+        return res.status(404).json({ error: 'Model not found' });
+      }
+
+      try {
+        const modelConfig = {
+          name: model.name,
+          algorithmType: model.algorithm_type,
+          symbols: JSON.parse(model.symbols),
+          performanceMetrics: model.performance_metrics ? JSON.parse(model.performance_metrics) : {}
+        };
+
+        realtimeModelAdaptation.registerModel(modelId, modelConfig);
+        
+        logger.info(`Model registered for adaptation: ${modelId}`, { userId: req.user.id });
+        
+        res.json({
+          success: true,
+          message: 'Model registered for real-time adaptation',
+          modelId
+        });
+      } catch (error) {
+        logger.error('Error registering model for adaptation:', error);
+        res.status(500).json({ error: 'Failed to register model for adaptation' });
+      }
+    }
+  );
+});
+
+router.put('/adaptation/config', authenticateToken, auditLog('update_adaptation_config'), (req, res) => {
+  try {
+    const newConfig = req.body;
+    realtimeModelAdaptation.updateConfiguration(newConfig);
+    
+    logger.info('Adaptation configuration updated', { userId: req.user.id, config: newConfig });
+    
+    res.json({
+      success: true,
+      message: 'Adaptation configuration updated',
+      newConfiguration: realtimeModelAdaptation.adaptationConfig
+    });
+  } catch (error) {
+    logger.error('Error updating adaptation configuration:', error);
+    res.status(500).json({ error: 'Failed to update adaptation configuration' });
+  }
+});
+
+// Enhanced Time Series Analysis endpoints
+router.post('/time-series/garch', authenticateToken, auditLog('fit_garch'), async (req, res) => {
+  try {
+    const { returns, options = {} } = req.body;
+    
+    if (!returns || !Array.isArray(returns)) {
+      return res.status(400).json({ error: 'Returns array is required' });
+    }
+
+    const garchModel = await enhancedTimeSeriesAnalysis.fitGARCH(returns, options);
+    
+    logger.info('GARCH model fitted successfully', { 
+      userId: req.user.id,
+      dataPoints: returns.length,
+      omega: garchModel.parameters.omega.toFixed(6),
+      alpha: garchModel.parameters.alpha.toFixed(6),
+      beta: garchModel.parameters.beta.toFixed(6)
+    });
+
+    res.json({
+      success: true,
+      model: garchModel
+    });
+  } catch (error) {
+    logger.error('Error fitting GARCH model:', error);
+    res.status(500).json({ error: 'Failed to fit GARCH model' });
+  }
+});
+
+router.post('/time-series/var', authenticateToken, auditLog('fit_var'), async (req, res) => {
+  try {
+    const { timeSeries, options = {} } = req.body;
+    
+    if (!timeSeries || !Array.isArray(timeSeries)) {
+      return res.status(400).json({ error: 'Time series array is required' });
+    }
+
+    const varModel = await enhancedTimeSeriesAnalysis.fitVAR(timeSeries, options);
+    
+    logger.info('VAR model fitted successfully', { 
+      userId: req.user.id,
+      numberOfSeries: timeSeries.length,
+      lags: options.lags || 1
+    });
+
+    res.json({
+      success: true,
+      model: varModel
+    });
+  } catch (error) {
+    logger.error('Error fitting VAR model:', error);
+    res.status(500).json({ error: 'Failed to fit VAR model' });
+  }
+});
+
+router.post('/time-series/change-points', authenticateToken, auditLog('detect_change_points'), async (req, res) => {
+  try {
+    const { timeSeries, options = {} } = req.body;
+    
+    if (!timeSeries || !Array.isArray(timeSeries)) {
+      return res.status(400).json({ error: 'Time series array is required' });
+    }
+
+    const changePoints = await enhancedTimeSeriesAnalysis.detectChangePoints(timeSeries, options);
+    
+    logger.info('Change points detected', { 
+      userId: req.user.id,
+      dataPoints: timeSeries.length,
+      changePointsFound: changePoints.changePoints.length
+    });
+
+    res.json({
+      success: true,
+      changePoints
+    });
+  } catch (error) {
+    logger.error('Error detecting change points:', error);
+    res.status(500).json({ error: 'Failed to detect change points' });
+  }
+});
+
+router.post('/time-series/decompose', authenticateToken, auditLog('decompose_time_series'), async (req, res) => {
+  try {
+    const { timeSeries, options = {} } = req.body;
+    
+    if (!timeSeries || !Array.isArray(timeSeries)) {
+      return res.status(400).json({ error: 'Time series array is required' });
+    }
+
+    const decomposition = await enhancedTimeSeriesAnalysis.decomposeTimeSeries(timeSeries, options);
+    
+    logger.info('Time series decomposed', { 
+      userId: req.user.id,
+      dataPoints: timeSeries.length,
+      trendStrength: decomposition.statistics.trendStrength.toFixed(4),
+      seasonalStrength: decomposition.statistics.seasonalStrength.toFixed(4)
+    });
+
+    res.json({
+      success: true,
+      decomposition
+    });
+  } catch (error) {
+    logger.error('Error decomposing time series:', error);
+    res.status(500).json({ error: 'Failed to decompose time series' });
+  }
+});
+
+router.post('/time-series/predict-volatility', authenticateToken, auditLog('predict_volatility'), async (req, res) => {
+  try {
+    const { garchModel, steps = 1 } = req.body;
+    
+    if (!garchModel) {
+      return res.status(400).json({ error: 'GARCH model is required' });
+    }
+
+    const predictions = enhancedTimeSeriesAnalysis.predictVolatility(garchModel, steps);
+    
+    logger.info('Volatility predictions generated', { 
+      userId: req.user.id,
+      predictionSteps: steps,
+      firstPrediction: predictions[0]?.toFixed(6)
+    });
+
+    res.json({
+      success: true,
+      predictions,
+      steps
+    });
+  } catch (error) {
+    logger.error('Error predicting volatility:', error);
+    res.status(500).json({ error: 'Failed to predict volatility' });
+  }
+});
+
+// Model performance update endpoint for real-time adaptation
+router.post('/models/:modelId/update-performance', authenticateToken, auditLog('update_model_performance'), (req, res) => {
+  try {
+    const { modelId } = req.params;
+    const { prediction, actual } = req.body;
+    
+    if (prediction === undefined || actual === undefined) {
+      return res.status(400).json({ error: 'Both prediction and actual values are required' });
+    }
+
+    realtimeModelAdaptation.updateModelPerformance(modelId, prediction, actual);
+    
+    logger.info('Model performance updated', { 
+      userId: req.user.id,
+      modelId,
+      prediction,
+      actual
+    });
+
+    res.json({
+      success: true,
+      message: 'Model performance updated'
+    });
+  } catch (error) {
+    logger.error('Error updating model performance:', error);
+    res.status(500).json({ error: 'Failed to update model performance' });
+  }
+});
+
+// Get advanced ML analytics
+router.get('/analytics/advanced', authenticateToken, (req, res) => {
+  try {
+    const adaptationStatus = realtimeModelAdaptation.getAdaptationStatus();
+    
+    // Get model performance summary
+    const performanceSummary = adaptationStatus.performance.map(perf => ({
+      modelId: perf.modelId,
+      name: perf.name,
+      currentAccuracy: perf.currentAccuracy,
+      degradationCount: perf.degradationCount,
+      status: perf.currentAccuracy < 0.6 ? 'NEEDS_ATTENTION' : 'HEALTHY'
+    }));
+
+    const analytics = {
+      adaptationSystem: {
+        isActive: adaptationStatus.isActive,
+        registeredModels: adaptationStatus.registeredModels,
+        queuedRetrainings: adaptationStatus.queuedRetrainings
+      },
+      modelPerformance: performanceSummary,
+      systemHealth: {
+        totalModels: performanceSummary.length,
+        healthyModels: performanceSummary.filter(p => p.status === 'HEALTHY').length,
+        modelsNeedingAttention: performanceSummary.filter(p => p.status === 'NEEDS_ATTENTION').length
+      }
+    };
+
+    res.json({ analytics });
+  } catch (error) {
+    logger.error('Error getting advanced ML analytics:', error);
+    res.status(500).json({ error: 'Failed to get advanced analytics' });
+  }
+});
 
 module.exports = router;
