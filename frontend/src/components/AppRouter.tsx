@@ -15,6 +15,7 @@ import AnalyticsPage from '../pages/AnalyticsPage';
 import SettingsPage from '../pages/SettingsPage';
 import MLModelsPage from '../pages/MLModelsPage';
 import MLModelDetailPage from '../pages/MLModelDetailPage';
+import AdvancedMLPage from '../pages/AdvancedMLPage';
 
 import Navbar from './layout/Navbar';
 import Sidebar from './layout/Sidebar';
@@ -58,6 +59,7 @@ const AppRouter: React.FC = () => {
             <Route path="/bots/:botId" element={<BotDetailPage />} />
             <Route path="/ml" element={<MLModelsPage />} />
             <Route path="/ml/models/:modelId" element={<MLModelDetailPage />} />
+            <Route path="/ml/advanced" element={<AdvancedMLPage />} />
             <Route path="/trading" element={<TradingPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/settings" element={<SettingsPage />} />

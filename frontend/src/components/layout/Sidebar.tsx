@@ -16,6 +16,7 @@ import {
   Analytics,
   Settings,
   Science,
+  Psychology,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -39,6 +40,12 @@ const menuItems = [
     icon: <Science />, 
     path: '/ml',
     description: 'Machine Learning'
+  },
+  { 
+    text: 'Advanced ML', 
+    icon: <Psychology />, 
+    path: '/ml/advanced',
+    description: 'AI Intelligence'
   },
   { 
     text: 'Live Trading', 

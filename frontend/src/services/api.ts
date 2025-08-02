@@ -300,6 +300,133 @@ export const mlAPI = {
     const response = await apiClient.post('/ml/compare', { modelIds, metric });
     return response.data;
   },
+
+  // ========================================================================================
+  // ADVANCED ML & AI INTELLIGENCE API METHODS
+  // ========================================================================================
+
+  // Real-time Model Adaptation
+  initializeModelAdaptation: async (modelId: string, thresholds: {
+    performanceThreshold?: number;
+    volatilityThreshold?: number;
+    evaluationWindow?: number;
+    retrainCooldown?: number;
+  } = {}) => {
+    const response = await apiClient.post(`/ml/models/${modelId}/adaptation/init`, { thresholds });
+    return response.data;
+  },
+
+  monitorModelPerformance: async (modelId: string, prediction: number, actual: number, marketData?: any) => {
+    const response = await apiClient.post(`/ml/models/${modelId}/adaptation/monitor`, {
+      prediction,
+      actual,
+      marketData
+    });
+    return response.data;
+  },
+
+  // GARCH Models for Volatility Prediction
+  createGARCHModel: async (config: {
+    symbol: string;
+    timeframe?: string;
+    parameters?: { p?: number; q?: number; maxIterations?: number; tolerance?: number };
+    trainingPeriodDays?: number;
+  }) => {
+    const response = await apiClient.post('/ml/models/garch', config);
+    return response.data;
+  },
+
+  // Vector Autoregression (VAR) for Multi-Asset Analysis
+  createVARModel: async (config: {
+    symbols: string[];
+    timeframe?: string;
+    parameters?: { lag?: number };
+    trainingPeriodDays?: number;
+  }) => {
+    const response = await apiClient.post('/ml/models/var', config);
+    return response.data;
+  },
+
+  // Change Point Detection
+  detectChangePoints: async (config: {
+    symbol: string;
+    timeframe?: string;
+    method?: 'cusum' | 'pelt' | 'binseg';
+    parameters?: {
+      threshold?: number;
+      minSegmentLength?: number;
+      maxChangePoints?: number;
+    };
+    periodDays?: number;
+  }) => {
+    const response = await apiClient.post('/ml/analysis/changepoints', config);
+    return response.data;
+  },
+
+  // Monte Carlo Simulation for Portfolio Stress Testing
+  runMonteCarloSimulation: async (config: {
+    portfolioWeights: number[];
+    symbols: string[];
+    timeframe?: string;
+    parameters?: {
+      simulations?: number;
+      timeHorizon?: number;
+      confidenceLevel?: number;
+    };
+    trainingPeriodDays?: number;
+  }) => {
+    const response = await apiClient.post('/ml/portfolio/montecarlo', config);
+    return response.data;
+  },
+
+  // Dynamic Hedging Strategies
+  createHedgeStrategy: async (config: {
+    portfolio: Record<string, number>;
+    parameters?: {
+      hedgeRatio?: number;
+      rebalanceThreshold?: number;
+      hedgeInstruments?: string[];
+      delta?: number;
+      volatilityTarget?: number;
+      maxCorrelation?: number;
+    };
+  }) => {
+    const response = await apiClient.post('/ml/portfolio/hedge', config);
+    return response.data;
+  },
+
+  // Enhanced Risk Parity Optimization
+  optimizeRiskParity: async (config: {
+    symbols: string[];
+    timeframe?: string;
+    parameters?: {
+      targetRiskContributions?: number[];
+      maxIterations?: number;
+      tolerance?: number;
+      shrinkage?: number;
+      lookback?: number;
+    };
+    trainingPeriodDays?: number;
+  }) => {
+    const response = await apiClient.post('/ml/portfolio/risk-parity', config);
+    return response.data;
+  },
+
+  // Get Analysis Results
+  getAnalysisResults: async (filters: {
+    type?: string;
+    symbol?: string;
+    limit?: number;
+  } = {}) => {
+    const response = await apiClient.get('/ml/analysis/results', { params: filters });
+    return response.data;
+  },
+
+  // Get Hedge Strategies
+  getHedgeStrategies: async (status: string = 'active') => {
+    const response = await apiClient.get('/ml/portfolio/hedge', { params: { status } });
+    return response.data;
+  },
 };
 
 // System Health API

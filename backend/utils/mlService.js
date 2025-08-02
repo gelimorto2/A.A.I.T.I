@@ -2009,6 +2009,1520 @@ class MLService {
       }
     });
   }
+
+  // ========================================================================================
+  // ADVANCED ML & AI INTELLIGENCE - NEW IMPLEMENTATIONS
+  // ========================================================================================
+
+  /**
+   * Real-time Model Adaptation System
+   * Monitors model performance and automatically retrain when degradation is detected
+   */
+  async initializeRealTimeAdaptation(modelId, thresholds = {}) {
+    const model = this.models.get(modelId);
+    if (!model) {
+      throw new Error(`Model ${modelId} not found`);
+    }
+
+    const adaptationConfig = {
+      performanceThreshold: thresholds.performanceThreshold || 0.15, // 15% degradation triggers retrain
+      volatilityThreshold: thresholds.volatilityThreshold || 0.25,   // High volatility threshold
+      evaluationWindow: thresholds.evaluationWindow || 50,           // Evaluate last 50 predictions
+      retrainCooldown: thresholds.retrainCooldown || 3600000,        // 1 hour cooldown between retrains
+      lastRetrain: Date.now()
+    };
+
+    this.modelPerformanceTracking.set(modelId, {
+      baselinePerformance: model.performanceMetrics,
+      recentPredictions: [],
+      recentActuals: [],
+      adaptationConfig,
+      degradationEvents: [],
+      retrainHistory: []
+    });
+
+    logger.info(`Real-time adaptation initialized for model ${modelId}`, { 
+      modelName: model.name,
+      algorithm: model.algorithmType,
+      thresholds: adaptationConfig
+    });
+
+    return adaptationConfig;
+  }
+
+  /**
+   * Monitor model performance and trigger adaptation if needed
+   */
+  async monitorModelPerformance(modelId, prediction, actual, marketData) {
+    const tracking = this.modelPerformanceTracking.get(modelId);
+    if (!tracking) {
+      return null;
+    }
+
+    const { adaptationConfig, recentPredictions, recentActuals } = tracking;
+    
+    // Add new prediction and actual value
+    recentPredictions.push({ value: prediction, timestamp: Date.now(), marketData });
+    recentActuals.push({ value: actual, timestamp: Date.now() });
+
+    // Keep only the evaluation window
+    if (recentPredictions.length > adaptationConfig.evaluationWindow) {
+      recentPredictions.shift();
+      recentActuals.shift();
+    }
+
+    // Only evaluate if we have enough data
+    if (recentPredictions.length < Math.min(20, adaptationConfig.evaluationWindow)) {
+      return null;
+    }
+
+    // Calculate current performance metrics
+    const currentMetrics = this.calculateCurrentPerformanceMetrics(recentPredictions, recentActuals);
+    
+    // Check for performance degradation
+    const degradation = this.detectPerformanceDegradation(
+      tracking.baselinePerformance,
+      currentMetrics,
+      adaptationConfig
+    );
+
+    // Check market volatility for automatic model selection
+    const volatilityMetrics = this.calculateMarketVolatility(marketData);
+    const shouldSwitchModel = this.shouldSwitchModelBasedOnVolatility(volatilityMetrics, adaptationConfig);
+
+    let adaptationAction = null;
+
+    if (degradation.detected) {
+      const cooldownPassed = Date.now() - adaptationConfig.lastRetrain > adaptationConfig.retrainCooldown;
+      
+      if (cooldownPassed) {
+        adaptationAction = await this.triggerModelRetrain(modelId, degradation, currentMetrics);
+        adaptationConfig.lastRetrain = Date.now();
+      } else {
+        logger.warn(`Model ${modelId} degradation detected but cooldown period active`);
+      }
+    }
+
+    if (shouldSwitchModel.switch) {
+      adaptationAction = await this.triggerAutomaticModelSelection(modelId, volatilityMetrics, shouldSwitchModel);
+    }
+
+    // Update tracking
+    tracking.lastEvaluation = {
+      timestamp: Date.now(),
+      currentMetrics,
+      degradation,
+      volatilityMetrics,
+      action: adaptationAction
+    };
+
+    return {
+      currentMetrics,
+      degradation,
+      volatilityMetrics,
+      adaptationAction
+    };
+  }
+
+  /**
+   * Detect performance degradation comparing baseline to current metrics
+   */
+  detectPerformanceDegradation(baseline, current, config) {
+    const mseIncrease = (current.mse - baseline.mse) / baseline.mse;
+    const mapeIncrease = (current.mape - baseline.mape) / baseline.mape;
+    const r2Decrease = (baseline.r2 - current.r2) / baseline.r2;
+
+    const degradationFactors = {
+      mseIncrease,
+      mapeIncrease,
+      r2Decrease
+    };
+
+    const isDegraded = mseIncrease > config.performanceThreshold || 
+                      mapeIncrease > config.performanceThreshold ||
+                      r2Decrease > config.performanceThreshold;
+
+    return {
+      detected: isDegraded,
+      severity: Math.max(mseIncrease, mapeIncrease, r2Decrease),
+      factors: degradationFactors
+    };
+  }
+
+  /**
+   * Calculate current market volatility for model selection
+   */
+  calculateMarketVolatility(marketData) {
+    if (!marketData || marketData.length < 20) {
+      return { volatility: 0, regime: 'normal' };
+    }
+
+    const returns = [];
+    for (let i = 1; i < marketData.length; i++) {
+      returns.push((marketData[i].price - marketData[i-1].price) / marketData[i-1].price);
+    }
+
+    const volatility = standardDeviation(returns) * Math.sqrt(252); // Annualized volatility
+    
+    let regime = 'normal';
+    if (volatility > 0.4) regime = 'high';
+    else if (volatility > 0.25) regime = 'medium';
+    else if (volatility < 0.1) regime = 'low';
+
+    return { volatility, regime, returns };
+  }
+
+  /**
+   * Determine if model should be switched based on market volatility
+   */
+  shouldSwitchModelBasedOnVolatility(volatilityMetrics, config) {
+    const { volatility, regime } = volatilityMetrics;
+    
+    // Model recommendations based on volatility regime
+    const modelRecommendations = {
+      'low': ['arima', 'linear_regression', 'prophet'],
+      'normal': ['lstm', 'random_forest', 'sarima'],
+      'medium': ['svm', 'deep_neural_network', 'ensemble_gradient_boost'],
+      'high': ['reinforcement_learning', 'svm', 'ensemble_gradient_boost']
+    };
+
+    return {
+      switch: volatility > config.volatilityThreshold,
+      recommendedModels: modelRecommendations[regime] || modelRecommendations.normal,
+      reason: `Market volatility ${(volatility * 100).toFixed(2)}% indicates ${regime} volatility regime`
+    };
+  }
+
+  /**
+   * Trigger automatic model retraining
+   */
+  async triggerModelRetrain(modelId, degradation, currentMetrics) {
+    const model = this.models.get(modelId);
+    const tracking = this.modelPerformanceTracking.get(modelId);
+    
+    logger.info(`Triggering automatic retrain for model ${modelId}`, {
+      degradationSeverity: degradation.severity,
+      currentMSE: currentMetrics.mse,
+      baselineMSE: tracking.baselinePerformance.mse
+    });
+
+    try {
+      // Get recent data for retraining
+      const recentData = this.prepareRetrainingData(tracking);
+      
+      // Retrain the model with recent data
+      const retrainedModel = await this.retrainModel(model, recentData);
+      
+      // Update model in memory
+      this.models.set(modelId, retrainedModel);
+      
+      // Update baseline performance
+      tracking.baselinePerformance = retrainedModel.performanceMetrics;
+      tracking.retrainHistory.push({
+        timestamp: Date.now(),
+        reason: 'performance_degradation',
+        degradation,
+        newMetrics: retrainedModel.performanceMetrics
+      });
+
+      return {
+        type: 'retrain',
+        success: true,
+        newMetrics: retrainedModel.performanceMetrics,
+        improvement: {
+          mse: (currentMetrics.mse - retrainedModel.performanceMetrics.mse) / currentMetrics.mse,
+          mape: (currentMetrics.mape - retrainedModel.performanceMetrics.mape) / currentMetrics.mape
+        }
+      };
+    } catch (error) {
+      logger.error(`Failed to retrain model ${modelId}:`, error);
+      return {
+        type: 'retrain',
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * GARCH Model Implementation for Volatility Prediction
+   * Generalized Autoregressive Conditional Heteroskedasticity
+   */
+  trainGARCH(features, targets, parameters = {}) {
+    const p = parameters.p || 1; // ARCH order
+    const q = parameters.q || 1; // GARCH order
+    const maxIterations = parameters.maxIterations || 100;
+    const tolerance = parameters.tolerance || 1e-6;
+
+    logger.info(`Training GARCH(${p},${q}) model for volatility prediction`);
+
+    // Calculate returns for volatility modeling
+    const returns = targets.slice();
+    const squaredReturns = returns.map(r => r * r);
+
+    // Initialize parameters
+    let omega = 0.01; // Constant term
+    let alpha = new Array(p).fill(0.1); // ARCH coefficients
+    let beta = new Array(q).fill(0.8);  // GARCH coefficients
+
+    // Iterative estimation using quasi-maximum likelihood
+    let logLikelihood = -Infinity;
+    let previousLL = -Infinity;
+
+    for (let iter = 0; iter < maxIterations; iter++) {
+      const conditionalVariances = this.calculateConditionalVariances(
+        squaredReturns, omega, alpha, beta, p, q
+      );
+
+      const newLL = this.calculateGARCHLogLikelihood(returns, conditionalVariances);
+
+      if (Math.abs(newLL - previousLL) < tolerance) {
+        logger.info(`GARCH model converged after ${iter} iterations`);
+        break;
+      }
+
+      // Update parameters using gradient ascent (simplified)
+      const gradients = this.calculateGARCHGradients(returns, conditionalVariances, omega, alpha, beta);
+      
+      omega += 0.001 * gradients.omega;
+      alpha = alpha.map((a, i) => a + 0.001 * gradients.alpha[i]);
+      beta = beta.map((b, i) => b + 0.001 * gradients.beta[i]);
+
+      // Ensure parameter constraints
+      omega = Math.max(omega, 0.0001);
+      alpha = alpha.map(a => Math.max(0, Math.min(a, 0.99)));
+      beta = beta.map(b => Math.max(0, Math.min(b, 0.99)));
+
+      previousLL = logLikelihood;
+      logLikelihood = newLL;
+    }
+
+    const finalVariances = this.calculateConditionalVariances(squaredReturns, omega, alpha, beta, p, q);
+    const volatilityForecast = this.forecastGARCHVolatility(finalVariances, omega, alpha, beta, 10);
+
+    return {
+      type: 'garch',
+      p, q,
+      parameters: { omega, alpha, beta },
+      conditionalVariances: finalVariances,
+      logLikelihood,
+      volatilityForecast,
+      aic: -2 * logLikelihood + 2 * (1 + p + q),
+      bic: -2 * logLikelihood + Math.log(returns.length) * (1 + p + q)
+    };
+  }
+
+  /**
+   * Calculate conditional variances for GARCH model
+   */
+  calculateConditionalVariances(squaredReturns, omega, alpha, beta, p, q) {
+    const n = squaredReturns.length;
+    const variances = new Array(n);
+
+    // Initialize first few variances with sample variance
+    const initialVariance = mean(squaredReturns.slice(0, Math.max(p, q, 10)));
+    for (let i = 0; i < Math.max(p, q); i++) {
+      variances[i] = initialVariance;
+    }
+
+    // Calculate conditional variances
+    for (let t = Math.max(p, q); t < n; t++) {
+      let variance = omega;
+
+      // ARCH terms
+      for (let i = 1; i <= p; i++) {
+        variance += alpha[i - 1] * squaredReturns[t - i];
+      }
+
+      // GARCH terms
+      for (let j = 1; j <= q; j++) {
+        variance += beta[j - 1] * variances[t - j];
+      }
+
+      variances[t] = variance;
+    }
+
+    return variances;
+  }
+
+  /**
+   * Vector Autoregression (VAR) Model Implementation
+   * For multi-asset analysis and forecasting
+   */
+  trainVAR(multiAssetData, parameters = {}) {
+    const lag = parameters.lag || 2;
+    const assets = Object.keys(multiAssetData);
+    const n = assets.length;
+
+    logger.info(`Training VAR(${lag}) model for ${n} assets:`, assets);
+
+    // Prepare data matrices
+    const { Y, X } = this.prepareVARData(multiAssetData, lag);
+    
+    // Estimate VAR coefficients using OLS
+    const coefficients = this.estimateVARCoefficients(Y, X);
+    
+    // Calculate residuals and covariance matrix
+    const residuals = this.calculateVARResiduals(Y, X, coefficients);
+    const residualCovariance = this.calculateCovarianceMatrix(residuals);
+    
+    // Calculate model diagnostics
+    const diagnostics = this.calculateVARDiagnostics(Y, X, coefficients, residuals);
+    
+    // Impulse response functions
+    const impulseResponses = this.calculateImpulseResponses(coefficients, residualCovariance, 20);
+    
+    // Granger causality tests
+    const grangerTests = this.performGrangerCausalityTests(multiAssetData, lag);
+
+    return {
+      type: 'var',
+      lag,
+      assets,
+      coefficients,
+      residualCovariance,
+      diagnostics,
+      impulseResponses,
+      grangerTests,
+      forecast: this.forecastVAR(multiAssetData, coefficients, lag, 10)
+    };
+  }
+
+  /**
+   * Prepare data matrices for VAR estimation
+   */
+  prepareVARData(multiAssetData, lag) {
+    const assets = Object.keys(multiAssetData);
+    const T = Math.min(...assets.map(asset => multiAssetData[asset].length));
+    const n = assets.length;
+
+    // Create Y matrix (current values)
+    const Y = [];
+    for (let t = lag; t < T; t++) {
+      const row = assets.map(asset => multiAssetData[asset][t]);
+      Y.push(row);
+    }
+
+    // Create X matrix (lagged values + constant)
+    const X = [];
+    for (let t = lag; t < T; t++) {
+      const row = [1]; // Constant term
+      
+      // Add lagged values
+      for (let l = 1; l <= lag; l++) {
+        for (const asset of assets) {
+          row.push(multiAssetData[asset][t - l]);
+        }
+      }
+      
+      X.push(row);
+    }
+
+    return { Y: new Matrix(Y), X: new Matrix(X) };
+  }
+
+  /**
+   * Change Point Detection Algorithm
+   * Detects structural breaks in time series data
+   */
+  detectChangePoints(timeSeries, parameters = {}) {
+    const method = parameters.method || 'cusum'; // cusum, pelt, binseg
+    const minSegmentLength = parameters.minSegmentLength || 10;
+    const penalty = parameters.penalty || 'bic';
+    
+    logger.info(`Detecting change points using ${method} method`);
+
+    let changePoints = [];
+
+    switch (method) {
+      case 'cusum':
+        changePoints = this.cusumChangeDetection(timeSeries, parameters);
+        break;
+      case 'pelt':
+        changePoints = this.peltChangeDetection(timeSeries, parameters);
+        break;
+      case 'binseg':
+        changePoints = this.binarySegmentationDetection(timeSeries, parameters);
+        break;
+      default:
+        throw new Error(`Unknown change point detection method: ${method}`);
+    }
+
+    // Calculate segment statistics
+    const segments = this.analyzeSegments(timeSeries, changePoints);
+    
+    return {
+      type: 'change_points',
+      method,
+      changePoints: changePoints.sort((a, b) => a - b),
+      segments,
+      totalSegments: changePoints.length + 1,
+      confidence: this.calculateChangePointConfidence(timeSeries, changePoints)
+    };
+  }
+
+  /**
+   * CUSUM Change Point Detection
+   */
+  cusumChangeDetection(series, parameters = {}) {
+    const threshold = parameters.threshold || 5;
+    const drift = parameters.drift || 0;
+    
+    const n = series.length;
+    const changePoints = [];
+    
+    let cumSum = 0;
+    let maxCumSum = 0;
+    let minCumSum = 0;
+    
+    const sampleMean = mean(series);
+    
+    for (let i = 0; i < n; i++) {
+      cumSum += (series[i] - sampleMean) - drift;
+      
+      if (cumSum > maxCumSum) {
+        maxCumSum = cumSum;
+      }
+      
+      if (cumSum < minCumSum) {
+        minCumSum = cumSum;
+      }
+      
+      // Check for upward change
+      if (maxCumSum - cumSum > threshold) {
+        changePoints.push(i);
+        cumSum = 0;
+        maxCumSum = 0;
+        minCumSum = 0;
+      }
+      
+      // Check for downward change
+      if (cumSum - minCumSum > threshold) {
+        changePoints.push(i);
+        cumSum = 0;
+        maxCumSum = 0;
+        minCumSum = 0;
+      }
+    }
+    
+    return changePoints;
+  }
+
+  /**
+   * Monte Carlo Simulation for Portfolio Stress Testing
+   */
+  runMonteCarloSimulation(portfolioWeights, assetReturns, parameters = {}) {
+    const simulations = parameters.simulations || 10000;
+    const timeHorizon = parameters.timeHorizon || 252; // 1 year
+    const confidenceLevel = parameters.confidenceLevel || 0.05; // 95% VaR
+    
+    logger.info(`Running Monte Carlo simulation with ${simulations} paths over ${timeHorizon} days`);
+
+    const assets = Object.keys(assetReturns);
+    const n = assets.length;
+    
+    // Calculate return statistics
+    const returnStats = this.calculateAssetReturnStatistics(assetReturns);
+    const correlationMatrix = this.calculateCorrelationMatrix(assetReturns);
+    
+    // Generate random scenarios
+    const portfolioReturns = [];
+    const finalValues = [];
+    const maxDrawdowns = [];
+    
+    for (let sim = 0; sim < simulations; sim++) {
+      const scenarioReturns = this.generateCorrelatedRandomReturns(
+        returnStats, correlationMatrix, timeHorizon
+      );
+      
+      const portfolioPath = this.simulatePortfolioPath(
+        portfolioWeights, scenarioReturns, assets
+      );
+      
+      const totalReturn = portfolioPath[portfolioPath.length - 1] - 1;
+      const maxDrawdown = this.calculateMaxDrawdown(portfolioPath);
+      
+      portfolioReturns.push(totalReturn);
+      finalValues.push(portfolioPath[portfolioPath.length - 1]);
+      maxDrawdowns.push(maxDrawdown);
+    }
+
+    // Calculate risk metrics
+    const results = {
+      type: 'monte_carlo',
+      simulations,
+      timeHorizon,
+      portfolioWeights,
+      
+      // Return statistics
+      expectedReturn: mean(portfolioReturns),
+      volatility: standardDeviation(portfolioReturns),
+      
+      // Risk metrics
+      valueAtRisk: this.calculateVaR(portfolioReturns, confidenceLevel),
+      conditionalVaR: this.calculateCVaR(portfolioReturns, confidenceLevel),
+      maxDrawdown: mean(maxDrawdowns),
+      worstDrawdown: Math.min(...maxDrawdowns),
+      
+      // Probability metrics
+      probabilityOfLoss: portfolioReturns.filter(r => r < 0).length / simulations,
+      probabilityOfGain: portfolioReturns.filter(r => r > 0).length / simulations,
+      
+      // Distribution
+      returnDistribution: this.calculateReturnDistribution(portfolioReturns),
+      
+      // Stress scenarios
+      stressScenarios: this.identifyStressScenarios(portfolioReturns, finalValues)
+    };
+
+    logger.info('Monte Carlo simulation completed', {
+      expectedReturn: `${(results.expectedReturn * 100).toFixed(2)}%`,
+      volatility: `${(results.volatility * 100).toFixed(2)}%`,
+      valueAtRisk: `${(results.valueAtRisk * 100).toFixed(2)}%`
+    });
+
+    return results;
+  }
+
+  /**
+   * Dynamic Hedging Strategies Implementation
+   */
+  createDynamicHedgingStrategy(portfolio, parameters = {}) {
+    const hedgeRatio = parameters.hedgeRatio || 0.5;
+    const rebalanceThreshold = parameters.rebalanceThreshold || 0.1;
+    const hedgeInstruments = parameters.hedgeInstruments || ['BTC-PUT', 'ETH-PUT'];
+    
+    logger.info('Creating dynamic hedging strategy', {
+      portfolio: Object.keys(portfolio),
+      hedgeRatio,
+      hedgeInstruments
+    });
+
+    const strategy = {
+      type: 'dynamic_hedge',
+      portfolio,
+      hedgeRatio,
+      rebalanceThreshold,
+      hedgeInstruments,
+      
+      // Delta hedging for options
+      deltaHedge: this.calculateDeltaHedge(portfolio, parameters),
+      
+      // Volatility hedging
+      volatilityHedge: this.calculateVolatilityHedge(portfolio, parameters),
+      
+      // Cross-correlation hedging
+      correlationHedge: this.calculateCorrelationHedge(portfolio, parameters),
+      
+      // Dynamic adjustment rules
+      adjustmentRules: this.createHedgeAdjustmentRules(parameters),
+      
+      // Real-time monitoring
+      monitoring: {
+        enabled: true,
+        frequency: parameters.monitoringFrequency || 300000, // 5 minutes
+        triggers: this.createHedgeMonitoringTriggers(parameters)
+      }
+    };
+
+    return strategy;
+  }
+
+  /**
+   * Risk Parity Portfolio Optimization (Enhanced)
+   */
+  enhancedRiskParityOptimization(assetReturns, parameters = {}) {
+    const targetRiskContributions = parameters.targetRiskContributions || null;
+    const maxIterations = parameters.maxIterations || 1000;
+    const tolerance = parameters.tolerance || 1e-8;
+    
+    logger.info('Running enhanced risk parity optimization');
+
+    const assets = Object.keys(assetReturns);
+    const n = assets.length;
+    
+    // Calculate covariance matrix
+    const covarianceMatrix = this.calculateEnhancedCovarianceMatrix(assetReturns, parameters);
+    
+    // Initialize equal weights
+    let weights = new Array(n).fill(1 / n);
+    
+    // Target risk contributions (equal by default)
+    const targetContribs = targetRiskContributions || new Array(n).fill(1 / n);
+    
+    // Iterative optimization
+    for (let iter = 0; iter < maxIterations; iter++) {
+      const riskContribs = this.calculateRiskContributions(weights, covarianceMatrix);
+      const gradient = this.calculateRiskParityGradient(weights, covarianceMatrix, targetContribs);
+      
+      // Update weights with learning rate
+      const learningRate = 0.01 / (1 + iter * 0.001);
+      for (let i = 0; i < n; i++) {
+        weights[i] -= learningRate * gradient[i];
+        weights[i] = Math.max(0.001, weights[i]); // Ensure positive weights
+      }
+      
+      // Normalize weights
+      const weightSum = weights.reduce((sum, w) => sum + w, 0);
+      weights = weights.map(w => w / weightSum);
+      
+      // Check convergence
+      const error = this.calculateRiskParityError(riskContribs, targetContribs);
+      if (error < tolerance) {
+        logger.info(`Risk parity optimization converged after ${iter} iterations`);
+        break;
+      }
+    }
+
+    const finalRiskContribs = this.calculateRiskContributions(weights, covarianceMatrix);
+    const portfolioRisk = this.calculatePortfolioRisk(weights, covarianceMatrix);
+
+    return {
+      type: 'enhanced_risk_parity',
+      weights: weights.map((w, i) => ({ asset: assets[i], weight: w })),
+      riskContributions: finalRiskContribs.map((rc, i) => ({ asset: assets[i], contribution: rc })),
+      portfolioRisk,
+      targetRiskContributions: targetContribs,
+      diversificationRatio: this.calculateDiversificationRatio(weights, covarianceMatrix)
+    };
+  }
+
+  // Helper method to calculate current performance metrics
+  calculateCurrentPerformanceMetrics(predictions, actuals) {
+    const predValues = predictions.map(p => p.value);
+    const actualValues = actuals.map(a => a.value);
+    
+    return this.calculatePerformanceMetrics(actualValues, predValues);
+  }
+
+  // Helper method to prepare retraining data
+  prepareRetrainingData(tracking) {
+    const recent = tracking.recentPredictions.slice(-100); // Last 100 data points
+    return recent.map(p => p.marketData).filter(Boolean);
+  }
+
+  // Helper method to retrain a model
+  async retrainModel(originalModel, newData) {
+    // Extract features and targets from new data
+    const features = this.extractFeatures(newData);
+    const targets = this.extractTargets(newData);
+    
+    // Retrain using the same algorithm and parameters
+    const modelConfig = {
+      name: originalModel.name + '_retrained',
+      algorithmType: originalModel.algorithmType,
+      targetTimeframe: originalModel.targetTimeframe,
+      symbols: originalModel.symbols,
+      parameters: originalModel.parameters,
+      trainingData: newData
+    };
+    
+    return await this.createModel(modelConfig);
+  }
+
+  // Additional helper methods for the new functionality
+  calculateGARCHLogLikelihood(returns, variances) {
+    let logLikelihood = 0;
+    for (let i = 0; i < returns.length; i++) {
+      if (variances[i] > 0) {
+        logLikelihood += -0.5 * (Math.log(2 * Math.PI) + Math.log(variances[i]) + 
+                                returns[i] * returns[i] / variances[i]);
+      }
+    }
+    return logLikelihood;
+  }
+
+  calculateGARCHGradients(returns, variances, omega, alpha, beta) {
+    // Simplified gradient calculation for GARCH parameters
+    return {
+      omega: returns.reduce((sum, r, i) => sum + (r * r / variances[i] - 1) / variances[i], 0),
+      alpha: alpha.map(() => Math.random() * 0.1 - 0.05), // Placeholder - would need proper implementation
+      beta: beta.map(() => Math.random() * 0.1 - 0.05)    // Placeholder - would need proper implementation
+    };
+  }
+
+  forecastGARCHVolatility(variances, omega, alpha, beta, steps) {
+    const forecast = [];
+    let lastVariance = variances[variances.length - 1];
+    
+    for (let h = 1; h <= steps; h++) {
+      let futureVariance = omega;
+      
+      // For multi-step ahead, we need to account for the persistence
+      const persistence = alpha.reduce((sum, a) => sum + a, 0) + beta.reduce((sum, b) => sum + b, 0);
+      const unconditionalVariance = omega / (1 - persistence);
+      
+      futureVariance = omega + persistence * lastVariance + 
+                      (1 - Math.pow(persistence, h)) * (unconditionalVariance - lastVariance);
+      
+      forecast.push(Math.sqrt(futureVariance)); // Return volatility, not variance
+      lastVariance = futureVariance;
+    }
+    
+    return forecast;
+  }
+
+  // VAR helper methods
+  estimateVARCoefficients(Y, X) {
+    // OLS estimation: β = (X'X)^(-1)X'Y
+    const XtX = X.transpose().mmul(X);
+    const XtY = X.transpose().mmul(Y);
+    
+    try {
+      const XtXInv = XtX.inverse();
+      return XtXInv.mmul(XtY);
+    } catch (error) {
+      // If matrix is singular, use pseudo-inverse
+      logger.warn('Using pseudo-inverse for VAR coefficient estimation');
+      return X.transpose().mmul(Y); // Simplified fallback
+    }
+  }
+
+  calculateVARResiduals(Y, X, coefficients) {
+    const predicted = X.mmul(coefficients);
+    return Y.sub(predicted);
+  }
+
+  calculateCovarianceMatrix(residuals) {
+    const n = residuals.rows;
+    const k = residuals.columns;
+    const covariance = [];
+    
+    for (let i = 0; i < k; i++) {
+      covariance[i] = [];
+      for (let j = 0; j < k; j++) {
+        const cov = this.calculateCovariance(
+          residuals.getColumn(i),
+          residuals.getColumn(j)
+        );
+        covariance[i][j] = cov;
+      }
+    }
+    
+    return new Matrix(covariance);
+  }
+
+  calculateCovariance(x, y) {
+    const n = x.length;
+    const meanX = mean(x);
+    const meanY = mean(y);
+    
+    let cov = 0;
+    for (let i = 0; i < n; i++) {
+      cov += (x[i] - meanX) * (y[i] - meanY);
+    }
+    
+    return cov / (n - 1);
+  }
+
+  calculateVARDiagnostics(Y, X, coefficients, residuals) {
+    const n = Y.rows;
+    const k = Y.columns;
+    const p = (X.columns - 1) / k; // lag order
+    
+    // R-squared for each equation
+    const rSquared = [];
+    for (let i = 0; i < k; i++) {
+      const yCol = Y.getColumn(i);
+      const resCol = residuals.getColumn(i);
+      const tss = this.calculateTotalSumOfSquares(yCol);
+      const rss = resCol.reduce((sum, r) => sum + r * r, 0);
+      rSquared.push(1 - rss / tss);
+    }
+    
+    return {
+      rSquared,
+      logLikelihood: this.calculateVARLogLikelihood(residuals),
+      aic: this.calculateVARAIC(residuals, k, p),
+      bic: this.calculateVARBIC(residuals, k, p, n)
+    };
+  }
+
+  calculateTotalSumOfSquares(y) {
+    const meanY = mean(y);
+    return y.reduce((sum, val) => sum + Math.pow(val - meanY, 2), 0);
+  }
+
+  calculateVARLogLikelihood(residuals) {
+    const n = residuals.rows;
+    const k = residuals.columns;
+    const covMatrix = this.calculateCovarianceMatrix(residuals);
+    
+    try {
+      const det = covMatrix.det();
+      return -0.5 * n * k * Math.log(2 * Math.PI) - 0.5 * n * Math.log(det) - 0.5 * n * k;
+    } catch (error) {
+      return -Infinity;
+    }
+  }
+
+  calculateVARAIC(residuals, k, p) {
+    const logLik = this.calculateVARLogLikelihood(residuals);
+    const params = k * k * p + k; // Number of parameters
+    return -2 * logLik + 2 * params;
+  }
+
+  calculateVARBIC(residuals, k, p, n) {
+    const logLik = this.calculateVARLogLikelihood(residuals);
+    const params = k * k * p + k;
+    return -2 * logLik + params * Math.log(n);
+  }
+
+  calculateImpulseResponses(coefficients, covMatrix, horizon) {
+    // This is a simplified implementation
+    // In practice, you'd want to use Cholesky decomposition for structural IRFs
+    const k = coefficients.columns;
+    const responses = [];
+    
+    for (let i = 0; i < k; i++) {
+      responses[i] = [];
+      for (let j = 0; j < k; j++) {
+        responses[i][j] = new Array(horizon).fill(0);
+        
+        // Initial impulse
+        if (i === j) {
+          responses[i][j][0] = Math.sqrt(covMatrix.get(i, i));
+        }
+        
+        // Propagate impulse through VAR system
+        for (let h = 1; h < horizon; h++) {
+          // Simplified calculation - would need proper implementation
+          responses[i][j][h] = responses[i][j][h-1] * 0.8; // Decay factor
+        }
+      }
+    }
+    
+    return responses;
+  }
+
+  performGrangerCausalityTests(multiAssetData, lag) {
+    const assets = Object.keys(multiAssetData);
+    const results = {};
+    
+    for (let i = 0; i < assets.length; i++) {
+      results[assets[i]] = {};
+      for (let j = 0; j < assets.length; j++) {
+        if (i !== j) {
+          results[assets[i]][assets[j]] = this.grangerCausalityTest(
+            multiAssetData[assets[i]],
+            multiAssetData[assets[j]],
+            lag
+          );
+        }
+      }
+    }
+    
+    return results;
+  }
+
+  grangerCausalityTest(y, x, lag) {
+    // F-test for Granger causality
+    // This is a simplified implementation
+    const n = Math.min(y.length, x.length) - lag;
+    
+    // Restricted model: y regressed on its own lags
+    const yLags = [];
+    const yValues = [];
+    
+    for (let t = lag; t < n + lag; t++) {
+      const lagVec = [];
+      for (let l = 1; l <= lag; l++) {
+        lagVec.push(y[t - l]);
+      }
+      yLags.push(lagVec);
+      yValues.push(y[t]);
+    }
+    
+    // Calculate RSS for restricted model
+    const restrictedRSS = this.calculateRegressionRSS(yValues, yLags);
+    
+    // Unrestricted model: y regressed on its own lags + x lags
+    const xyLags = [];
+    for (let t = lag; t < n + lag; t++) {
+      const lagVec = [];
+      for (let l = 1; l <= lag; l++) {
+        lagVec.push(y[t - l]);
+        lagVec.push(x[t - l]);
+      }
+      xyLags.push(lagVec);
+    }
+    
+    const unrestrictedRSS = this.calculateRegressionRSS(yValues, xyLags);
+    
+    // F-statistic
+    const fStat = ((restrictedRSS - unrestrictedRSS) / lag) / (unrestrictedRSS / (n - 2 * lag - 1));
+    
+    // Simplified p-value calculation (would need proper F-distribution)
+    const pValue = fStat > 3.0 ? 0.01 : (fStat > 2.0 ? 0.05 : 0.1);
+    
+    return {
+      fStatistic: fStat,
+      pValue: pValue,
+      significant: pValue < 0.05,
+      causality: pValue < 0.05 ? 'yes' : 'no'
+    };
+  }
+
+  calculateRegressionRSS(y, X) {
+    // Simple OLS regression and RSS calculation
+    try {
+      const XMatrix = new Matrix(X);
+      const yVector = Matrix.columnVector(y);
+      
+      const XtX = XMatrix.transpose().mmul(XMatrix);
+      const XtY = XMatrix.transpose().mmul(yVector);
+      const coefficients = XtX.inverse().mmul(XtY);
+      
+      const predicted = XMatrix.mmul(coefficients);
+      const residuals = yVector.sub(predicted);
+      
+      return residuals.getColumn(0).reduce((sum, r) => sum + r * r, 0);
+    } catch (error) {
+      return Infinity;
+    }
+  }
+
+  forecastVAR(multiAssetData, coefficients, lag, horizon) {
+    const assets = Object.keys(multiAssetData);
+    const forecasts = {};
+    
+    assets.forEach(asset => {
+      forecasts[asset] = [];
+    });
+    
+    // Get last lag observations
+    const lastObs = [];
+    for (let l = lag; l >= 1; l--) {
+      assets.forEach(asset => {
+        const data = multiAssetData[asset];
+        lastObs.push(data[data.length - l]);
+      });
+    }
+    
+    // Generate forecasts
+    for (let h = 0; h < horizon; h++) {
+      const X = [1, ...lastObs]; // Add constant
+      const forecast = [];
+      
+      for (let i = 0; i < assets.length; i++) {
+        let pred = 0;
+        for (let j = 0; j < X.length; j++) {
+          pred += coefficients.get(j, i) * X[j];
+        }
+        forecast.push(pred);
+      }
+      
+      // Store forecasts
+      assets.forEach((asset, i) => {
+        forecasts[asset].push(forecast[i]);
+      });
+      
+      // Update lastObs for multi-step ahead forecasting
+      lastObs.splice(0, assets.length);
+      lastObs.push(...forecast);
+    }
+    
+    return forecasts;
+  }
+
+  // Binary Segmentation for change point detection
+  binarySegmentationDetection(series, parameters = {}) {
+    const maxChangePoints = parameters.maxChangePoints || 10;
+    const minSegmentLength = parameters.minSegmentLength || 10;
+    
+    const changePoints = [];
+    const candidates = [{ start: 0, end: series.length - 1 }];
+    
+    while (candidates.length > 0 && changePoints.length < maxChangePoints) {
+      let bestSegment = null;
+      let bestChangePoint = -1;
+      let bestCost = -Infinity;
+      
+      for (const segment of candidates) {
+        if (segment.end - segment.start < 2 * minSegmentLength) continue;
+        
+        const { changePoint, cost } = this.findOptimalChangePoint(
+          series.slice(segment.start, segment.end + 1),
+          minSegmentLength
+        );
+        
+        if (cost > bestCost) {
+          bestCost = cost;
+          bestChangePoint = segment.start + changePoint;
+          bestSegment = segment;
+        }
+      }
+      
+      if (bestSegment && bestChangePoint > 0) {
+        changePoints.push(bestChangePoint);
+        
+        // Remove the best segment and add two new segments
+        const index = candidates.indexOf(bestSegment);
+        candidates.splice(index, 1);
+        
+        candidates.push({
+          start: bestSegment.start,
+          end: bestChangePoint - 1
+        });
+        
+        candidates.push({
+          start: bestChangePoint,
+          end: bestSegment.end
+        });
+      } else {
+        break;
+      }
+    }
+    
+    return changePoints;
+  }
+
+  findOptimalChangePoint(segment, minLength) {
+    let bestChangePoint = -1;
+    let bestCost = -Infinity;
+    
+    for (let i = minLength; i < segment.length - minLength; i++) {
+      const leftSegment = segment.slice(0, i);
+      const rightSegment = segment.slice(i);
+      
+      const leftMean = mean(leftSegment);
+      const rightMean = mean(rightSegment);
+      const overallMean = mean(segment);
+      
+      // Calculate cost as improvement in fit
+      const totalSS = segment.reduce((sum, val) => sum + Math.pow(val - overallMean, 2), 0);
+      const leftSS = leftSegment.reduce((sum, val) => sum + Math.pow(val - leftMean, 2), 0);
+      const rightSS = rightSegment.reduce((sum, val) => sum + Math.pow(val - rightMean, 2), 0);
+      
+      const cost = totalSS - leftSS - rightSS;
+      
+      if (cost > bestCost) {
+        bestCost = cost;
+        bestChangePoint = i;
+      }
+    }
+    
+    return { changePoint: bestChangePoint, cost: bestCost };
+  }
+
+  analyzeSegments(series, changePoints) {
+    const segments = [];
+    const points = [0, ...changePoints.sort((a, b) => a - b), series.length];
+    
+    for (let i = 0; i < points.length - 1; i++) {
+      const start = points[i];
+      const end = points[i + 1];
+      const segmentData = series.slice(start, end);
+      
+      segments.push({
+        start,
+        end,
+        length: end - start,
+        mean: mean(segmentData),
+        variance: this.calculateVariance(segmentData),
+        trend: this.calculateSegmentTrend(segmentData)
+      });
+    }
+    
+    return segments;
+  }
+
+  calculateSegmentTrend(segment) {
+    const n = segment.length;
+    const x = Array.from({ length: n }, (_, i) => i);
+    return this.calculateSlope(x, segment);
+  }
+
+  calculateChangePointConfidence(series, changePoints) {
+    // Simplified confidence calculation
+    if (changePoints.length === 0) return 1.0;
+    
+    const segments = this.analyzeSegments(series, changePoints);
+    const varianceReduction = segments.reduce((sum, seg) => {
+      return sum + seg.variance * seg.length;
+    }, 0) / series.length;
+    
+    const totalVariance = this.calculateVariance(series);
+    
+    return Math.max(0, 1 - varianceReduction / totalVariance);
+  }
+
+  // Monte Carlo helper methods
+  calculateAssetReturnStatistics(assetReturns) {
+    const stats = {};
+    
+    Object.keys(assetReturns).forEach(asset => {
+      const returns = assetReturns[asset];
+      stats[asset] = {
+        mean: mean(returns),
+        std: standardDeviation(returns),
+        skewness: this.calculateSkewness(returns),
+        kurtosis: this.calculateKurtosis(returns)
+      };
+    });
+    
+    return stats;
+  }
+
+  calculateCorrelationMatrix(assetReturns) {
+    const assets = Object.keys(assetReturns);
+    const n = assets.length;
+    const corrMatrix = [];
+    
+    for (let i = 0; i < n; i++) {
+      corrMatrix[i] = [];
+      for (let j = 0; j < n; j++) {
+        if (i === j) {
+          corrMatrix[i][j] = 1.0;
+        } else {
+          corrMatrix[i][j] = this.calculateCorrelation(
+            assetReturns[assets[i]],
+            assetReturns[assets[j]]
+          );
+        }
+      }
+    }
+    
+    return new Matrix(corrMatrix);
+  }
+
+  calculateCorrelation(x, y) {
+    const n = Math.min(x.length, y.length);
+    const meanX = mean(x.slice(0, n));
+    const meanY = mean(y.slice(0, n));
+    const stdX = standardDeviation(x.slice(0, n));
+    const stdY = standardDeviation(y.slice(0, n));
+    
+    if (stdX === 0 || stdY === 0) return 0;
+    
+    let correlation = 0;
+    for (let i = 0; i < n; i++) {
+      correlation += (x[i] - meanX) * (y[i] - meanY);
+    }
+    
+    return correlation / ((n - 1) * stdX * stdY);
+  }
+
+  generateCorrelatedRandomReturns(returnStats, correlationMatrix, periods) {
+    const assets = Object.keys(returnStats);
+    const n = assets.length;
+    
+    // Generate uncorrelated random returns
+    const randomReturns = [];
+    for (let t = 0; t < periods; t++) {
+      const periodReturns = {};
+      for (const asset of assets) {
+        // Use normal distribution approximation
+        const random = this.generateNormalRandom();
+        periodReturns[asset] = returnStats[asset].mean + returnStats[asset].std * random;
+      }
+      randomReturns.push(periodReturns);
+    }
+    
+    // Apply correlation (simplified - in practice would use Cholesky decomposition)
+    return randomReturns;
+  }
+
+  generateNormalRandom() {
+    // Box-Muller transformation for normal random numbers
+    if (this.spare !== undefined) {
+      const tmp = this.spare;
+      delete this.spare;
+      return tmp;
+    }
+    
+    const u = Math.random();
+    const v = Math.random();
+    const mag = Math.sqrt(-2 * Math.log(u));
+    this.spare = mag * Math.cos(2 * Math.PI * v);
+    return mag * Math.sin(2 * Math.PI * v);
+  }
+
+  simulatePortfolioPath(weights, scenarioReturns, assets) {
+    const path = [1.0]; // Start with $1
+    
+    for (const periodReturns of scenarioReturns) {
+      let portfolioReturn = 0;
+      
+      assets.forEach((asset, i) => {
+        portfolioReturn += weights[i] * periodReturns[asset];
+      });
+      
+      const newValue = path[path.length - 1] * (1 + portfolioReturn);
+      path.push(newValue);
+    }
+    
+    return path;
+  }
+
+  calculateMaxDrawdown(pricePath) {
+    let maxDrawdown = 0;
+    let peak = pricePath[0];
+    
+    for (let i = 1; i < pricePath.length; i++) {
+      if (pricePath[i] > peak) {
+        peak = pricePath[i];
+      }
+      
+      const drawdown = (peak - pricePath[i]) / peak;
+      if (drawdown > maxDrawdown) {
+        maxDrawdown = drawdown;
+      }
+    }
+    
+    return maxDrawdown;
+  }
+
+  calculateVaR(returns, confidenceLevel) {
+    const sortedReturns = returns.slice().sort((a, b) => a - b);
+    const index = Math.floor(confidenceLevel * returns.length);
+    return sortedReturns[index];
+  }
+
+  calculateCVaR(returns, confidenceLevel) {
+    const sortedReturns = returns.slice().sort((a, b) => a - b);
+    const index = Math.floor(confidenceLevel * returns.length);
+    const tailReturns = sortedReturns.slice(0, index);
+    return mean(tailReturns);
+  }
+
+  calculateReturnDistribution(returns) {
+    const sortedReturns = returns.slice().sort((a, b) => a - b);
+    const n = returns.length;
+    
+    return {
+      min: sortedReturns[0],
+      q25: sortedReturns[Math.floor(0.25 * n)],
+      median: sortedReturns[Math.floor(0.5 * n)],
+      q75: sortedReturns[Math.floor(0.75 * n)],
+      max: sortedReturns[n - 1],
+      mean: mean(returns),
+      std: standardDeviation(returns)
+    };
+  }
+
+  identifyStressScenarios(returns, finalValues) {
+    const sortedIndices = returns
+      .map((r, i) => ({ return: r, value: finalValues[i], index: i }))
+      .sort((a, b) => a.return - b.return);
+    
+    const worstScenarios = sortedIndices.slice(0, 10);
+    const bestScenarios = sortedIndices.slice(-10);
+    
+    return {
+      worst: worstScenarios,
+      best: bestScenarios,
+      tailRisk: {
+        worst1Percent: sortedIndices.slice(0, Math.floor(returns.length * 0.01)),
+        worst5Percent: sortedIndices.slice(0, Math.floor(returns.length * 0.05))
+      }
+    };
+  }
+
+  // Dynamic hedging helper methods
+  calculateDeltaHedge(portfolio, parameters) {
+    // Simplified delta hedging for crypto portfolios
+    const delta = parameters.delta || 0.5;
+    const hedgeRatio = parameters.hedgeRatio || 0.5;
+    
+    return {
+      type: 'delta_hedge',
+      targetDelta: delta,
+      hedgeRatio: hedgeRatio,
+      adjustmentFrequency: parameters.adjustmentFrequency || 'daily',
+      instruments: parameters.hedgeInstruments || ['BTC-USD', 'ETH-USD']
+    };
+  }
+
+  calculateVolatilityHedge(portfolio, parameters) {
+    const volTarget = parameters.volatilityTarget || 0.2; // 20% target vol
+    
+    return {
+      type: 'volatility_hedge',
+      targetVolatility: volTarget,
+      realizationWindow: parameters.realizationWindow || 30,
+      adjustmentThreshold: parameters.adjustmentThreshold || 0.05
+    };
+  }
+
+  calculateCorrelationHedge(portfolio, parameters) {
+    return {
+      type: 'correlation_hedge',
+      maxCorrelation: parameters.maxCorrelation || 0.7,
+      diversificationTarget: parameters.diversificationTarget || 0.8,
+      rebalanceThreshold: parameters.rebalanceThreshold || 0.1
+    };
+  }
+
+  createHedgeAdjustmentRules(parameters) {
+    return {
+      volatilityBased: {
+        enabled: true,
+        lowVolThreshold: 0.15,
+        highVolThreshold: 0.35,
+        lowVolAction: 'reduce_hedge',
+        highVolAction: 'increase_hedge'
+      },
+      correlationBased: {
+        enabled: true,
+        correlationThreshold: 0.8,
+        action: 'diversify'
+      },
+      momentumBased: {
+        enabled: parameters.momentumAdjustment || false,
+        lookbackPeriod: 20,
+        threshold: 0.1
+      }
+    };
+  }
+
+  createHedgeMonitoringTriggers(parameters) {
+    return {
+      deltaDeviation: { threshold: 0.05, action: 'rebalance' },
+      volatilitySpike: { threshold: 0.5, action: 'increase_hedge' },
+      correlationBreakdown: { threshold: 0.3, action: 'reassess_hedge' },
+      drawdownLimit: { threshold: 0.1, action: 'emergency_hedge' }
+    };
+  }
+
+  // Enhanced risk parity helper methods
+  calculateEnhancedCovarianceMatrix(assetReturns, parameters = {}) {
+    const shrinkage = parameters.shrinkage || 0.1;
+    const lookback = parameters.lookback || 252;
+    
+    // Calculate sample covariance matrix
+    const sampleCov = this.calculateCovarianceMatrix(assetReturns);
+    
+    // Apply shrinkage towards identity matrix
+    const assets = Object.keys(assetReturns);
+    const n = assets.length;
+    const identity = Matrix.eye(n);
+    const avgVariance = this.calculateAverageVariance(sampleCov);
+    const target = identity.mul(avgVariance);
+    
+    // Shrinkage estimator
+    const shrunkCov = sampleCov.mul(1 - shrinkage).add(target.mul(shrinkage));
+    
+    return shrunkCov;
+  }
+
+  calculateAverageVariance(covMatrix) {
+    let sum = 0;
+    for (let i = 0; i < covMatrix.rows; i++) {
+      sum += covMatrix.get(i, i);
+    }
+    return sum / covMatrix.rows;
+  }
+
+  calculateRiskContributions(weights, covMatrix) {
+    const portfolioVar = this.calculatePortfolioVariance(weights, covMatrix);
+    const marginalContribs = this.calculateMarginalRiskContributions(weights, covMatrix);
+    
+    return weights.map((w, i) => w * marginalContribs[i] / Math.sqrt(portfolioVar));
+  }
+
+  calculatePortfolioVariance(weights, covMatrix) {
+    let variance = 0;
+    const n = weights.length;
+    
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        variance += weights[i] * weights[j] * covMatrix.get(i, j);
+      }
+    }
+    
+    return variance;
+  }
+
+  calculateMarginalRiskContributions(weights, covMatrix) {
+    const n = weights.length;
+    const marginal = [];
+    
+    for (let i = 0; i < n; i++) {
+      let contribution = 0;
+      for (let j = 0; j < n; j++) {
+        contribution += weights[j] * covMatrix.get(i, j);
+      }
+      marginal.push(contribution);
+    }
+    
+    return marginal;
+  }
+
+  calculateRiskParityGradient(weights, covMatrix, targetContribs) {
+    const currentContribs = this.calculateRiskContributions(weights, covMatrix);
+    const gradient = [];
+    
+    for (let i = 0; i < weights.length; i++) {
+      gradient.push(2 * (currentContribs[i] - targetContribs[i]));
+    }
+    
+    return gradient;
+  }
+
+  calculateRiskParityError(currentContribs, targetContribs) {
+    let error = 0;
+    for (let i = 0; i < currentContribs.length; i++) {
+      error += Math.pow(currentContribs[i] - targetContribs[i], 2);
+    }
+    return Math.sqrt(error);
+  }
+
+  calculatePortfolioRisk(weights, covMatrix) {
+    return Math.sqrt(this.calculatePortfolioVariance(weights, covMatrix));
+  }
+
+  calculateDiversificationRatio(weights, covMatrix) {
+    // Weighted average of individual volatilities divided by portfolio volatility
+    const individualVols = [];
+    for (let i = 0; i < weights.length; i++) {
+      individualVols.push(Math.sqrt(covMatrix.get(i, i)));
+    }
+    
+    const weightedAvgVol = weights.reduce((sum, w, i) => sum + w * individualVols[i], 0);
+    const portfolioVol = this.calculatePortfolioRisk(weights, covMatrix);
+    
+    return weightedAvgVol / portfolioVol;
+  }
+
+  // Additional helper methods
+  calculateSkewness(data) {
+    const n = data.length;
+    const m = mean(data);
+    const s = standardDeviation(data);
+    
+    if (s === 0) return 0;
+    
+    let skew = 0;
+    for (let i = 0; i < n; i++) {
+      skew += Math.pow((data[i] - m) / s, 3);
+    }
+    
+    return (n / ((n - 1) * (n - 2))) * skew;
+  }
+
+  calculateKurtosis(data) {
+    const n = data.length;
+    const m = mean(data);
+    const s = standardDeviation(data);
+    
+    if (s === 0) return 0;
+    
+    let kurt = 0;
+    for (let i = 0; i < n; i++) {
+      kurt += Math.pow((data[i] - m) / s, 4);
+    }
+    
+    return (n * (n + 1) / ((n - 1) * (n - 2) * (n - 3))) * kurt - 
+           (3 * (n - 1) * (n - 1) / ((n - 2) * (n - 3)));
+  }
+
+  calculateVariance(data) {
+    if (data.length < 2) return 0;
+    const m = mean(data);
+    const squaredDiffs = data.map(x => Math.pow(x - m, 2));
+    return mean(squaredDiffs);
+  }
 }
 
 module.exports = new MLService();
