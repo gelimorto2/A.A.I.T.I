@@ -2,6 +2,28 @@
 
 A.A.I.T.I provides a comprehensive suite of machine learning algorithms for cryptocurrency trading analysis and prediction. This guide covers all available models, their use cases, and implementation details.
 
+## 🚀 **NEW: Advanced ML & AI Intelligence**
+
+A.A.I.T.I v1.4.0 introduces cutting-edge ML capabilities for professional trading operations:
+
+### 🧠 Real-time Model Adaptation System
+- **Dynamic Model Retraining**: Automatically retrain models when performance degrades
+- **Performance Degradation Detection**: Monitor model accuracy in real-time
+- **Automatic Model Selection**: Switch models based on market volatility regimes
+- **Configurable Thresholds**: Customize adaptation sensitivity and cooldown periods
+
+### 📈 Enhanced Time Series Analysis
+- **GARCH Models**: Volatility prediction using Generalized Autoregressive Conditional Heteroskedasticity
+- **Vector Autoregression (VAR)**: Multi-asset analysis and cross-correlation modeling
+- **Change Point Detection**: Identify structural breaks and regime changes using CUSUM, PELT, and Binary Segmentation
+
+### 💼 Advanced Portfolio Intelligence
+- **Enhanced Risk Parity**: Optimized equal risk contribution allocation with shrinkage estimation
+- **Monte Carlo Simulation**: Portfolio stress testing with thousands of market scenarios
+- **Dynamic Hedging Strategies**: Automated portfolio protection with delta, volatility, and correlation hedging
+
+---
+
 ## 📊 Available ML Models
 
 ### Classical Machine Learning Models

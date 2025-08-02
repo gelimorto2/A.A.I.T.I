@@ -1096,4 +1096,684 @@ async function generateRealtimeFeatures(symbol, timeframe) {
   return advancedIndicators.generateMLFeatures(mockOHLCV);
 }
 
+// ========================================================================================
+// ADVANCED ML & AI INTELLIGENCE API ENDPOINTS
+// ========================================================================================
+
+// Initialize real-time model adaptation
+router.post('/models/:id/adaptation/init', authenticateToken, auditLog('init_model_adaptation'), async (req, res) => {
+  try {
+    const { thresholds = {} } = req.body;
+    
+    // Verify model ownership
+    const model = await new Promise((resolve, reject) => {
+      db.get(
+        'SELECT * FROM ml_models WHERE id = ? AND user_id = ?',
+        [req.params.id, req.user.id],
+        (err, row) => err ? reject(err) : resolve(row)
+      );
+    });
+
+    if (!model) {
+      return res.status(404).json({ error: 'ML model not found' });
+    }
+
+    const adaptationConfig = await mlService.initializeRealTimeAdaptation(req.params.id, thresholds);
+    
+    logger.info(`Real-time adaptation initialized for model ${req.params.id}`, {
+      userId: req.user.id,
+      modelName: model.name,
+      thresholds: adaptationConfig
+    });
+
+    res.json({
+      success: true,
+      modelId: req.params.id,
+      adaptationConfig,
+      message: 'Real-time adaptation system initialized successfully'
+    });
+
+  } catch (error) {
+    logger.error('Error initializing model adaptation:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Monitor model performance (called by trading system)
+router.post('/models/:id/adaptation/monitor', authenticateToken, async (req, res) => {
+  try {
+    const { prediction, actual, marketData } = req.body;
+    
+    if (prediction === undefined || actual === undefined) {
+      return res.status(400).json({ error: 'Prediction and actual values are required' });
+    }
+
+    const monitoring = await mlService.monitorModelPerformance(
+      req.params.id, 
+      prediction, 
+      actual, 
+      marketData
+    );
+
+    if (!monitoring) {
+      return res.json({ 
+        success: true, 
+        message: 'Monitoring data recorded, insufficient data for evaluation' 
+      });
+    }
+
+    res.json({
+      success: true,
+      monitoring,
+      recommendation: monitoring.adaptationAction ? 
+        'Model adaptation action taken' : 
+        'Model performance within acceptable range'
+    });
+
+  } catch (error) {
+    logger.error('Error monitoring model performance:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Train GARCH model for volatility prediction
+router.post('/models/garch', authenticateToken, auditLog('create_garch_model'), async (req, res) => {
+  try {
+    const { 
+      symbol, 
+      timeframe = '1d',
+      parameters = { p: 1, q: 1 },
+      trainingPeriodDays = 365
+    } = req.body;
+
+    if (!symbol) {
+      return res.status(400).json({ error: 'Symbol is required for GARCH model' });
+    }
+
+    // Get historical data for volatility modeling
+    const historicalData = await getHistoricalMarketData(symbol, timeframe, trainingPeriodDays);
+    
+    if (historicalData.length < 50) {
+      return res.status(400).json({ error: 'Insufficient data for GARCH model training (minimum 50 periods)' });
+    }
+
+    // Calculate returns
+    const returns = [];
+    for (let i = 1; i < historicalData.length; i++) {
+      const returnRate = (historicalData[i].price - historicalData[i-1].price) / historicalData[i-1].price;
+      returns.push(returnRate);
+    }
+
+    const garchModel = mlService.trainGARCH([], returns, parameters);
+    
+    // Save model to database
+    const modelId = require('uuid').v4();
+    const modelData = {
+      id: modelId,
+      user_id: req.user.id,
+      name: `GARCH(${parameters.p},${parameters.q}) - ${symbol}`,
+      algorithm_type: 'garch',
+      target_timeframe: timeframe,
+      symbols: JSON.stringify([symbol]),
+      parameters: JSON.stringify(parameters),
+      model_data: JSON.stringify(garchModel),
+      training_status: 'trained',
+      accuracy: 0, // GARCH doesn't have traditional accuracy
+      precision_score: 0,
+      last_trained: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    await new Promise((resolve, reject) => {
+      db.run(
+        `INSERT INTO ml_models (id, user_id, name, algorithm_type, target_timeframe, symbols, parameters, 
+         model_data, training_status, accuracy, precision_score, last_trained, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        Object.values(modelData),
+        (err) => err ? reject(err) : resolve()
+      );
+    });
+
+    logger.info(`GARCH model created for ${symbol}`, {
+      userId: req.user.id,
+      modelId,
+      parameters,
+      logLikelihood: garchModel.logLikelihood
+    });
+
+    res.json({
+      success: true,
+      model: {
+        id: modelId,
+        name: modelData.name,
+        type: 'garch',
+        symbol,
+        parameters: garchModel.parameters,
+        logLikelihood: garchModel.logLikelihood,
+        aic: garchModel.aic,
+        bic: garchModel.bic,
+        volatilityForecast: garchModel.volatilityForecast
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error creating GARCH model:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Train VAR model for multi-asset analysis
+router.post('/models/var', authenticateToken, auditLog('create_var_model'), async (req, res) => {
+  try {
+    const { 
+      symbols, 
+      timeframe = '1d',
+      parameters = { lag: 2 },
+      trainingPeriodDays = 365
+    } = req.body;
+
+    if (!symbols || !Array.isArray(symbols) || symbols.length < 2) {
+      return res.status(400).json({ error: 'At least 2 symbols are required for VAR model' });
+    }
+
+    // Get historical data for all assets
+    const multiAssetData = {};
+    for (const symbol of symbols) {
+      const data = await getHistoricalMarketData(symbol, timeframe, trainingPeriodDays);
+      if (data.length < 50) {
+        return res.status(400).json({ 
+          error: `Insufficient data for ${symbol} (minimum 50 periods required)` 
+        });
+      }
+      
+      // Calculate returns
+      const returns = [];
+      for (let i = 1; i < data.length; i++) {
+        returns.push((data[i].price - data[i-1].price) / data[i-1].price);
+      }
+      multiAssetData[symbol] = returns;
+    }
+
+    const varModel = mlService.trainVAR(multiAssetData, parameters);
+    
+    // Save model to database
+    const modelId = require('uuid').v4();
+    const modelData = {
+      id: modelId,
+      user_id: req.user.id,
+      name: `VAR(${parameters.lag}) - ${symbols.join(', ')}`,
+      algorithm_type: 'var',
+      target_timeframe: timeframe,
+      symbols: JSON.stringify(symbols),
+      parameters: JSON.stringify(parameters),
+      model_data: JSON.stringify(varModel),
+      training_status: 'trained',
+      accuracy: varModel.diagnostics.rSquared[0] || 0,
+      precision_score: 0,
+      last_trained: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    await new Promise((resolve, reject) => {
+      db.run(
+        `INSERT INTO ml_models (id, user_id, name, algorithm_type, target_timeframe, symbols, parameters, 
+         model_data, training_status, accuracy, precision_score, last_trained, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        Object.values(modelData),
+        (err) => err ? reject(err) : resolve()
+      );
+    });
+
+    logger.info(`VAR model created for ${symbols.join(', ')}`, {
+      userId: req.user.id,
+      modelId,
+      lag: parameters.lag,
+      assets: symbols.length
+    });
+
+    res.json({
+      success: true,
+      model: {
+        id: modelId,
+        name: modelData.name,
+        type: 'var',
+        symbols,
+        lag: varModel.lag,
+        diagnostics: varModel.diagnostics,
+        grangerTests: varModel.grangerTests,
+        forecast: varModel.forecast
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error creating VAR model:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Detect change points in time series
+router.post('/analysis/changepoints', authenticateToken, auditLog('detect_change_points'), async (req, res) => {
+  try {
+    const { 
+      symbol, 
+      timeframe = '1d',
+      method = 'cusum',
+      parameters = {},
+      periodDays = 365
+    } = req.body;
+
+    if (!symbol) {
+      return res.status(400).json({ error: 'Symbol is required for change point detection' });
+    }
+
+    // Get historical data
+    const historicalData = await getHistoricalMarketData(symbol, timeframe, periodDays);
+    
+    if (historicalData.length < 30) {
+      return res.status(400).json({ error: 'Insufficient data for change point detection (minimum 30 periods)' });
+    }
+
+    const prices = historicalData.map(d => d.price);
+    const changePoints = mlService.detectChangePoints(prices, { method, ...parameters });
+    
+    // Save analysis results
+    const analysisId = require('uuid').v4();
+    const analysisData = {
+      id: analysisId,
+      user_id: req.user.id,
+      analysis_type: 'change_points',
+      symbol,
+      timeframe,
+      parameters: JSON.stringify({ method, ...parameters }),
+      results: JSON.stringify(changePoints),
+      created_at: new Date().toISOString()
+    };
+
+    // Store in analysis results table (create if not exists)
+    await new Promise((resolve, reject) => {
+      db.run(
+        `CREATE TABLE IF NOT EXISTS analysis_results (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          analysis_type TEXT NOT NULL,
+          symbol TEXT NOT NULL,
+          timeframe TEXT NOT NULL,
+          parameters TEXT,
+          results TEXT,
+          created_at TEXT NOT NULL
+        )`,
+        (err) => err ? reject(err) : resolve()
+      );
+    });
+
+    await new Promise((resolve, reject) => {
+      db.run(
+        `INSERT INTO analysis_results (id, user_id, analysis_type, symbol, timeframe, parameters, results, created_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        Object.values(analysisData),
+        (err) => err ? reject(err) : resolve()
+      );
+    });
+
+    logger.info(`Change point detection completed for ${symbol}`, {
+      userId: req.user.id,
+      method,
+      changePoints: changePoints.changePoints.length,
+      confidence: changePoints.confidence
+    });
+
+    res.json({
+      success: true,
+      analysis: {
+        id: analysisId,
+        symbol,
+        method,
+        changePoints: changePoints.changePoints,
+        segments: changePoints.segments,
+        confidence: changePoints.confidence,
+        totalSegments: changePoints.totalSegments
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error detecting change points:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Run Monte Carlo simulation for portfolio stress testing
+router.post('/portfolio/montecarlo', authenticateToken, auditLog('monte_carlo_simulation'), async (req, res) => {
+  try {
+    const { 
+      portfolioWeights,
+      symbols,
+      timeframe = '1d',
+      parameters = {},
+      trainingPeriodDays = 365
+    } = req.body;
+
+    if (!portfolioWeights || !symbols || portfolioWeights.length !== symbols.length) {
+      return res.status(400).json({ 
+        error: 'Portfolio weights and symbols arrays must have the same length' 
+      });
+    }
+
+    // Validate weights sum to 1
+    const weightSum = portfolioWeights.reduce((sum, w) => sum + w, 0);
+    if (Math.abs(weightSum - 1.0) > 0.01) {
+      return res.status(400).json({ error: 'Portfolio weights must sum to 1.0' });
+    }
+
+    // Get historical returns for all assets
+    const assetReturns = {};
+    for (let i = 0; i < symbols.length; i++) {
+      const symbol = symbols[i];
+      const data = await getHistoricalMarketData(symbol, timeframe, trainingPeriodDays);
+      
+      if (data.length < 100) {
+        return res.status(400).json({ 
+          error: `Insufficient data for ${symbol} (minimum 100 periods required)` 
+        });
+      }
+      
+      const returns = [];
+      for (let j = 1; j < data.length; j++) {
+        returns.push((data[j].price - data[j-1].price) / data[j-1].price);
+      }
+      assetReturns[symbol] = returns;
+    }
+
+    const simulation = mlService.runMonteCarloSimulation(
+      portfolioWeights, 
+      assetReturns, 
+      {
+        simulations: parameters.simulations || 10000,
+        timeHorizon: parameters.timeHorizon || 252,
+        confidenceLevel: parameters.confidenceLevel || 0.05,
+        ...parameters
+      }
+    );
+    
+    // Save simulation results
+    const simulationId = require('uuid').v4();
+    const simulationData = {
+      id: simulationId,
+      user_id: req.user.id,
+      analysis_type: 'monte_carlo',
+      symbol: symbols.join(','),
+      timeframe,
+      parameters: JSON.stringify({ portfolioWeights, ...parameters }),
+      results: JSON.stringify(simulation),
+      created_at: new Date().toISOString()
+    };
+
+    await new Promise((resolve, reject) => {
+      db.run(
+        `INSERT INTO analysis_results (id, user_id, analysis_type, symbol, timeframe, parameters, results, created_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        Object.values(simulationData),
+        (err) => err ? reject(err) : resolve()
+      );
+    });
+
+    logger.info('Monte Carlo simulation completed', {
+      userId: req.user.id,
+      symbols: symbols.length,
+      simulations: simulation.simulations,
+      expectedReturn: simulation.expectedReturn,
+      valueAtRisk: simulation.valueAtRisk
+    });
+
+    res.json({
+      success: true,
+      simulation: {
+        id: simulationId,
+        portfolioWeights: portfolioWeights.map((w, i) => ({ symbol: symbols[i], weight: w })),
+        results: {
+          expectedReturn: simulation.expectedReturn,
+          volatility: simulation.volatility,
+          valueAtRisk: simulation.valueAtRisk,
+          conditionalVaR: simulation.conditionalVaR,
+          maxDrawdown: simulation.maxDrawdown,
+          probabilityOfLoss: simulation.probabilityOfLoss,
+          returnDistribution: simulation.returnDistribution
+        },
+        stressScenarios: simulation.stressScenarios
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error running Monte Carlo simulation:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create dynamic hedging strategy
+router.post('/portfolio/hedge', authenticateToken, auditLog('create_hedge_strategy'), async (req, res) => {
+  try {
+    const { 
+      portfolio,
+      parameters = {}
+    } = req.body;
+
+    if (!portfolio || Object.keys(portfolio).length === 0) {
+      return res.status(400).json({ error: 'Portfolio configuration is required' });
+    }
+
+    const hedgeStrategy = mlService.createDynamicHedgingStrategy(portfolio, parameters);
+    
+    // Save hedging strategy
+    const strategyId = require('uuid').v4();
+    const strategyData = {
+      id: strategyId,
+      user_id: req.user.id,
+      strategy_type: 'dynamic_hedge',
+      name: `Dynamic Hedge - ${Object.keys(portfolio).join(', ')}`,
+      portfolio: JSON.stringify(portfolio),
+      parameters: JSON.stringify(parameters),
+      strategy_config: JSON.stringify(hedgeStrategy),
+      status: 'active',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    // Create strategies table if not exists
+    await new Promise((resolve, reject) => {
+      db.run(
+        `CREATE TABLE IF NOT EXISTS hedge_strategies (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          strategy_type TEXT NOT NULL,
+          name TEXT NOT NULL,
+          portfolio TEXT,
+          parameters TEXT,
+          strategy_config TEXT,
+          status TEXT DEFAULT 'active',
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )`,
+        (err) => err ? reject(err) : resolve()
+      );
+    });
+
+    await new Promise((resolve, reject) => {
+      db.run(
+        `INSERT INTO hedge_strategies (id, user_id, strategy_type, name, portfolio, parameters, strategy_config, status, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        Object.values(strategyData),
+        (err) => err ? reject(err) : resolve()
+      );
+    });
+
+    logger.info('Dynamic hedging strategy created', {
+      userId: req.user.id,
+      strategyId,
+      portfolio: Object.keys(portfolio),
+      hedgeRatio: hedgeStrategy.hedgeRatio
+    });
+
+    res.json({
+      success: true,
+      strategy: {
+        id: strategyId,
+        name: strategyData.name,
+        type: 'dynamic_hedge',
+        hedgeRatio: hedgeStrategy.hedgeRatio,
+        deltaHedge: hedgeStrategy.deltaHedge,
+        volatilityHedge: hedgeStrategy.volatilityHedge,
+        correlationHedge: hedgeStrategy.correlationHedge,
+        monitoring: hedgeStrategy.monitoring
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error creating hedge strategy:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Enhanced risk parity optimization
+router.post('/portfolio/risk-parity', authenticateToken, auditLog('risk_parity_optimization'), async (req, res) => {
+  try {
+    const { 
+      symbols,
+      timeframe = '1d',
+      parameters = {},
+      trainingPeriodDays = 365
+    } = req.body;
+
+    if (!symbols || !Array.isArray(symbols) || symbols.length < 2) {
+      return res.status(400).json({ error: 'At least 2 symbols are required for risk parity optimization' });
+    }
+
+    // Get historical returns for all assets
+    const assetReturns = {};
+    for (const symbol of symbols) {
+      const data = await getHistoricalMarketData(symbol, timeframe, trainingPeriodDays);
+      
+      if (data.length < 100) {
+        return res.status(400).json({ 
+          error: `Insufficient data for ${symbol} (minimum 100 periods required)` 
+        });
+      }
+      
+      const returns = [];
+      for (let i = 1; i < data.length; i++) {
+        returns.push((data[i].price - data[i-1].price) / data[i-1].price);
+      }
+      assetReturns[symbol] = returns;
+    }
+
+    const riskParityResult = mlService.enhancedRiskParityOptimization(assetReturns, parameters);
+    
+    // Save optimization results
+    const optimizationId = require('uuid').v4();
+    const optimizationData = {
+      id: optimizationId,
+      user_id: req.user.id,
+      analysis_type: 'risk_parity',
+      symbol: symbols.join(','),
+      timeframe,
+      parameters: JSON.stringify(parameters),
+      results: JSON.stringify(riskParityResult),
+      created_at: new Date().toISOString()
+    };
+
+    await new Promise((resolve, reject) => {
+      db.run(
+        `INSERT INTO analysis_results (id, user_id, analysis_type, symbol, timeframe, parameters, results, created_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        Object.values(optimizationData),
+        (err) => err ? reject(err) : resolve()
+      );
+    });
+
+    logger.info('Risk parity optimization completed', {
+      userId: req.user.id,
+      symbols: symbols.length,
+      portfolioRisk: riskParityResult.portfolioRisk,
+      diversificationRatio: riskParityResult.diversificationRatio
+    });
+
+    res.json({
+      success: true,
+      optimization: {
+        id: optimizationId,
+        type: 'enhanced_risk_parity',
+        weights: riskParityResult.weights,
+        riskContributions: riskParityResult.riskContributions,
+        portfolioRisk: riskParityResult.portfolioRisk,
+        diversificationRatio: riskParityResult.diversificationRatio
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error in risk parity optimization:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get analysis results
+router.get('/analysis/results', authenticateToken, (req, res) => {
+  const { type, symbol, limit = 50 } = req.query;
+  
+  let query = 'SELECT * FROM analysis_results WHERE user_id = ?';
+  const params = [req.user.id];
+  
+  if (type) {
+    query += ' AND analysis_type = ?';
+    params.push(type);
+  }
+  
+  if (symbol) {
+    query += ' AND symbol LIKE ?';
+    params.push(`%${symbol}%`);
+  }
+  
+  query += ' ORDER BY created_at DESC LIMIT ?';
+  params.push(parseInt(limit));
+
+  db.all(query, params, (err, results) => {
+    if (err) {
+      logger.error('Error fetching analysis results:', err);
+      return res.status(500).json({ error: 'Failed to fetch analysis results' });
+    }
+
+    const parsedResults = results.map(result => ({
+      ...result,
+      parameters: result.parameters ? JSON.parse(result.parameters) : {},
+      results: result.results ? JSON.parse(result.results) : {}
+    }));
+
+    res.json({ results: parsedResults });
+  });
+});
+
+// Get hedge strategies
+router.get('/portfolio/hedge', authenticateToken, (req, res) => {
+  const { status = 'active' } = req.query;
+  
+  const query = 'SELECT * FROM hedge_strategies WHERE user_id = ? AND status = ? ORDER BY created_at DESC';
+  
+  db.all(query, [req.user.id, status], (err, strategies) => {
+    if (err) {
+      logger.error('Error fetching hedge strategies:', err);
+      return res.status(500).json({ error: 'Failed to fetch hedge strategies' });
+    }
+
+    const parsedStrategies = strategies.map(strategy => ({
+      ...strategy,
+      portfolio: strategy.portfolio ? JSON.parse(strategy.portfolio) : {},
+      parameters: strategy.parameters ? JSON.parse(strategy.parameters) : {},
+      strategy_config: strategy.strategy_config ? JSON.parse(strategy.strategy_config) : {}
+    }));
+
+    res.json({ strategies: parsedStrategies });
+  });
+});
+
+module.exports = router;
+
 module.exports = router;
