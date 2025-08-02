@@ -321,6 +321,76 @@ const initializeDatabase = async () => {
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (user_id) REFERENCES users (id)
         )
+      `);
+
+      // Advanced Portfolios table
+      database.run(`
+        CREATE TABLE IF NOT EXISTS portfolios (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          type TEXT NOT NULL,
+          weights TEXT NOT NULL,
+          performance_metrics TEXT,
+          optimization_details TEXT,
+          factor_exposures TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+      `);
+
+      // Monte Carlo Simulations table
+      database.run(`
+        CREATE TABLE IF NOT EXISTS monte_carlo_simulations (
+          id TEXT PRIMARY KEY,
+          portfolio_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          num_simulations INTEGER NOT NULL,
+          time_horizon INTEGER NOT NULL,
+          statistics TEXT NOT NULL,
+          stress_tests TEXT,
+          path_analysis TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (portfolio_id) REFERENCES portfolios (id),
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+      `);
+
+      // Hedging Strategies table
+      database.run(`
+        CREATE TABLE IF NOT EXISTS hedging_strategies (
+          id TEXT PRIMARY KEY,
+          portfolio_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          type TEXT NOT NULL,
+          hedging_assets TEXT,
+          risk_target REAL,
+          rebalance_frequency TEXT,
+          hedge_ratios TEXT,
+          rules TEXT,
+          triggers TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (portfolio_id) REFERENCES portfolios (id),
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+      `);
+
+      // Portfolio Risk Monitoring table
+      database.run(`
+        CREATE TABLE IF NOT EXISTS portfolio_risk_monitoring (
+          id TEXT PRIMARY KEY,
+          portfolio_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          current_risk TEXT NOT NULL,
+          risk_attribution TEXT,
+          risk_alerts TEXT,
+          market_data TEXT,
+          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (portfolio_id) REFERENCES portfolios (id),
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )
       `, (err) => {
         if (err) {
           logger.error('Error creating tables:', err);
