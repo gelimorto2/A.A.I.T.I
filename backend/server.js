@@ -24,6 +24,13 @@ const { initializeUserCredentials, getCredentials } = require('./utils/credentia
 const marketDataService = require('./utils/marketData');
 const logger = require('./utils/logger');
 const ASCIIDashboard = require('./utils/asciiDashboard');
+const { getCache, cacheMiddleware } = require('./utils/cache');
+const { getDatabaseOptimizer } = require('./utils/databaseOptimizer');
+const { getAPIPool } = require('./utils/apiConnectionPool');
+const { getMetrics } = require('./utils/prometheusMetrics');
+const { getNotificationManager } = require('./utils/notificationManager');
+const { createGraphQLServer } = require('./routes/graphql');
+const { getVersionManager } = require('./utils/apiVersionManager');
 
 // Performance configuration
 const performanceConfig = require('./config/performance');
@@ -99,6 +106,12 @@ const initializeSocketIO = () => {
 const initializeMiddleware = () => {
   logger.info('🔐 Setting up security middleware...', { service: 'aaiti-backend' });
   
+  // Get metrics instance for middleware
+  const metrics = getMetrics();
+  
+  // Prometheus metrics middleware (before other middleware)
+  app.use(metrics.createMiddleware());
+  
   // Security middleware
   app.use(helmet());
   app.use(cors({
@@ -154,6 +167,19 @@ const initializeMiddleware = () => {
   
   // Metrics routes (for monitoring)
   app.use('/api', metricsRoutes);
+  
+  // Prometheus metrics endpoint
+  app.get('/metrics', async (req, res) => {
+    try {
+      const metrics = getMetrics();
+      const metricsData = await metrics.getMetrics();
+      res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
+      res.send(metricsData);
+    } catch (error) {
+      logger.error('Failed to generate metrics', { error: error.message, service: 'aaiti-backend' });
+      res.status(500).send('Failed to generate metrics');
+    }
+  });
 
   logger.info('🏥 Setting up health check endpoint...', { service: 'aaiti-backend' });
 
@@ -188,6 +214,32 @@ const initializeMiddleware = () => {
     });
     
     res.json(healthData);
+  });
+
+  // Performance monitoring endpoint with caching
+  app.get('/api/performance', cacheMiddleware(60), async (req, res) => {
+    try {
+      const cache = getCache();
+      const dbOptimizer = getDatabaseOptimizer();
+      const apiPool = getAPIPool();
+
+      const performanceData = {
+        timestamp: new Date().toISOString(),
+        cache: cache.getStats(),
+        database: await dbOptimizer.getStats(),
+        api: apiPool.getStats(),
+        system: {
+          uptime: process.uptime(),
+          memory: process.memoryUsage(),
+          cpu: process.cpuUsage()
+        }
+      };
+
+      res.json(performanceData);
+    } catch (error) {
+      logger.error('Performance endpoint error', { error: error.message, service: 'aaiti-backend' });
+      res.status(500).json({ error: 'Failed to get performance data' });
+    }
   });
 
   logger.info('✅ Middleware setup completed', { service: 'aaiti-backend' });
@@ -345,6 +397,36 @@ const startServer = async () => {
     await initializeConfig();
     logger.info('✅ Configuration initialized successfully', { service: 'aaiti-backend' });
     
+    // Initialize performance enhancements
+    logger.info('⚡ Initializing performance optimizations...', { service: 'aaiti-backend' });
+    
+    // Initialize cache system
+    const cache = getCache();
+    logger.info('✅ Cache system initialized', { service: 'aaiti-backend' });
+    
+    // Initialize database optimizer
+    const dbOptimizer = getDatabaseOptimizer();
+    await dbOptimizer.initialize();
+    await dbOptimizer.createOptimizedIndexes();
+    await dbOptimizer.analyzeAndOptimize();
+    logger.info('✅ Database optimizer initialized', { service: 'aaiti-backend' });
+    
+    // Initialize API connection pool
+    const apiPool = getAPIPool();
+    logger.info('✅ API connection pool initialized', { service: 'aaiti-backend' });
+    
+    // Initialize Prometheus metrics
+    const metrics = getMetrics();
+    logger.info('✅ Prometheus metrics initialized', { service: 'aaiti-backend' });
+    
+    // Initialize notification manager
+    const notificationManager = getNotificationManager();
+    logger.info('✅ Notification manager initialized', { service: 'aaiti-backend' });
+    
+    // Initialize API version manager
+    const versionManager = getVersionManager();
+    logger.info('✅ API version manager initialized', { service: 'aaiti-backend' });
+    
     // Initialize database
     logger.info('💾 Initializing database connection...', { service: 'aaiti-backend' });
     await initializeDatabase();
@@ -360,6 +442,11 @@ const startServer = async () => {
     const io = initializeSocketIO();
     initializeSocketHandlers(io);
     logger.info('✅ Socket.IO initialized successfully', { service: 'aaiti-backend' });
+    
+    // Initialize GraphQL server
+    logger.info('🔗 Initializing GraphQL server...', { service: 'aaiti-backend' });
+    await createGraphQLServer(app);
+    logger.info('✅ GraphQL server initialized successfully', { service: 'aaiti-backend' });
     
     logger.info('🌐 Starting HTTP server...', { 
       port: config.port,
