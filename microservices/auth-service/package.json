@@ -1,0 +1,30 @@
+{
+  "name": "@aaiti/auth-service",
+  "version": "1.0.0",
+  "description": "AAITI Authentication and Authorization Microservice",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^4.21.1",
+    "bcryptjs": "^3.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "express-rate-limit": "^7.5.1",
+    "helmet": "^8.1.0",
+    "cors": "^2.8.5",
+    "morgan": "^1.10.0",
+    "winston": "^3.17.0",
+    "dotenv": "^16.4.7",
+    "pg": "^8.11.3",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "keywords": ["auth", "microservice", "jwt", "authentication"],
+  "author": "AAITI Team",
+  "license": "ISC"
+}
