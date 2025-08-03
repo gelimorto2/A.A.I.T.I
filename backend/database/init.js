@@ -161,6 +161,73 @@ const initializeDatabase = async () => {
         )
       `);
 
+      // API Keys table for programmatic access
+      database.run(`
+        CREATE TABLE IF NOT EXISTS api_keys (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          key_hash TEXT NOT NULL,
+          key_salt TEXT NOT NULL,
+          permissions TEXT NOT NULL,
+          last_used DATETIME,
+          expires_at DATETIME,
+          is_active BOOLEAN DEFAULT 1,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+      `);
+
+      // OAuth providers table for external authentication
+      database.run(`
+        CREATE TABLE IF NOT EXISTS oauth_providers (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          provider TEXT NOT NULL,
+          provider_user_id TEXT NOT NULL,
+          provider_username TEXT,
+          provider_email TEXT,
+          access_token TEXT,
+          refresh_token TEXT,
+          token_expires_at DATETIME,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users (id),
+          UNIQUE(provider, provider_user_id)
+        )
+      `);
+
+      // Security events table for enhanced audit logging
+      database.run(`
+        CREATE TABLE IF NOT EXISTS security_events (
+          id TEXT PRIMARY KEY,
+          user_id TEXT,
+          event_type TEXT NOT NULL,
+          event_severity TEXT DEFAULT 'info',
+          description TEXT NOT NULL,
+          ip_address TEXT,
+          user_agent TEXT,
+          additional_data TEXT,
+          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+      `);
+
+      // Data retention policies table
+      database.run(`
+        CREATE TABLE IF NOT EXISTS data_retention_policies (
+          id TEXT PRIMARY KEY,
+          table_name TEXT NOT NULL,
+          retention_days INTEGER NOT NULL,
+          condition_column TEXT,
+          condition_value TEXT,
+          is_active BOOLEAN DEFAULT 1,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
       // Market data table (for backtesting and analysis)
       database.run(`
         CREATE TABLE IF NOT EXISTS market_data (
