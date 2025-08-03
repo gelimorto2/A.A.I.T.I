@@ -90,8 +90,11 @@ class ASCIIDashboard {
   }
 
   centerText(text, width) {
+    if (text.length >= width) {
+      return text.substring(0, width);
+    }
     const padding = Math.max(0, Math.floor((width - text.length) / 2));
-    return ' '.repeat(padding) + text + ' '.repeat(width - text.length - padding);
+    return ' '.repeat(padding) + text + ' '.repeat(Math.max(0, width - text.length - padding));
   }
 
   truncateText(text, maxLength) {

@@ -7,21 +7,26 @@ import {
   IconButton,
   Badge,
   Chip,
+  Tooltip,
 } from '@mui/material';
 import {
   Notifications,
   AccountCircle,
   PowerSettingsNew,
+  DarkMode,
+  LightMode,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
 import { logout } from '../../store/slices/authSlice';
 import { useSocket } from '../../contexts/SocketContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const Navbar: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
   const { isConnected } = useSocket();
+  const { isDarkMode, toggleTheme } = useTheme();
 
   const handleLogout = () => {
     dispatch(logout());
@@ -69,6 +74,22 @@ const Navbar: React.FC = () => {
               fontFamily: 'monospace',
             }}
           />
+
+          {/* Theme Toggle */}
+          <Tooltip title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
+            <IconButton 
+              color="inherit" 
+              onClick={toggleTheme}
+              sx={{ 
+                color: 'text.primary',
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.1)',
+                }
+              }}
+            >
+              {isDarkMode ? <LightMode /> : <DarkMode />}
+            </IconButton>
+          </Tooltip>
 
           {/* Notifications */}
           <IconButton color="inherit">
