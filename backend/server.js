@@ -11,6 +11,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const botRoutes = require('./routes/bots');
 const tradingRoutes = require('./routes/trading');
+const tradingEnhancedRoutes = require('./routes/tradingEnhanced');
 const analyticsRoutes = require('./routes/analytics');
 const userRoutes = require('./routes/users');
 const mlRoutes = require('./routes/ml');
@@ -145,6 +146,7 @@ const initializeMiddleware = () => {
   app.use('/api/auth', authRoutes);
   app.use('/api/bots', botRoutes);
   app.use('/api/trading', tradingRoutes);
+  app.use('/api/trading-enhanced', tradingEnhancedRoutes);
   app.use('/api/analytics', analyticsRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/ml', mlRoutes);
