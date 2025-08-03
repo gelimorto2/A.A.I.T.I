@@ -1,0 +1,88 @@
+# Prometheus configuration for AAITI microservices monitoring
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # API Gateway monitoring
+  - job_name: 'api-gateway'
+    static_configs:
+      - targets: ['api-gateway:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Auth Service monitoring
+  - job_name: 'auth-service'
+    static_configs:
+      - targets: ['auth-service:3001']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Trading Service monitoring
+  - job_name: 'trading-service'
+    static_configs:
+      - targets: ['trading-service:3002']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Analytics Service monitoring
+  - job_name: 'analytics-service'
+    static_configs:
+      - targets: ['analytics-service:3003']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # ML Service monitoring
+  - job_name: 'ml-service'
+    static_configs:
+      - targets: ['ml-service:3004']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Notification Service monitoring
+  - job_name: 'notification-service'
+    static_configs:
+      - targets: ['notification-service:3005']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # User Service monitoring
+  - job_name: 'user-service'
+    static_configs:
+      - targets: ['user-service:3006']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # PostgreSQL monitoring (using postgres_exporter)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s
+
+  # Redis monitoring (using redis_exporter)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+
+  # HAProxy monitoring
+  - job_name: 'haproxy'
+    static_configs:
+      - targets: ['load-balancer:8404']
+    metrics_path: '/stats;csv'
+    scrape_interval: 30s
+
+  # Node exporter for system metrics
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

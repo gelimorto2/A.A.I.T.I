@@ -1,0 +1,479 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Primary Database
+  postgres-primary:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: aaiti
+      POSTGRES_USER: aaiti_user
+      POSTGRES_PASSWORD: aaiti_password
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_primary_data:/var/lib/postgresql/data
+      - ./microservices/shared/database/init:/docker-entrypoint-initdb.d
+    networks:
+      - aaiti_microservices
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aaiti_user -d aaiti"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    command: >
+      postgres 
+      -c max_connections=200
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.7
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # PostgreSQL Replica (Read-only)
+  postgres-replica:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: aaiti
+      POSTGRES_USER: aaiti_user
+      POSTGRES_PASSWORD: aaiti_password
+      PGUSER: aaiti_user
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_replica_data:/var/lib/postgresql/data
+    networks:
+      - aaiti_microservices
+    restart: unless-stopped
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    profiles:
+      - replica
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aaiti_user -d aaiti"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Redis for Caching and Session Management
+  redis-cluster:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - aaiti_microservices
+    restart: unless-stopped
+    command: >
+      redis-server 
+      --maxmemory 512mb 
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./microservices/api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - LOG_LEVEL=info
+      - CORS_ORIGIN=http://localhost:3001
+      - RATE_LIMIT_WINDOW=900000
+      - RATE_LIMIT_MAX=1000
+      # Service URLs
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - TRADING_SERVICE_URL=http://trading-service:3002
+      - ANALYTICS_SERVICE_URL=http://analytics-service:3003
+      - ML_SERVICE_URL=http://ml-service:3004
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3005
+      - USER_SERVICE_URL=http://user-service:3006
+    depends_on:
+      - postgres-primary
+      - redis-cluster
+    networks:
+      - aaiti_microservices
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./microservices/auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - SERVICE_VERSION=1.0.0
+      - LOG_LEVEL=info
+      # Database
+      - DB_HOST=postgres-primary
+      - DB_PORT=5432
+      - DB_NAME=aaiti
+      - DB_USER=aaiti_user
+      - DB_PASSWORD=aaiti_password
+      - DB_POOL_MAX=20
+      - DB_POOL_MIN=5
+      # JWT Configuration
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_EXPIRES_IN=7d
+      # Rate Limiting
+      - RATE_LIMIT_WINDOW=900000
+      - RATE_LIMIT_MAX=100
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    networks:
+      - aaiti_microservices
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Trading Service
+  trading-service:
+    build:
+      context: ./microservices/trading-service
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - SERVICE_VERSION=1.0.0
+      - LOG_LEVEL=info
+      # Database
+      - DB_HOST=postgres-primary
+      - DB_PORT=5432
+      - DB_NAME=aaiti
+      - DB_USER=aaiti_user
+      - DB_PASSWORD=aaiti_password
+      - DB_POOL_MAX=20
+      - DB_POOL_MIN=5
+      # Redis
+      - REDIS_URL=redis://redis-cluster:6379
+      # Auth Service
+      - AUTH_SERVICE_URL=http://auth-service:3001
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+      redis-cluster:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    networks:
+      - aaiti_microservices
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    profiles:
+      - full
+
+  # Analytics Service
+  analytics-service:
+    build:
+      context: ./microservices/analytics-service
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=production
+      - PORT=3003
+      - SERVICE_VERSION=1.0.0
+      - LOG_LEVEL=info
+      # Database
+      - DB_HOST=postgres-primary
+      - DB_PORT=5432
+      - DB_NAME=aaiti
+      - DB_USER=aaiti_user
+      - DB_PASSWORD=aaiti_password
+      - DB_POOL_MAX=20
+      - DB_POOL_MIN=5
+      # Redis
+      - REDIS_URL=redis://redis-cluster:6379
+      # Auth Service
+      - AUTH_SERVICE_URL=http://auth-service:3001
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+      redis-cluster:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    networks:
+      - aaiti_microservices
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    profiles:
+      - full
+
+  # ML Service
+  ml-service:
+    build:
+      context: ./microservices/ml-service
+      dockerfile: Dockerfile
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=production
+      - PORT=3004
+      - SERVICE_VERSION=1.0.0
+      - LOG_LEVEL=info
+      # Database
+      - DB_HOST=postgres-primary
+      - DB_PORT=5432
+      - DB_NAME=aaiti
+      - DB_USER=aaiti_user
+      - DB_PASSWORD=aaiti_password
+      - DB_POOL_MAX=20
+      - DB_POOL_MIN=5
+      # Redis
+      - REDIS_URL=redis://redis-cluster:6379
+      # Auth Service
+      - AUTH_SERVICE_URL=http://auth-service:3001
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+      redis-cluster:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    networks:
+      - aaiti_microservices
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.5'
+        reservations:
+          memory: 1G
+          cpus: '0.75'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    profiles:
+      - full
+
+  # Load Balancer (HAProxy)
+  load-balancer:
+    image: haproxy:2.8-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8404:8404"  # HAProxy stats
+    volumes:
+      - ./microservices/config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./microservices/config/ssl:/etc/ssl/certs:ro
+    depends_on:
+      - api-gateway
+    networks:
+      - aaiti_microservices
+    restart: unless-stopped
+    profiles:
+      - production
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Monitoring: Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./microservices/config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - aaiti_microservices
+    restart: unless-stopped
+    profiles:
+      - monitoring
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # Monitoring: Grafana
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3007:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./microservices/config/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./microservices/config/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - prometheus
+    networks:
+      - aaiti_microservices
+    restart: unless-stopped
+    profiles:
+      - monitoring
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # Distributed Tracing: Jaeger
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - aaiti_microservices
+    restart: unless-stopped
+    profiles:
+      - tracing
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+volumes:
+  postgres_primary_data:
+    driver: local
+  postgres_replica_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  aaiti_microservices:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16
