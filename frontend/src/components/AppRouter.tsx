@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { Box } from '@mui/material';
+import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { RootState, AppDispatch } from '../store/store';
 import { getProfile } from '../store/slices/authSlice';
 
@@ -24,6 +24,8 @@ import LoadingScreen from './common/LoadingScreen';
 const AppRouter: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { isAuthenticated, isLoading, token } = useSelector((state: RootState) => state.auth);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   useEffect(() => {
     // Try to authenticate with stored token on app load
@@ -49,9 +51,23 @@ const AppRouter: React.FC = () => {
   return (
     <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       <Sidebar />
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+      <Box 
+        sx={{ 
+          flexGrow: 1, 
+          display: 'flex', 
+          flexDirection: 'column',
+          ml: isMobile ? 0 : 0, // No margin on mobile since sidebar is overlay
+        }}
+      >
         <Navbar />
-        <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
+        <Box 
+          sx={{ 
+            flexGrow: 1, 
+            overflow: 'auto', 
+            p: isMobile ? 1 : 2, // Less padding on mobile
+            pt: isMobile ? 8 : 2, // Extra top padding for mobile menu button
+          }}
+        >
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />

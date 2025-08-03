@@ -30,6 +30,7 @@ import BotsStatusWidget from './BotsStatusWidget';
 import PnLWidget from './PnLWidget';
 import WinRateWidget from './WinRateWidget';
 import SystemHealthWidget from './SystemHealthWidget';
+import MarketHeatMapWidget from './MarketHeatMapWidget';
 
 // CSS for react-grid-layout
 import 'react-grid-layout/css/styles.css';
@@ -49,6 +50,7 @@ const availableWidgets: DashboardWidget[] = [
   { id: 'pnl', type: 'pnl', title: 'Profit & Loss', enabled: true },
   { id: 'win-rate', type: 'win-rate', title: 'Win Rate', enabled: true },
   { id: 'system-health', type: 'system-health', title: 'System Health', enabled: true },
+  { id: 'market-heatmap', type: 'market-heatmap', title: 'Market Heat Map', enabled: true },
 ];
 
 const defaultLayouts = {
@@ -57,24 +59,28 @@ const defaultLayouts = {
     { i: 'pnl', x: 3, y: 0, w: 3, h: 3 },
     { i: 'win-rate', x: 6, y: 0, w: 3, h: 3 },
     { i: 'system-health', x: 9, y: 0, w: 3, h: 3 },
+    { i: 'market-heatmap', x: 0, y: 3, w: 12, h: 3 },
   ],
   md: [
     { i: 'bots-status', x: 0, y: 0, w: 6, h: 3 },
     { i: 'pnl', x: 6, y: 0, w: 6, h: 3 },
     { i: 'win-rate', x: 0, y: 3, w: 6, h: 3 },
     { i: 'system-health', x: 6, y: 3, w: 6, h: 3 },
+    { i: 'market-heatmap', x: 0, y: 6, w: 12, h: 3 },
   ],
   sm: [
     { i: 'bots-status', x: 0, y: 0, w: 12, h: 3 },
     { i: 'pnl', x: 0, y: 3, w: 12, h: 3 },
     { i: 'win-rate', x: 0, y: 6, w: 12, h: 3 },
     { i: 'system-health', x: 0, y: 9, w: 12, h: 3 },
+    { i: 'market-heatmap', x: 0, y: 12, w: 12, h: 3 },
   ],
   xs: [
     { i: 'bots-status', x: 0, y: 0, w: 12, h: 3 },
     { i: 'pnl', x: 0, y: 3, w: 12, h: 3 },
     { i: 'win-rate', x: 0, y: 6, w: 12, h: 3 },
     { i: 'system-health', x: 0, y: 9, w: 12, h: 3 },
+    { i: 'market-heatmap', x: 0, y: 12, w: 12, h: 3 },
   ],
 };
 
@@ -179,6 +185,13 @@ const CustomizableDashboard: React.FC = () => {
       case 'system-health':
         return (
           <SystemHealthWidget
+            id={widget.id}
+            onRemove={isEditMode ? removeWidget : undefined}
+          />
+        );
+      case 'market-heatmap':
+        return (
+          <MarketHeatMapWidget
             id={widget.id}
             onRemove={isEditMode ? removeWidget : undefined}
           />

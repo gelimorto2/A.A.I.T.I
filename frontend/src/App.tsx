@@ -5,6 +5,7 @@ import { store } from './store/store';
 import AppRouter from './components/AppRouter';
 import SocketProvider from './contexts/SocketContext';
 import { ThemeContextProvider } from './contexts/ThemeContext';
+import { UserPreferencesProvider } from './contexts/UserPreferencesContext';
 import './App.css';
 
 function App() {
@@ -13,7 +14,9 @@ function App() {
       <ThemeContextProvider>
         <Router>
           <SocketProvider>
-            <AppRouter />
+            <UserPreferencesProvider>
+              <AppRouter />
+            </UserPreferencesProvider>
           </SocketProvider>
         </Router>
       </ThemeContextProvider>

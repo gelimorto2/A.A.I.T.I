@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Drawer,
   List,
@@ -8,6 +8,9 @@ import {
   Divider,
   Box,
   Typography,
+  IconButton,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   Dashboard,
@@ -17,6 +20,8 @@ import {
   Settings,
   Science,
   Psychology,
+  Menu,
+  Close,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -70,21 +75,23 @@ const menuItems = [
 const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: DRAWER_WIDTH,
-        flexShrink: 0,
-        '& .MuiDrawer-paper': {
-          width: DRAWER_WIDTH,
-          boxSizing: 'border-box',
-          bgcolor: 'background.paper',
-          borderRight: '1px solid #333',
-        },
-      }}
-    >
+  const handleMenuToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    if (isMobile) {
+      setMobileOpen(false);
+    }
+  };
+
+  const drawerContent = (
+    <>
       <Box sx={{ p: 2, textAlign: 'center' }}>
         <Typography 
           variant="h6" 
@@ -109,14 +116,14 @@ const Sidebar: React.FC = () => {
         </Typography>
       </Box>
 
-      <Divider sx={{ borderColor: '#333' }} />
+      <Divider sx={{ borderColor: 'grey.700' }} />
 
       <List sx={{ pt: 1 }}>
         {menuItems.map((item) => (
           <ListItemButton
             key={item.text}
             selected={location.pathname === item.path}
-            onClick={() => navigate(item.path)}
+            onClick={() => handleNavigation(item.path)}
             sx={{
               mx: 1,
               mb: 0.5,
@@ -144,7 +151,7 @@ const Sidebar: React.FC = () => {
             </ListItemIcon>
             <ListItemText 
               primary={item.text}
-              secondary={item.description}
+              secondary={!isMobile ? item.description : undefined}
               primaryTypographyProps={{
                 fontSize: '0.9rem',
                 fontWeight: location.pathname === item.path ? 'bold' : 'normal',
@@ -171,6 +178,73 @@ const Sidebar: React.FC = () => {
           v1.0.0 • ALPHA
         </Typography>
       </Box>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <>
+        {/* Mobile Menu Button */}
+        <IconButton
+          sx={{
+            position: 'fixed',
+            top: 16,
+            left: 16,
+            zIndex: 1300,
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'grey.700',
+            '&:hover': {
+              bgcolor: 'rgba(0, 255, 136, 0.1)',
+            },
+          }}
+          onClick={handleMenuToggle}
+        >
+          {mobileOpen ? <Close /> : <Menu />}
+        </IconButton>
+
+        {/* Mobile Drawer */}
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleMenuToggle}
+          ModalProps={{
+            keepMounted: true, // Better performance on mobile
+          }}
+          sx={{
+            display: { xs: 'block', md: 'none' },
+            '& .MuiDrawer-paper': {
+              width: DRAWER_WIDTH,
+              boxSizing: 'border-box',
+              bgcolor: 'background.paper',
+              borderRight: '1px solid',
+              borderColor: 'grey.700',
+            },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      </>
+    );
+  }
+
+  return (
+    <Drawer
+      variant="permanent"
+      sx={{
+        width: DRAWER_WIDTH,
+        flexShrink: 0,
+        display: { xs: 'none', md: 'block' },
+        '& .MuiDrawer-paper': {
+          width: DRAWER_WIDTH,
+          boxSizing: 'border-box',
+          bgcolor: 'background.paper',
+          borderRight: '1px solid',
+          borderColor: 'grey.700',
+        },
+      }}
+    >
+      {drawerContent}
     </Drawer>
   );
 };
