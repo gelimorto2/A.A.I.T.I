@@ -1,14 +1,14 @@
-# 🚀 A.A.I.T.I TODO Roadmap - Next Release (v1.4.0)
+# 🚀 A.A.I.T.I TODO Roadmap - Post v2.0.0 Release
 
-**Target Release Date**: Q2 2025  
-**Current Version**: v1.3.0  
+**Current Version**: v2.0.0  
+**Next Target**: v2.1.0 (Q1 2025)  
 **Focus**: Advanced Trading Intelligence & Production Scalability
 
 ---
 
 ## 🎯 Executive Summary
 
-The v1.4.0 release will focus on enhancing A.A.I.T.I's trading intelligence capabilities, improving production scalability, and expanding the ML suite with advanced features. This roadmap builds upon our Docker-first architecture and comprehensive documentation foundation established in v1.3.0.
+The v2.1.0 release will focus on enhancing A.A.I.T.I's production deployment capabilities and expanding the trading intelligence features. This roadmap builds upon the solid foundation established in v2.0.0 with its comprehensive documentation, streamlined repository structure, and enhanced development guidelines.
 
 ## 📊 Priority Matrix
 
