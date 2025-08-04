@@ -22,6 +22,8 @@ import {
   Psychology,
   Menu,
   Close,
+  Extension,
+  Lightbulb,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -51,6 +53,18 @@ const menuItems = [
     icon: <Psychology />, 
     path: '/ml/advanced',
     description: 'AI Intelligence'
+  },
+  { 
+    text: 'AI Insights', 
+    icon: <Lightbulb />, 
+    path: '/ai-insights',
+    description: 'Natural Language AI'
+  },
+  { 
+    text: 'Integrations', 
+    icon: <Extension />, 
+    path: '/integrations',
+    description: 'Ecosystem Hub'
   },
   { 
     text: 'Live Trading', 
