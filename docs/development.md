@@ -1,17 +1,17 @@
 # Development Guide
 
-Complete development guide for contributing to A.A.I.T.I v1.2.1. Learn how to set up your development environment, understand the codebase, and contribute effectively.
+Complete development guide for contributing to A.A.I.T.I v2.0.0. Learn how to set up your development environment, understand the codebase, and contribute effectively.
 
 ## 🛠 Development Environment Setup
 
 ### Prerequisites
 
-- **Node.js** 16+ (recommended: 18+)
-- **npm** 8+ or **yarn** 3+
+- **Node.js** 18+ (LTS recommended)
+- **npm** 9+ or **yarn** 3+
 - **Docker** 20.0+ and **Docker Compose** v2.0+
 - **Git** with SSH key configured
 - **VS Code** (recommended) with extensions
-- **SQLite3** for database access
+- **SQLite3** for database access (optional for debugging)
 
 ### Initial Setup
 
@@ -32,6 +32,8 @@ npm run dev
 
 ### VS Code Extensions (Recommended)
 
+Create `.vscode/extensions.json`:
+
 ```json
 {
   "recommendations": [
@@ -41,7 +43,9 @@ npm run dev
     "esbenp.prettier-vscode",
     "dbaeumer.vscode-eslint",
     "ms-vscode.vscode-docker",
-    "redhat.vscode-yaml"
+    "redhat.vscode-yaml",
+    "ms-vscode.vscode-docker",
+    "ms-vscode-remote.remote-containers"
   ]
 }
 ```
@@ -103,6 +107,238 @@ A.A.I.T.I/
 - **Testing**: Jest (unit), Cypress (e2e)
 - **Containerization**: Docker + Docker Compose
 - **Monitoring**: Prometheus + Grafana
+
+## 📝 Coding Standards & Guidelines
+
+### Code Quality Requirements
+
+All code contributions must adhere to these standards:
+
+#### 🎯 **General Standards**
+- **TypeScript First**: Use TypeScript for all new frontend code
+- **ES6+ Syntax**: Use modern JavaScript features (async/await, destructuring, arrow functions)
+- **Error Handling**: Comprehensive try-catch blocks and proper error propagation
+- **Logging**: Structured logging with appropriate levels (error, warn, info, debug)
+- **Documentation**: JSDoc comments for all functions and complex logic
+- **Testing**: Unit tests for all business logic, integration tests for APIs
+
+#### 🔧 **Backend Standards**
+```javascript
+// ✅ Good: Proper error handling and logging
+const router = express.Router();
+
+router.get('/models', authenticateToken, async (req, res) => {
+  try {
+    const startTime = Date.now();
+    const models = await mlService.getAllModels(req.user.id);
+    
+    logger.info('Models retrieved successfully', {
+      userId: req.user.id,
+      count: models.length,
+      duration: Date.now() - startTime
+    });
+    
+    res.json({ success: true, data: models });
+  } catch (error) {
+    logger.error('Failed to retrieve models', {
+      userId: req.user.id,
+      error: error.message,
+      stack: error.stack
+    });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ❌ Bad: No error handling, no logging
+router.get('/models', (req, res) => {
+  const models = mlService.getAllModels();
+  res.json(models);
+});
+```
+
+#### ⚛️ **Frontend Standards**
+```typescript
+// ✅ Good: TypeScript with proper types and error handling
+interface ModelProps {
+  modelId: string;
+  onUpdate?: (model: Model) => void;
+}
+
+const ModelComponent: React.FC<ModelProps> = ({ modelId, onUpdate }) => {
+  const [model, setModel] = useState<Model | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchModel = async () => {
+      try {
+        setLoading(true);
+        const response = await apiService.getModel(modelId);
+        setModel(response.data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchModel();
+  }, [modelId]);
+
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage message={error} />;
+  if (!model) return <NotFound />;
+
+  return <ModelDetails model={model} onUpdate={onUpdate} />;
+};
+
+// ❌ Bad: No types, no error handling
+const ModelComponent = ({ modelId }) => {
+  const [model, setModel] = useState();
+  
+  useEffect(() => {
+    apiService.getModel(modelId).then(setModel);
+  }, []);
+
+  return <div>{model?.name}</div>;
+};
+```
+
+### 🚦 **Git Workflow**
+
+#### Branch Naming Convention
+```bash
+# Feature branches
+feature/user-authentication
+feature/ml-model-optimization
+
+# Bug fixes
+bugfix/authentication-memory-leak
+bugfix/chart-rendering-issue
+
+# Hotfixes
+hotfix/security-vulnerability
+hotfix/production-crash
+
+# Documentation
+docs/api-reference-update
+docs/development-guide-enhancement
+```
+
+#### Commit Message Standards
+```bash
+# Format: <type>(<scope>): <subject>
+# Types: feat, fix, docs, style, refactor, test, chore
+
+# ✅ Good commit messages
+feat(ml): add LSTM neural network implementation
+fix(auth): resolve JWT token expiration handling
+docs(api): update model training endpoint documentation
+test(frontend): add unit tests for trading dashboard
+refactor(backend): optimize database query performance
+chore(deps): update dependencies to latest versions
+
+# ❌ Bad commit messages
+update stuff
+fix bug
+new feature
+changes
+```
+
+#### Pull Request Guidelines
+1. **Branch from `main`**: Always create feature branches from main
+2. **Descriptive Title**: Clear, concise description of changes
+3. **Detailed Description**: Include what, why, and how
+4. **Link Issues**: Reference related GitHub issues
+5. **Add Screenshots**: For UI changes, include before/after screenshots
+6. **Test Coverage**: Ensure tests pass and add new tests for new features
+7. **Documentation Updates**: Update relevant documentation
+
+#### Example PR Template
+```markdown
+## Description
+Brief description of changes and motivation.
+
+## Type of Change
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Documentation update
+
+## Testing
+- [ ] Unit tests pass
+- [ ] Integration tests pass
+- [ ] Manual testing completed
+- [ ] Performance impact assessed
+
+## Screenshots (if applicable)
+Include before/after screenshots for UI changes.
+
+## Checklist
+- [ ] Code follows project style guidelines
+- [ ] Self-review completed
+- [ ] Code is commented where necessary
+- [ ] Documentation updated
+- [ ] Tests added/updated
+```
+
+### 🧪 **Testing Standards**
+
+#### Unit Testing
+```javascript
+// ✅ Good: Comprehensive test coverage
+describe('MLService', () => {
+  describe('trainModel', () => {
+    it('should train ARIMA model with valid data', async () => {
+      const mockData = generateMockPriceData();
+      const config = { algorithmType: 'arima', periods: 30 };
+      
+      const result = await mlService.trainModel(mockData, config);
+      
+      expect(result.success).toBe(true);
+      expect(result.model).toBeDefined();
+      expect(result.model.type).toBe('arima');
+      expect(result.metrics.mse).toBeLessThan(0.1);
+    });
+
+    it('should handle insufficient data gracefully', async () => {
+      const insufficientData = generateMockPriceData(5); // Too few points
+      const config = { algorithmType: 'arima', periods: 30 };
+      
+      await expect(mlService.trainModel(insufficientData, config))
+        .rejects.toThrow('Insufficient data for training');
+    });
+  });
+});
+```
+
+#### Integration Testing
+```javascript
+// ✅ Good: API integration test
+describe('ML Models API', () => {
+  beforeEach(async () => {
+    await setupTestDatabase();
+    authToken = await getTestAuthToken();
+  });
+
+  it('should create and train a new model', async () => {
+    const modelData = {
+      name: 'Test ARIMA Model',
+      algorithmType: 'arima',
+      symbol: 'BTC-USD'
+    };
+
+    const response = await request(app)
+      .post('/api/ml/models')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send(modelData)
+      .expect(201);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.id).toBeDefined();
+  });
+});
+```
 
 ## 🔧 Development Workflows
 
