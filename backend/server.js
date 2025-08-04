@@ -17,6 +17,11 @@ const userRoutes = require('./routes/users');
 const mlRoutes = require('./routes/ml');
 const notificationRoutes = require('./routes/notifications');
 const { router: metricsRoutes, collectRequestMetrics } = require('./routes/metrics');
+// Security & Compliance routes
+const apiKeysRoutes = require('./routes/apiKeys');
+const oauthRoutes = require('./routes/oauth');
+const complianceRoutes = require('./routes/compliance');
+const dataRetentionRoutes = require('./routes/dataRetention');
 
 const { initializeDatabase } = require('./database/init');
 const { authenticateSocket } = require('./middleware/auth');
@@ -31,6 +36,9 @@ const { getMetrics } = require('./utils/prometheusMetrics');
 const { getNotificationManager } = require('./utils/notificationManager');
 const { createGraphQLServer } = require('./routes/graphql');
 const { getVersionManager } = require('./utils/apiVersionManager');
+// Security & Compliance services
+const apiKeyManager = require('./utils/apiKeyManager');
+const dataRetentionService = require('./utils/dataRetentionService');
 
 // Performance configuration
 const performanceConfig = require('./config/performance');
@@ -164,6 +172,12 @@ const initializeMiddleware = () => {
   app.use('/api/users', userRoutes);
   app.use('/api/ml', mlRoutes);
   app.use('/api/notifications', notificationRoutes);
+  
+  // Security & Compliance routes
+  app.use('/api/api-keys', apiKeysRoutes);
+  app.use('/api/oauth', oauthRoutes);
+  app.use('/api/compliance', complianceRoutes);
+  app.use('/api/data-retention', dataRetentionRoutes);
   
   // Metrics routes (for monitoring)
   app.use('/api', metricsRoutes);
@@ -431,6 +445,23 @@ const startServer = async () => {
     logger.info('💾 Initializing database connection...', { service: 'aaiti-backend' });
     await initializeDatabase();
     logger.info('✅ Database initialized successfully', { service: 'aaiti-backend' });
+    
+    // Initialize Security & Compliance services
+    logger.info('🔐 Initializing security and compliance services...', { service: 'aaiti-backend' });
+    
+    // Initialize data retention policies
+    await dataRetentionService.initializePolicies();
+    logger.info('✅ Data retention policies initialized', { service: 'aaiti-backend' });
+    
+    // Schedule automatic cleanup (runs every 24 hours)
+    dataRetentionService.scheduleCleanup(24);
+    logger.info('✅ Automatic data cleanup scheduled', { service: 'aaiti-backend' });
+    
+    // Clean up expired API keys on startup
+    await apiKeyManager.cleanupExpiredKeys();
+    logger.info('✅ Expired API keys cleaned up', { service: 'aaiti-backend' });
+    
+    logger.info('✅ Security and compliance services initialized', { service: 'aaiti-backend' });
     
     // Initialize middleware
     logger.info('⚙️ Setting up application middleware...', { service: 'aaiti-backend' });
