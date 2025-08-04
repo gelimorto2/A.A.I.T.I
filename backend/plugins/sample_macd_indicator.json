@@ -1,0 +1,19 @@
+{
+  "id": "sample_macd_indicator",
+  "name": "MACD Indicator",
+  "description": "Moving Average Convergence Divergence indicator with customizable parameters",
+  "version": "1.0.0",
+  "author": "A.A.I.T.I System",
+  "code": "// MACD Indicator Plugin\n// Calculate MACD line, signal line, and histogram\n\nconst fastPeriod = parameters.fastPeriod || 12;\nconst slowPeriod = parameters.slowPeriod || 26;\nconst signalPeriod = parameters.signalPeriod || 9;\n\nif (!data || data.length < slowPeriod + signalPeriod) {\n  result = { error: 'Insufficient data points' };\n} else {\n  // Calculate EMAs\n  const fastEMA = api.utils.ema(data, fastPeriod);\n  const slowEMA = api.utils.ema(data, slowPeriod);\n  \n  // Calculate MACD line\n  const macdLine = fastEMA - slowEMA;\n  \n  // For signal line, we need historical MACD values\n  // Simplified calculation for demo\n  const signalLine = macdLine * 0.9; // Simplified\n  const histogram = macdLine - signalLine;\n  \n  result = {\n    macd: macdLine,\n    signal: signalLine,\n    histogram: histogram,\n    fastEMA: fastEMA,\n    slowEMA: slowEMA,\n    parameters: {\n      fastPeriod: fastPeriod,\n      slowPeriod: slowPeriod,\n      signalPeriod: signalPeriod\n    }\n  };\n}",
+  "parameters": {
+    "fastPeriod": 12,
+    "slowPeriod": 26,
+    "signalPeriod": 9
+  },
+  "category": "technical_indicators",
+  "enabled": true,
+  "createdAt": "2025-01-04T00:00:00.000Z",
+  "lastUpdated": "2025-01-04T00:00:00.000Z",
+  "executionCount": 0,
+  "averageExecutionTime": 0
+}

@@ -22,6 +22,9 @@ const apiKeysRoutes = require('./routes/apiKeys');
 const oauthRoutes = require('./routes/oauth');
 const complianceRoutes = require('./routes/compliance');
 const dataRetentionRoutes = require('./routes/dataRetention');
+// Advanced Features routes
+const aiInsightsRoutes = require('./routes/aiInsights');
+const integrationsRoutes = require('./routes/integrations');
 
 const { initializeDatabase } = require('./database/init');
 const { authenticateSocket } = require('./middleware/auth');
@@ -178,6 +181,10 @@ const initializeMiddleware = () => {
   app.use('/api/oauth', oauthRoutes);
   app.use('/api/compliance', complianceRoutes);
   app.use('/api/data-retention', dataRetentionRoutes);
+  
+  // Advanced Features routes
+  app.use('/api/ai-insights', aiInsightsRoutes);
+  app.use('/api/integrations', integrationsRoutes);
   
   // Metrics routes (for monitoring)
   app.use('/api', metricsRoutes);
