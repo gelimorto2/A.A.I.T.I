@@ -13,22 +13,20 @@ Experience A.A.I.T.I with sample data and zero configuration:
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
 
-# Enhanced Verbose Demo (Recommended)
-# Linux
-./scripts/linux/demo-verbose.sh
+# Universal Demo (Recommended) - Auto-detects your OS
+./demo
 
-# macOS  
-./scripts/macos/demo-verbose.sh
+# Or use specific options:
+./demo --verbose    # Enhanced demo with detailed progress
+./demo --quick      # Quick demo with minimal output
+```
 
-# Windows
-scripts\windows\demo-verbose.bat
-
-# Quick Demo (Backward Compatible)
-# Linux/Mac
-./demo.sh
-
-# Windows
-demo.bat
+**Legacy OS-specific demos** (still available):
+```bash
+# Enhanced Verbose Demo
+./scripts/linux/demo-verbose.sh      # Linux
+./scripts/macos/demo-verbose.sh      # macOS  
+scripts\windows\demo-verbose.bat     # Windows
 ```
 
 The **verbose demo** includes:
@@ -50,38 +48,42 @@ The **quick demo** provides:
 
 ### 📦 **Full Installation**
 
-#### Linux/Mac
+#### Universal Installer (Recommended)
 ```bash
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
 
-# Enhanced installation (recommended)
-./scripts/linux/install.sh     # Linux
-./scripts/macos/install.sh      # macOS
+# Universal installer - Auto-detects your OS and calls appropriate method
+./install
 
-# Docker-based installation
-./install-docker.sh
+# Or use specific installation types:
+./install --docker      # Docker-based installation
+./install --dev         # Development installation
+./install --production  # Production installation
 ```
 
-#### Windows
-```batch
-git clone https://github.com/gelimorto2/A.A.I.T.I.git
-cd A.A.I.T.I
+#### Alternative Methods
+```bash
+# Docker-based installation (all platforms)
+./install-docker.sh
 
-# Enhanced installation (recommended)
-scripts\windows\install.bat     # Command Prompt
-scripts\windows\install.ps1     # PowerShell
+# Quick deployment options
+./quick-start.sh
 
-# Backward compatible
-install.bat
+# Traditional package managers
+make install    # Production deployment
+make dev        # Development environment
+make monitor    # With Prometheus/Grafana
+make full       # Complete enterprise setup
 ```
 
 The installer automatically:
+- ✅ Detects your operating system
 - ✅ Checks system requirements
 - 🎯 Configures deployment profile  
 - 🔨 Builds optimized containers
 - 🚀 Starts all services
-- 📊 Opens dashboard at `http://localhost:5000`
+- 📊 Opens dashboard at appropriate URL
 
 ### ⚡ Alternative Commands
 
