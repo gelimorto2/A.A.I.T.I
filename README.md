@@ -6,22 +6,44 @@
 
 ## 🚀 Quick Start
 
-### One-Command Installation
+### 🖥️ **Try the Demo** (Minimal Setup)
+```bash
+# Quick demo with sample data
+git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
 
+# Linux/Mac
+./demo.sh
+
+# Windows
+demo.bat
+```
+
+### 📦 **Full Installation**
+
+#### Linux/Mac
 ```bash
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
 ./install-docker.sh
 ```
 
-The installer will automatically:
-- ✅ Check system requirements
-- 🎯 Configure deployment profile
-- 🔨 Build optimized containers
-- 🚀 Start all services
-- 📊 Launch dashboard at `http://localhost:5000`
+#### Windows
+```batch
+git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
+install.bat
+# Or with PowerShell: .\install.ps1
+```
 
-### Alternative Commands
+The installer automatically:
+- ✅ Checks system requirements
+- 🎯 Configures deployment profile  
+- 🔨 Builds optimized containers
+- 🚀 Starts all services
+- 📊 Opens dashboard at `http://localhost:5000`
+
+### ⚡ Alternative Commands
 
 ```bash
 make install    # Production deployment
@@ -29,6 +51,26 @@ make dev        # Development environment
 make monitor    # With Prometheus/Grafana
 make full       # Complete enterprise setup
 ```
+
+## 🖥️ **Cross-Platform Support**
+
+A.A.I.T.I supports all major operating systems:
+
+- **🐧 Linux**: Native Docker support, recommended for production
+- **🍎 macOS**: Full Docker Desktop compatibility  
+- **🪟 Windows**: Complete support with Docker Desktop
+  - Windows 10/11 Pro, Enterprise, or Education
+  - Windows Server 2019+ 
+  - WSL2 backend recommended
+
+### 📋 **System Requirements**
+
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
+| RAM | 4GB | 8GB+ |
+| CPU | 2 cores | 4+ cores |
+| Storage | 5GB | 20GB+ |
+| Docker | 20.0+ | Latest |
 
 ## ✨ Key Features
 
@@ -62,6 +104,7 @@ Comprehensive documentation is available to guide you through every aspect of A.
 
 ### 🎯 Getting Started
 - **[📖 Installation Guide](docs/installation.md)** - Complete setup instructions
+- **[🪟 Windows Guide](docs/windows.md)** - Windows-specific installation  
 - **[🚀 Quick Start Guide](docs/quick-start.md)** - 5-minute setup guide
 - **[👤 User Guide](docs/user-guide.md)** - Feature walkthrough with screenshots
 
@@ -75,6 +118,8 @@ Comprehensive documentation is available to guide you through every aspect of A.
 - **[💻 Development Guide](docs/development.md)** - Developer setup and guidelines
 - **[🚀 TODO Roadmap](TODO-ROADMAP.md)** - Planned features and roadmap
 - **[🆘 Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
+
+**[📖 Browse All Documentation](docs/README.md)**
 
 ## 🛠 Tech Stack
 

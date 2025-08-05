@@ -2,55 +2,71 @@
 
 Welcome to the comprehensive documentation for A.A.I.T.I (Auto AI Trading Interface) - a Docker-first Neural Command Deck for AI-powered trading.
 
+## 🚀 Quick Navigation
+
+- **New Users**: [Installation Guide](installation.md) → [Quick Start](quick-start.md) → [User Guide](user-guide.md)
+- **Developers**: [Development Guide](development.md) → [API Reference](api-reference.md) → [Architecture](architecture.md)
+- **System Admins**: [Docker Guide](docker.md) → [Performance Tuning](performance.md) → [Security Guide](security.md)
+
 ## 📚 Documentation Index
 
-### Getting Started
-- [Installation Guide](installation.md) - Complete setup instructions for Docker and manual installation
-- [Quick Start Guide](quick-start.md) - Get up and running in minutes
-- [User Guide](user-guide.md) - Comprehensive user interface and features guide
+### 🎯 Getting Started
+- **[📖 Installation Guide](installation.md)** - Complete setup for Linux/macOS/Windows
+- **[🪟 Windows Guide](windows.md)** - Windows-specific installation and setup
+- **[🚀 Quick Start Guide](quick-start.md)** - 5-minute setup guide with demo
+- **[👤 User Guide](user-guide.md)** - Feature walkthrough with screenshots
 
-### Technical Documentation
-- [API Reference](api-reference.md) - Complete REST API documentation
-- [ML Models Guide](ml-models.md) - Machine learning algorithms and usage
-- [Docker Guide](docker.md) - Container deployment and orchestration
-- [Architecture Overview](architecture.md) - System design and components
+### 🔧 Technical Documentation
+- **[🔌 API Reference](api-reference.md)** - Complete REST API documentation
+- **[🧠 ML Models Guide](ml-models.md)** - 16 algorithms with examples
+- **[🐳 Docker Guide](docker.md)** - Container deployment guide
+- **[🏗️ Architecture Overview](architecture.md)** - System design and components
 
-### Development & Maintenance
-- [Development Guide](development.md) - Developer setup and contribution guidelines
-- [TODO Roadmap](../TODO-ROADMAP.md) - Next release roadmap and planned features
-- [Troubleshooting](troubleshooting.md) - Common issues and solutions
-- [Performance Tuning](performance.md) - Optimization and configuration
-- [Security Guide](security.md) - Security best practices and hardening
+### 🛠 Development & Operations
+- **[💻 Development Guide](development.md)** - Developer setup and guidelines
+- **[🔒 Security Guide](security.md)** - Security best practices and hardening
+- **[📊 Performance Tuning](performance.md)** - Optimization and configuration
+- **[🆘 Troubleshooting](troubleshooting.md)** - Common issues and solutions
 
-### Features & Guides
-- [Trading Interface](features/trading.md) - Trading bots and strategy management
-- [Analytics & Reporting](features/analytics.md) - Performance tracking and analysis
-- [Notifications](features/notifications.md) - Webhook and email alert system
-- [Portfolio Management](features/portfolio.md) - Advanced portfolio management
+### 📈 Features & Guides
+- **[📊 Trading Interface](features/trading.md)** - Trading bots and strategy management
+- **[📈 Analytics & Reporting](features/analytics.md)** - Performance tracking and analysis
+- **[🔔 Notifications](features/notifications.md)** - Webhook and email alert system
+- **[💼 Portfolio Management](features/portfolio.md)** - Advanced portfolio management
 
 ## 🎯 Version Information
 
-**Current Version:** v1.2.1  
+**Current Version:** v2.0.0  
 **Architecture:** Docker-First  
 **Environment:** Production-Ready  
+**Platforms:** Linux, macOS, Windows
 
-## 🚀 Quick Navigation
+## 🖥️ Platform Support
 
-- **New Users**: Start with [Installation Guide](installation.md) → [Quick Start](quick-start.md) → [User Guide](user-guide.md)
-- **Developers**: Read [Development Guide](development.md) → [API Reference](api-reference.md) → [Architecture](architecture.md)
-- **System Admins**: Check [Docker Guide](docker.md) → [Performance Tuning](performance.md) → [Security Guide](security.md)
+### 🐧 Linux
+- Native Docker support
+- All distributions with Docker CE/EE
+- Recommended for production deployments
 
-## 📸 Screenshots
+### 🍎 macOS  
+- Full Docker Desktop compatibility
+- Intel and Apple Silicon (M1/M2) support
+- Development environment ready
 
-All documentation includes relevant screenshots and visual examples to help you understand the features and interfaces.
+### 🪟 Windows
+- Windows 10/11 Pro, Enterprise, Education
+- Windows Server 2019+
+- Docker Desktop with WSL2 backend
+- PowerShell and Batch script support
 
 ## 🆘 Need Help?
 
-1. Check the [Troubleshooting Guide](troubleshooting.md)
-2. Review the [FAQ](faq.md)
-3. Consult the specific feature documentation
-4. Check the system health endpoint: `http://localhost:5000/api/health`
+1. **🔍 Check Documentation**: Review the relevant guide above
+2. **🚨 Troubleshooting**: See the [troubleshooting guide](troubleshooting.md)
+3. **❓ FAQ**: Check the [frequently asked questions](faq.md)
+4. **🏥 Health Check**: Visit `http://localhost:5000/api/health`
+5. **🐛 Issues**: Report bugs on [GitHub Issues](https://github.com/gelimorto2/A.A.I.T.I/issues)
 
 ---
 
-**Note**: This documentation is regularly updated to reflect the latest features and improvements. Last updated: 2025-01-08 (v1.2.1)
+**Note**: This documentation is regularly updated to reflect the latest features and improvements. Last updated: 2025-01-08 (v2.0.0)
