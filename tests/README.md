@@ -33,6 +33,24 @@ Tests trading engine enhancements including exchange abstraction, order manageme
 node tests/test_trading_enhancements.js
 ```
 
+### `test-docker.sh`
+Docker build test script that tests Docker builds and basic functionality.
+
+**Usage:**
+```bash
+# Run from project root
+./tests/test-docker.sh
+```
+
+### `test-microservices.sh`
+Test script for AAITI microservices architecture. Tests microservices without requiring database connections.
+
+**Usage:**
+```bash
+# Run from project root
+./tests/test-microservices.sh
+```
+
 ## Running Tests
 
 Most tests require backend dependencies to be installed. Make sure to run:
