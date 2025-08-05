@@ -47,7 +47,7 @@ docker-compose --version
 ```batch
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
-install.bat
+scripts\windows\install.bat
 ```
 
 ### Method 2: PowerShell Script
@@ -82,11 +82,11 @@ docker-compose up -d --build
 For quick evaluation without full setup:
 ```batch
 # Quick demo
-demo.bat
+scripts\windows\demo.bat
 
 # Or download and run
-curl -o demo.bat https://raw.githubusercontent.com/gelimorto2/A.A.I.T.I/main/demo.bat
-demo.bat
+curl -o scripts\windows\demo.bat https://raw.githubusercontent.com/gelimorto2/A.A.I.T.I/main/scripts/windows/demo.bat
+scripts\windows\demo.bat
 ```
 
 ## 🔧 Windows-Specific Configuration

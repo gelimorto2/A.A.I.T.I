@@ -491,7 +491,7 @@ Comprehensive test suite ensures reliability:
 
 ```bash
 # Run trading enhancement tests
-node test_trading_enhancements.js
+node tests/test_trading_enhancements.js
 ```
 
 The test suite covers:

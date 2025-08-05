@@ -40,7 +40,7 @@ cd A.A.I.T.I
 # Clone and install
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
-install.bat
+scripts\windows\install.bat
 # Or: .\install.ps1
 ```
 

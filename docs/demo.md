@@ -86,7 +86,7 @@ cd A.A.I.T.I
 ```batch
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
-demo.bat
+scripts\windows\demo.bat
 ```
 
 The quick demo scripts will automatically detect your system and offer to run the enhanced verbose version.
@@ -189,7 +189,7 @@ Located in `scripts/[system]/demo-verbose.*`, these provide:
 
 ### Quick Demo Scripts
 
-Located in project root (`demo.sh`, `demo.bat`), these provide:
+Located in project root (`demo.sh`, `scripts/windows/demo.bat`), these provide:
 
 **Backward Compatibility:**
 - Simple, fast demo startup
@@ -253,7 +253,7 @@ scripts\windows\demo-verbose.bat
 ./demo.sh
 
 # Windows
-demo.bat
+scripts\windows\demo.bat
 
 # Docker Only
 docker compose -f docker-compose.demo.yml up -d

@@ -445,7 +445,7 @@ scrape_configs:
 
 Run the comprehensive test suite:
 ```bash
-node test_system_enhancements.js
+node tests/test_system_enhancements.js
 ```
 
 ### API Tests
