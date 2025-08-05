@@ -1,68 +1,118 @@
-# Windows Installation Guide
+# 🪟 Windows Installation Guide for A.A.I.T.I
 
-Complete installation guide for A.A.I.T.I on Windows systems.
+Complete setup guide for Windows 10/11 users with multiple installation methods and comprehensive troubleshooting.
 
-## 🖥️ System Requirements
+## 🚀 Quick Start (Choose Your Method)
 
-### Supported Windows Versions
-- **Windows 10**: Pro, Enterprise, or Education (Version 2004 or higher)
-- **Windows 11**: All editions
-- **Windows Server**: 2019 or higher
-
-### Hardware Requirements
-- **RAM**: 4GB minimum, 8GB+ recommended
-- **Storage**: 5GB free space, 20GB+ recommended  
-- **CPU**: 2+ cores, 4+ cores recommended
-- **Virtualization**: Hyper-V capable (for Docker Desktop)
-
-## 📦 Prerequisites
-
-### 1. Enable Virtualization
-Ensure your system supports and has enabled:
-- **Hyper-V** (Windows Pro/Enterprise)
-- **WSL 2** (Windows Subsystem for Linux 2)
-- **Hardware virtualization** in BIOS/UEFI
-
-### 2. Install Docker Desktop
-1. Download Docker Desktop for Windows:
-   ```
-   https://docs.docker.com/desktop/install/windows-install/
-   ```
-
-2. Run installer as Administrator
-3. During installation, ensure WSL 2 backend is selected
-4. Restart your computer when prompted
-5. Start Docker Desktop and complete setup
-
-### 3. Verify Installation
-Open PowerShell or Command Prompt and verify:
-```powershell
-docker --version
-docker-compose --version
-```
-
-## 🚀 Installation Methods
-
-### Method 1: Batch Script (Recommended)
+### Method 1: Windows Batch Script (Easiest) ⭐ RECOMMENDED
 ```batch
+# Download and run the Windows installer
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
-scripts\windows\install.bat
+install.bat
 ```
 
-### Method 2: PowerShell Script
+### Method 2: PowerShell Script (Advanced)
 ```powershell
+# Run PowerShell as Administrator (recommended)
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
 .\install.ps1
 ```
 
-Additional PowerShell options:
-```powershell
-.\install.ps1 -Dev      # Development mode
-.\install.ps1 -Minimal  # Minimal installation
-.\install.ps1 -Help     # Show help
+### Method 3: Git Bash/WSL (Unix-like)
+```bash
+# Using Git Bash or WSL
+git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
+./install
 ```
+
+## 📋 Windows System Requirements
+
+### Minimum Requirements
+- **OS**: Windows 10 64-bit (version 1903+) or Windows 11
+- **RAM**: 4GB (8GB recommended)
+- **Storage**: 5GB free disk space (20GB for full development setup)
+- **Network**: Internet connection for initial setup
+
+### Required Software (Auto-detected by installer)
+
+#### For Docker Installation (Recommended) 🐳
+- **Docker Desktop for Windows**
+  - Download: https://docs.docker.com/desktop/install/windows-install/
+  - Requires WSL 2 backend (Windows 10/11 Pro/Enterprise/Education)
+  - Or Hyper-V backend (Windows 10 Pro/Enterprise)
+
+#### For NPM Installation (Advanced) 📦
+- **Node.js 18+**
+  - Download: https://nodejs.org/
+  - LTS version recommended
+- **npm** (included with Node.js)
+- **Git for Windows** (for cloning repository)
+
+## 🛠️ Installation Methods
+
+### 🐳 Docker Installation (Recommended)
+
+**Why Docker?**
+- ✅ Isolated environment
+- ✅ No Node.js version conflicts  
+- ✅ Production-ready setup
+- ✅ Easy to remove/upgrade
+- ✅ Works consistently across different Windows versions
+
+**Step 1: Install Docker Desktop**
+1. Download Docker Desktop from https://docker.com
+2. Run installer as Administrator
+3. Enable WSL 2 integration when prompted
+4. Restart computer if required
+5. Start Docker Desktop and wait for it to be ready
+
+**Step 2: Install A.A.I.T.I**
+```batch
+# Open Command Prompt or PowerShell
+git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
+install.bat
+# Select option 1 (Docker Installation)
+```
+
+**Docker Installation Options:**
+1. **Production** - Optimized for live trading
+2. **Development** - With hot reload for development  
+3. **Production + Monitoring** - Includes Prometheus/Grafana
+4. **Full Stack** - All services (nginx, redis, monitoring)
+
+### 📦 NPM Installation (Advanced Users)
+
+**When to use NPM installation:**
+- You need direct access to source code
+- You're developing/customizing A.A.I.T.I
+- You prefer native Windows installation
+- Docker Desktop is not available
+
+**Step 1: Install Node.js**
+1. Download from https://nodejs.org/ (LTS version)
+2. Run installer with default settings
+3. Verify installation:
+   ```cmd
+   node --version
+   npm --version
+   ```
+
+**Step 2: Install A.A.I.T.I**
+```batch
+git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
+install.bat
+# Select option 2 (NPM Installation)
+```
+
+**NPM Installation Options:**
+1. **Production** - Optimized build for live trading
+2. **Development** - Full development environment
+3. **Fast Install** - Quick setup with minimal features
 
 ### Method 3: Manual Installation
 ```batch
