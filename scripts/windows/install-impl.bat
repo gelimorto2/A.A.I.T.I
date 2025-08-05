@@ -1,7 +1,12 @@
 @echo off
+setlocal enabledelayedexpansion
+
+REM A.A.I.T.I Windows Installation Implementation
+REM This script contains the Windows-specific installation logic
+
 echo.
 echo ===================================================
-echo  A.A.I.T.I v2.0.0 - Windows Installation Script
+echo  A.A.I.T.I v2.0.0 - Windows Installation
 echo ===================================================
 echo.
 
@@ -39,6 +44,29 @@ if %errorlevel% neq 0 (
     set COMPOSE_CMD=docker-compose
 )
 
+REM Installation type selection
+echo Choose Installation Type:
+echo 1) Production (recommended for live trading)
+echo 2) Development (for testing and development)
+echo 3) Fast Install (skip some optimizations)
+echo.
+set /p INSTALL_TYPE="Enter your choice (1-3): "
+
+if "%INSTALL_TYPE%"=="1" (
+    set PROFILE=production
+    echo [INFO] Production installation selected
+) else if "%INSTALL_TYPE%"=="2" (
+    set PROFILE=development
+    echo [INFO] Development installation selected
+) else if "%INSTALL_TYPE%"=="3" (
+    set PROFILE=fast
+    echo [INFO] Fast installation selected
+) else (
+    echo [ERROR] Invalid selection
+    pause
+    exit /b 1
+)
+
 echo [INFO] Building and starting A.A.I.T.I services...
 %COMPOSE_CMD% down
 %COMPOSE_CMD% build --no-cache
@@ -59,9 +87,15 @@ echo.
 echo Dashboard: http://localhost:5000
 echo API Health: http://localhost:5000/api/health
 echo.
-echo To stop: %COMPOSE_CMD% down
-echo To restart: %COMPOSE_CMD% up -d
-echo To view logs: %COMPOSE_CMD% logs -f
+echo Windows Specific Information:
+echo - Use Ctrl+C to stop services
+echo - Logs available in Docker Desktop
+echo - Ensure Windows Defender allows Docker
+echo.
+echo Management Commands:
+echo   Stop:     %COMPOSE_CMD% down
+echo   Restart:  %COMPOSE_CMD% up -d
+echo   Logs:     %COMPOSE_CMD% logs -f
 echo.
 echo Press any key to open the dashboard...
 pause >nul

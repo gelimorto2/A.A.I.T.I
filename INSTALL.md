@@ -1,24 +1,31 @@
-# 🚀 AAITI Installation Guide - Optimized for Speed & Reliability
+# 🚀 A.A.I.T.I Installation Guide - Simplified and Unified
 
 ## Quick Start (30 seconds!)
 
-### Method 1: Interactive Installer (Recommended)
+### Method 1: Universal Installer (Recommended)
 ```bash
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
-chmod +x install.sh
-./install.sh
+./install
 ```
 
-The interactive installer will:
+The universal installer will:
+- ✅ Auto-detect your operating system (Linux/macOS/Windows)
 - ✅ Check system requirements (Node.js 18+, memory, disk space)
 - ✅ Let you choose installation type (Production/Development/Fast)
 - ✅ Clean previous installations if needed
 - ✅ Show progress indicators during installation
-- ✅ Create initial configuration
+- ✅ Create initial configuration optimized for your OS
 - ✅ Optionally start the application immediately
 
-### Method 2: Fast Install (For Advanced Users)
+### Method 2: Docker Installation (Production Ready)
+```bash
+git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
+./install --docker
+```
+
+### Method 3: Fast Install (For Advanced Users)
 ```bash
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
@@ -27,12 +34,7 @@ npm run build
 npm start
 ```
 
-### Method 3: Docker (Production Ready)
-```bash
-git clone https://github.com/gelimorto2/A.A.I.T.I.git
-cd A.A.I.T.I
-docker-compose up -d
-```
+### Method 4: Direct Docker Compose
 
 ## Installation Types
 

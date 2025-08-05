@@ -191,6 +191,31 @@ For issues with these scripts:
 3. Consult the main project documentation in `docs/`
 4. Report issues on the GitHub repository
 
+## 🆕 New Unified Entry Points
+
+**NEW: Use these unified entry points from the project root instead of OS-specific scripts:**
+
+```bash
+./install    # Universal installer (auto-detects OS and calls appropriate implementation)
+./demo       # Universal demo launcher (auto-detects OS and provides options)
+```
+
+These new scripts:
+- **Auto-detect your operating system**
+- **Call the appropriate OS-specific implementation** 
+- **Provide consistent user experience across platforms**
+- **Reduce confusion about which script to use**
+
+### Migration Guide
+
+| Old Approach | New Approach |
+|-------------|-------------|
+| `./scripts/linux/install.sh` | `./install` (auto-detects Linux) |
+| `./scripts/macos/install.sh` | `./install` (auto-detects macOS) |
+| `./scripts/windows/install.bat` | `./install` (works in Git Bash/WSL) |
+| `./scripts/linux/demo-verbose.sh` | `./demo --verbose` |
+| `./demo.sh` or `./demo.bat` | `./demo` (provides options) |
+
 ---
 
-**Note**: These scripts are designed to be self-contained and provide comprehensive feedback. They automatically detect your system configuration and provide tailored installation and demo experiences.
+**Note**: These scripts are designed to be self-contained and provide comprehensive feedback. They automatically detect your system configuration and provide tailored installation and demo experiences. The new unified entry points make it even easier to get started!
