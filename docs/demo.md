@@ -17,21 +17,79 @@ The A.A.I.T.I demo provides a complete evaluation environment with:
 - **4GB RAM**: Minimum system memory
 - **2GB Storage**: Free disk space
 
+# A.A.I.T.I Demo Guide
+
+Quick evaluation of A.A.I.T.I with minimal setup requirements.
+
+## 🎯 Demo Overview
+
+The A.A.I.T.I demo provides a complete evaluation environment with:
+- **Sample trading data** for realistic testing
+- **Pre-configured ML models** for immediate demonstration
+- **Interactive dashboard** showcasing all features
+- **Minimal system requirements** - just Docker needed
+
+## 🚀 Quick Start
+
+### Prerequisites
+- **Docker**: Any recent version (20.0+)
+- **4GB RAM**: Minimum system memory
+- **2GB Storage**: Free disk space
+
 ### Platform-Specific Commands
 
-#### 🐧 Linux / 🍎 macOS
+#### 🎯 Enhanced Verbose Demo (Recommended)
+
+The verbose demo provides detailed progress tracking, health checks, and troubleshooting information:
+
+**🐧 Linux:**
+```bash
+git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
+./scripts/linux/demo-verbose.sh
+```
+
+**🍎 macOS:**
+```bash
+git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
+./scripts/macos/demo-verbose.sh
+```
+
+**🪟 Windows:**
+```batch
+git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
+scripts\windows\demo-verbose.bat
+```
+
+**Features of Verbose Demo:**
+- 🎯 **8-step progress tracking** with detailed status
+- 🔍 **Comprehensive health checks** and system validation
+- ⏱️ **Timing information** for each step
+- 🌈 **Color-coded output** with clear status messages
+- 📋 **Built-in troubleshooting** commands and tips
+- 🚀 **Smart browser launch** with automatic fallbacks
+- 📝 **Complete logging** to timestamped files
+- 🛡️ **System-specific optimizations** for each platform
+
+#### ⚡ Quick Demo (Backward Compatible)
+
+**🐧 Linux / 🍎 macOS:**
 ```bash
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
 ./demo.sh
 ```
 
-#### 🪟 Windows
+**🪟 Windows:**
 ```batch
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
 demo.bat
 ```
+
+The quick demo scripts will automatically detect your system and offer to run the enhanced verbose version.
 
 #### 🐳 Docker Only (Any Platform)
 ```bash
@@ -93,6 +151,57 @@ Once the demo is running:
 4. Test different allocation strategies
 5. View detailed analytics and reports
 
+## 🛠️ Demo Scripts Comparison
+
+### Enhanced Verbose Demo Scripts
+
+Located in `scripts/[system]/demo-verbose.*`, these provide:
+
+**Progress Tracking:**
+- 8-step installation process with clear progress indicators
+- Real-time status updates with color-coded messages
+- Step timing information and total completion time
+- Detailed logging to timestamped files
+
+**System Validation:**
+- Comprehensive Docker installation and service checks
+- System requirements validation (memory, disk space)
+- Port availability testing and conflict resolution
+- Docker network connectivity verification
+- Docker Compose configuration validation
+
+**Health Monitoring:**
+- Backend API health checks with response validation
+- Frontend responsiveness testing
+- Demo data initialization verification
+- Service startup monitoring with retry logic
+
+**Platform Optimizations:**
+- **Linux**: Distribution detection and package manager support
+- **macOS**: Apple Silicon/Intel detection, Homebrew integration, native notifications
+- **Windows**: Docker Desktop specific checks, dual Command Prompt/PowerShell support
+
+**Troubleshooting:**
+- Built-in troubleshooting commands and tips
+- Comprehensive error messages with solution suggestions
+- Log file generation for debugging
+- Automatic cleanup and retry mechanisms
+
+### Quick Demo Scripts
+
+Located in project root (`demo.sh`, `demo.bat`), these provide:
+
+**Backward Compatibility:**
+- Simple, fast demo startup
+- Minimal output for quick testing
+- Automatic detection and offering of verbose demo
+- Fallback support when enhanced scripts aren't available
+
+**Use Cases:**
+- Quick evaluation without detailed feedback
+- CI/CD integration where minimal output is preferred
+- Users who prefer simple, traditional script behavior
+
 ## 📱 Demo Data
 
 The demo includes:
@@ -129,13 +238,24 @@ REACT_APP_DEMO_MODE=true
 
 ### Start Demo
 ```bash
+# Enhanced Verbose Demo (Recommended)
+# Linux
+./scripts/linux/demo-verbose.sh
+
+# macOS
+./scripts/macos/demo-verbose.sh
+
+# Windows
+scripts\windows\demo-verbose.bat
+
+# Quick Demo (Backward Compatible)
 # Linux/macOS
 ./demo.sh
 
 # Windows
 demo.bat
 
-# Docker
+# Docker Only
 docker compose -f docker-compose.demo.yml up -d
 ```
 
@@ -152,6 +272,13 @@ docker compose -f docker-compose.demo.yml logs -f
 
 ### Reset Demo Data
 ```bash
+# Enhanced Scripts
+docker compose -f docker-compose.demo.yml down -v
+./scripts/linux/demo-verbose.sh   # Linux
+./scripts/macos/demo-verbose.sh   # macOS
+scripts\windows\demo-verbose.bat  # Windows
+
+# Standard Scripts
 docker compose -f docker-compose.demo.yml down -v
 docker compose -f docker-compose.demo.yml up -d --build
 ```
