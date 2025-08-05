@@ -1,99 +1,111 @@
-# 🚀 A.A.I.T.I Installation Guide - Simplified and Unified
+# 🚀 A.A.I.T.I Installation Guide - Simplified & Unified
 
-## Quick Start (30 seconds!)
+## Quick Start (One Command!)
 
-### Method 1: Universal Installer (Recommended)
+### Universal Installer (All-in-One)
 ```bash
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
 ./install
 ```
 
-The universal installer will:
-- ✅ Auto-detect your operating system (Linux/macOS/Windows)
-- ✅ Check system requirements (Node.js 18+, memory, disk space)
-- ✅ Let you choose installation type (Production/Development/Fast)
-- ✅ Clean previous installations if needed
-- ✅ Show progress indicators during installation
-- ✅ Create initial configuration optimized for your OS
-- ✅ Optionally start the application immediately
+The unified installer toolkit includes:
+- ✅ **Auto-detection** of your OS (Linux/macOS/Windows)
+- ✅ **System requirements check** (Docker, Node.js, memory, disk)
+- ✅ **Docker installation** (Recommended - Production ready)
+- ✅ **NPM installation** (Advanced users)
+- ✅ **Demo functionality** (Try before installing)
+- ✅ **Interactive menu** - Choose what you need
+- ✅ **No complex scripts** - Everything in one file
 
-### Method 2: Docker Installation (Production Ready)
+## Available Commands
+
+### Interactive Menu
 ```bash
-git clone https://github.com/gelimorto2/A.A.I.T.I.git
-cd A.A.I.T.I
-./install --docker
+./install                    # Main menu with all options
 ```
 
-### Method 3: Fast Install (For Advanced Users)
+### Direct Commands
 ```bash
-git clone https://github.com/gelimorto2/A.A.I.T.I.git
-cd A.A.I.T.I
-npm run install:fast  # Uses npm ci for speed
-npm run build
-npm start
+./install docker             # Docker installation (recommended)
+./install npm                # NPM installation
+./install demo               # Run demo
+./install check              # System requirements check
+./install help               # Show help
 ```
 
-### Method 4: Direct Docker Compose
+## Installation Options
 
-## Installation Types
+### 🐳 Docker Installation (Recommended)
+- **Production**: Just A.A.I.T.I with optimized settings
+- **Development**: With hot reload for development
+- **Monitoring**: Production + Prometheus/Grafana
+- **Full Stack**: All services (nginx, redis, monitoring)
+- **Quick Start**: Just run it without configuration
 
-| Type | Command | Use Case | Speed | Features |
-|------|---------|----------|-------|----------|
-| **Production** | `npm run install:production` | Live trading | Medium | Production-optimized |
-| **Development** | `npm run setup:dev` | Testing/Dev | Medium | All dev tools included |
-| **Fast** | `npm run install:fast` | Quick setup | ⚡ Fast | Skip some optimizations |
+### 📦 NPM Installation (Advanced)
+- **Production**: Optimized for live trading
+- **Development**: All dev tools included
+- **Fast**: Quick setup with minimal features
 
-## Performance Improvements
+## System Requirements
 
-### 🚀 Speed Optimizations
-- **Improved .npmrc** - Better caching and offline preferences
-- **Parallel Installation** - Root, backend, and frontend install simultaneously  
-- **Smart Caching** - Reduced redundant package downloads
-- **Progress Indicators** - Visual feedback during installation
-- **Selective Dependencies** - Production vs development packages
+### Minimum Requirements
+- **Memory**: 4GB RAM (2GB minimum)
+- **Disk**: 2GB available space
+- **Docker**: Version 20.0+ (for Docker installation)
+- **Node.js**: Version 18+ (for NPM installation)
 
-### 🔧 Reliability Enhancements
-- **System Requirements Check** - Validates Node.js version, memory, disk space
-- **Clean Installation Options** - Removes conflicting previous installs
-- **Error Recovery** - Better error messages and fallback options
-- **Dependency Conflict Resolution** - Fixed React version conflicts
-- **Security Updates** - Patched vulnerabilities in serve and other packages
-
-## New Features in v1.1.0
-
-### 📊 Portfolio Optimization
-```bash
-# Access portfolio optimization via API:
-# GET /api/analytics/portfolio/optimization/methods
-# POST /api/analytics/portfolio/optimize
-```
-
-### 🔔 Notification System
-```bash
-# Webhook management:
-# POST /api/notifications/webhooks
-# GET /api/notifications/webhooks
-
-# Email notifications:
-# POST /api/notifications/subscribe
-```
-
-### 🐳 Docker Support
-```bash
-# Development
-docker-compose -f docker-compose.yml up -d
-
-# Production with nginx
-docker-compose --profile production up -d
-```
+### Supported Operating Systems
+- **Linux**: Ubuntu 18.04+, CentOS 7+, Fedora 30+
+- **macOS**: 10.15+ (Intel and Apple Silicon)
+- **Windows**: 10+ with WSL2 or Git Bash
 
 ## Troubleshooting
 
 ### Installation Issues
 ```bash
-# If installation fails, try:
-npm run clean:all    # Clean everything
+# Check system requirements
+./install check
+
+# Clean installation
+npm run clean
+
+# Try Docker instead of NPM
+./install docker
+```
+
+### Common Solutions
+1. **"Docker not found"**: Install Docker Desktop
+2. **"Node.js too old"**: Update to Node.js 18+
+3. **"Permission denied"**: Don't run as root
+4. **"Out of memory"**: Try Docker installation (lighter)
+
+### Getting Help
+```bash
+./install help              # Show all options
+./install check             # Diagnose issues
+```
+
+## What's New - Simplified Architecture
+
+### ✅ Before (Complex)
+- Multiple OS-specific scripts
+- Complex dependency chains
+- Platform-specific implementations
+- Separate demo scripts
+
+### ✅ After (Simple)
+- **One install script** handles everything
+- **Toolkit approach** - choose what you need
+- **Auto-detection** of optimal installation method
+- **Built-in demo** functionality
+
+### Key Improvements
+- 🚀 **Faster**: Reduced from 12+ scripts to 1
+- 🛡️ **More reliable**: Single point of control
+- 🎯 **Simpler**: Interactive menu vs command-line complexity
+- 🔧 **Easier maintenance**: One file to update
 npm cache verify     # Verify npm cache
 ./install.sh         # Use interactive installer
 ```

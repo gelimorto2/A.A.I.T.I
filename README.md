@@ -6,45 +6,33 @@
 
 ## 🚀 Quick Start
 
-### 🖥️ **Try the Demo** (Minimal Setup)
-Experience A.A.I.T.I with sample data and zero configuration:
-
+### 🖥️ **One-Command Installation**
 ```bash
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
-
-# Universal Demo (Recommended) - Auto-detects your OS
-./demo
-
-# Or use specific options:
-./demo --verbose    # Enhanced demo with detailed progress
-./demo --quick      # Quick demo with minimal output
+./install
 ```
 
-**Legacy OS-specific demos** (still available):
+The **unified installer toolkit** provides:
+- ✅ **Interactive menu** - Choose Docker, NPM, or Demo
+- ✅ **Auto-detection** of your OS (Linux/macOS/Windows)
+- ✅ **System requirements check** (Docker, Node.js, memory, disk)
+- ✅ **Production & development** options
+- ✅ **Built-in demo** functionality
+- ✅ **No complex scripts** - Everything in one file
+
+### 🎮 **Try the Demo First**
 ```bash
-# Enhanced Verbose Demo
-./scripts/linux/demo-verbose.sh      # Linux
-./scripts/macos/demo-verbose.sh      # macOS  
-scripts\windows\demo-verbose.bat     # Windows
+./install demo              # Run interactive demo
+./install check             # Check system requirements
+./install help              # Show all options
 ```
 
-The **verbose demo** includes:
-- ✅ **Detailed progress tracking** with 8-step process
-- 🔍 **Comprehensive health checks** and system validation
-- ⏱️ **Timing information** for each step
-- 🌈 **Color-coded output** with clear status messages
-- 📋 **Built-in troubleshooting** commands and tips
-- 🚀 **Smart browser launch** with automatic fallbacks
-- 📝 **Complete logging** to timestamped files
-
-The **quick demo** provides:
-- ✅ **Sample trading data** for realistic testing
-- 🤖 **Pre-configured ML models** ready to evaluate
-- 📊 **Interactive dashboard** with all features
-- 🚀 **Auto-opens** at `http://localhost:3000`
-
-**[📖 Full Demo Guide](docs/demo.md)** | **[📁 Scripts Documentation](scripts/README.md)**
+### 📦 **Direct Installation**
+```bash
+./install docker            # Docker installation (recommended)
+./install npm               # NPM installation (advanced)
+```
 
 ### 📦 **Full Installation**
 
