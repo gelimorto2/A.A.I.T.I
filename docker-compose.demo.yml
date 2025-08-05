@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  demo-backend:
+    build:
+      context: ./backend
+      dockerfile: ../Dockerfile.simple
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=demo
+      - DATABASE_URL=sqlite:./data/demo.db
+      - DEMO_MODE=true
+    volumes:
+      - demo_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  demo-frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../Dockerfile.simple
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+      - REACT_APP_DEMO_MODE=true
+    depends_on:
+      - demo-backend
+    restart: unless-stopped
+
+volumes:
+  demo_data:

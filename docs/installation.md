@@ -1,6 +1,15 @@
 # Installation Guide
 
-This guide provides comprehensive installation instructions for A.A.I.T.I v1.2.1, supporting both Docker-first deployment (recommended) and manual installation.
+This guide provides comprehensive installation instructions for A.A.I.T.I v2.0.0, supporting all major platforms with Docker-first deployment (recommended) and manual installation options.
+
+## 🖥️ Platform Support
+
+A.A.I.T.I supports all major operating systems:
+- **🐧 Linux**: Native Docker support, recommended for production
+- **🍎 macOS**: Full Docker Desktop compatibility  
+- **🪟 Windows**: Complete support with specialized scripts
+
+**For Windows users**: See the dedicated [Windows Installation Guide](windows.md) for platform-specific instructions.
 
 ## Prerequisites
 
@@ -16,7 +25,26 @@ This guide provides comprehensive installation instructions for A.A.I.T.I v1.2.1
 
 ## 🚀 Docker Installation (Recommended)
 
-### One-Command Installation
+### Platform-Specific Quick Start
+
+#### 🐧 Linux / 🍎 macOS
+```bash
+# Clone and install
+git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
+./install-docker.sh
+```
+
+#### 🪟 Windows
+```batch
+# Clone and install
+git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
+install.bat
+# Or: .\install.ps1
+```
+
+### One-Command Installation (Linux/macOS)
 
 ```bash
 # 1. Clone the repository
