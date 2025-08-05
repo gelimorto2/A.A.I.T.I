@@ -7,8 +7,9 @@
 ## 🚀 Quick Start
 
 ### 🖥️ **Try the Demo** (Minimal Setup)
+Experience A.A.I.T.I with sample data and zero configuration:
+
 ```bash
-# Quick demo with sample data
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
 
@@ -18,6 +19,14 @@ cd A.A.I.T.I
 # Windows
 demo.bat
 ```
+
+The demo includes:
+- ✅ **Sample trading data** for realistic testing
+- 🤖 **Pre-configured ML models** ready to evaluate
+- 📊 **Interactive dashboard** with all features
+- 🚀 **Auto-opens** at `http://localhost:3000`
+
+**[📖 Full Demo Guide](docs/demo.md)**
 
 ### 📦 **Full Installation**
 
@@ -105,6 +114,7 @@ Comprehensive documentation is available to guide you through every aspect of A.
 ### 🎯 Getting Started
 - **[📖 Installation Guide](docs/installation.md)** - Complete setup instructions
 - **[🪟 Windows Guide](docs/windows.md)** - Windows-specific installation  
+- **[🎮 Demo Guide](docs/demo.md)** - Quick evaluation with minimal setup
 - **[🚀 Quick Start Guide](docs/quick-start.md)** - 5-minute setup guide
 - **[👤 User Guide](docs/user-guide.md)** - Feature walkthrough with screenshots
 

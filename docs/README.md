@@ -13,6 +13,7 @@ Welcome to the comprehensive documentation for A.A.I.T.I (Auto AI Trading Interf
 ### 🎯 Getting Started
 - **[📖 Installation Guide](installation.md)** - Complete setup for Linux/macOS/Windows
 - **[🪟 Windows Guide](windows.md)** - Windows-specific installation and setup
+- **[🎮 Demo Guide](demo.md)** - Quick evaluation with minimal setup
 - **[🚀 Quick Start Guide](quick-start.md)** - 5-minute setup guide with demo
 - **[👤 User Guide](user-guide.md)** - Feature walkthrough with screenshots
 
