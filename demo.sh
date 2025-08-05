@@ -1,10 +1,67 @@
 #!/bin/bash
 
+# A.A.I.T.I Demo Launcher - Backward Compatible
+# This script maintains compatibility while directing users to the enhanced version
+
 echo ""
-echo "==========================================
- A.A.I.T.I Demo - Quick Start
-=========================================="
+echo "=========================================="
+echo " A.A.I.T.I Demo - Quick Start"
+echo "=========================================="
 echo ""
+
+# Get script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Detect operating system
+case "$(uname -s)" in
+    Linux*)
+        OS="linux"
+        VERBOSE_SCRIPT="$SCRIPT_DIR/scripts/linux/demo-verbose.sh"
+        ;;
+    Darwin*)
+        OS="macos"
+        VERBOSE_SCRIPT="$SCRIPT_DIR/scripts/macos/demo-verbose.sh"
+        ;;
+    *)
+        OS="linux"  # Default fallback
+        VERBOSE_SCRIPT="$SCRIPT_DIR/scripts/linux/demo-verbose.sh"
+        ;;
+esac
+
+echo "Detected OS: $OS"
+echo ""
+
+# Check if verbose script exists
+if [ -f "$VERBOSE_SCRIPT" ]; then
+    echo "🚀 Enhanced verbose demo script available!"
+    echo ""
+    echo "Options:"
+    echo "1) Run enhanced verbose demo (recommended)"
+    echo "2) Run simple quick demo"
+    echo ""
+    read -p "Choose option (1-2, default: 1): " choice
+    
+    case "${choice:-1}" in
+        1)
+            echo ""
+            echo "🎯 Launching enhanced verbose demo..."
+            echo "This provides detailed progress, health checks, and troubleshooting info."
+            echo ""
+            exec "$VERBOSE_SCRIPT"
+            ;;
+        2)
+            echo ""
+            echo "🔄 Running simple demo..."
+            ;;
+        *)
+            echo ""
+            echo "🎯 Launching enhanced verbose demo (default)..."
+            exec "$VERBOSE_SCRIPT"
+            ;;
+    esac
+fi
+
+# Original simple demo logic (fallback)
 echo "This demo requires minimal setup and runs"
 echo "with sample data for evaluation purposes."
 echo ""
@@ -64,6 +121,9 @@ echo "- Dashboard interface"
 echo "- Basic trading simulations"
 echo ""
 echo "To stop demo: $COMPOSE_CMD -f docker-compose.demo.yml down"
+echo ""
+echo "💡 Tip: For enhanced verbose demo with detailed progress tracking,"
+echo "   run: $VERBOSE_SCRIPT"
 echo ""
 
 # Try to open browser (cross-platform)

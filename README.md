@@ -13,6 +13,17 @@ Experience A.A.I.T.I with sample data and zero configuration:
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
 
+# Enhanced Verbose Demo (Recommended)
+# Linux
+./scripts/linux/demo-verbose.sh
+
+# macOS  
+./scripts/macos/demo-verbose.sh
+
+# Windows
+scripts\windows\demo-verbose.bat
+
+# Quick Demo (Backward Compatible)
 # Linux/Mac
 ./demo.sh
 
@@ -20,13 +31,22 @@ cd A.A.I.T.I
 demo.bat
 ```
 
-The demo includes:
+The **verbose demo** includes:
+- ✅ **Detailed progress tracking** with 8-step process
+- 🔍 **Comprehensive health checks** and system validation
+- ⏱️ **Timing information** for each step
+- 🌈 **Color-coded output** with clear status messages
+- 📋 **Built-in troubleshooting** commands and tips
+- 🚀 **Smart browser launch** with automatic fallbacks
+- 📝 **Complete logging** to timestamped files
+
+The **quick demo** provides:
 - ✅ **Sample trading data** for realistic testing
 - 🤖 **Pre-configured ML models** ready to evaluate
 - 📊 **Interactive dashboard** with all features
 - 🚀 **Auto-opens** at `http://localhost:3000`
 
-**[📖 Full Demo Guide](docs/demo.md)**
+**[📖 Full Demo Guide](docs/demo.md)** | **[📁 Scripts Documentation](scripts/README.md)**
 
 ### 📦 **Full Installation**
 
@@ -34,6 +54,12 @@ The demo includes:
 ```bash
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
+
+# Enhanced installation (recommended)
+./scripts/linux/install.sh     # Linux
+./scripts/macos/install.sh      # macOS
+
+# Docker-based installation
 ./install-docker.sh
 ```
 
@@ -41,8 +67,13 @@ cd A.A.I.T.I
 ```batch
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
+
+# Enhanced installation (recommended)
+scripts\windows\install.bat     # Command Prompt
+scripts\windows\install.ps1     # PowerShell
+
+# Backward compatible
 install.bat
-# Or with PowerShell: .\install.ps1
 ```
 
 The installer automatically:
