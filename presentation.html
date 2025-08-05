@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A.A.I.T.I v2.0.0 - Auto AI Trading Interface</title>
+    <meta name="description" content="Professional AI-powered trading platform with 16+ ML algorithms, enterprise-grade architecture, and cross-platform support.">
+    <meta name="keywords" content="AI trading, machine learning, cryptocurrency, algorithmic trading, Docker, enterprise">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="A.A.I.T.I v2.0.0 - Auto AI Trading Interface">
+    <meta property="og:description" content="Professional AI-powered trading platform with 16+ ML algorithms and enterprise-grade architecture.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://github.com/gelimorto2/A.A.I.T.I">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="assets/banner.svg">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(45deg, #00d2ff, #3a7bd5);
+            border-radius: 4px;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 25%, #16213e 75%, #1a1a2e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            text-align: center;
+            z-index: 2;
+            max-width: 1200px;
+            padding: 0 20px;
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 900;
+            background: linear-gradient(45deg, #00d2ff, #3a7bd5, #00d2ff);
+            background-size: 200% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: linear-gradient(45deg, #ff6b6b, #ffa726);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+
+        .hero p {
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            color: #ffffff;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 3rem;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #00d2ff, #3a7bd5);
+            color: white;
+            transform: translateY(0);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 210, 255, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #00d2ff;
+            border: 2px solid #00d2ff;
+        }
+
+        .btn-secondary:hover {
+            background: #00d2ff;
+            color: white;
+            transform: translateY(-3px);
+        }
+
+        /* Floating particles */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: #00d2ff;
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .particle:nth-child(1) { left: 10%; top: 20%; width: 4px; height: 4px; animation-delay: 0s; }
+        .particle:nth-child(2) { left: 20%; top: 80%; width: 6px; height: 6px; animation-delay: 2s; }
+        .particle:nth-child(3) { left: 60%; top: 30%; width: 3px; height: 3px; animation-delay: 4s; }
+        .particle:nth-child(4) { left: 80%; top: 70%; width: 5px; height: 5px; animation-delay: 1s; }
+        .particle:nth-child(5) { left: 90%; top: 10%; width: 4px; height: 4px; animation-delay: 3s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.7; }
+            50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
+        }
+
+        /* Features Section */
+        .features {
+            padding: 100px 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-title h2 {
+            font-size: clamp(2.5rem, 5vw, 3.5rem);
+            font-weight: 800;
+            color: #1a1a2e;
+            margin-bottom: 1rem;
+        }
+
+        .section-title p {
+            font-size: 1.2rem;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(58, 123, 213, 0.1);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 15px;
+        }
+
+        .feature-card p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        /* Stats Section */
+        .stats {
+            background: #1a1a2e;
+            padding: 80px 20px;
+            text-align: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .stat-item h3 {
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #00d2ff, #3a7bd5);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .stat-item p {
+            color: #ffffff;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Installation Section */
+        .installation {
+            padding: 100px 20px;
+            background: #f8f9fa;
+        }
+
+        .install-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 60px;
+        }
+
+        .install-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .install-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .install-card h3 {
+            color: #1a1a2e;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .code-block {
+            background: #1a1a2e;
+            color: #00d2ff;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin: 15px 0;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #3a7bd5;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .copy-btn:hover {
+            background: #00d2ff;
+        }
+
+        /* Demo Section */
+        .demo {
+            padding: 100px 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            text-align: center;
+        }
+
+        .demo h2 {
+            color: white;
+            font-size: clamp(2.5rem, 5vw, 3.5rem);
+            margin-bottom: 30px;
+        }
+
+        .demo p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .demo-video {
+            max-width: 800px;
+            margin: 0 auto;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .demo-placeholder {
+            background: linear-gradient(45deg, #3a7bd5, #00d2ff);
+            color: white;
+            padding: 100px 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            animation: pulse 3s infinite;
+        }
+
+        /* Footer */
+        .footer {
+            background: #0f0f23;
+            color: white;
+            padding: 60px 20px 30px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-section h3 {
+            color: #00d2ff;
+            margin-bottom: 20px;
+        }
+
+        .footer-section a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            display: block;
+            margin-bottom: 10px;
+            transition: color 0.3s ease;
+        }
+
+        .footer-section a:hover {
+            color: #00d2ff;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .install-methods {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Scroll animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Loading animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #00d2ff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="particles">
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+        </div>
+        
+        <div class="hero-content">
+            <div class="version-badge">v2.0.0 Enterprise-Ready</div>
+            <h1>A.A.I.T.I</h1>
+            <p>Auto AI Trading Interface</p>
+            <p style="font-size: 1.2rem; opacity: 0.8; margin-bottom: 3rem;">
+                Professional AI-powered trading platform with enterprise-grade architecture
+            </p>
+            
+            <div class="cta-buttons">
+                <a href="#installation" class="btn btn-primary">
+                    🚀 Get Started
+                </a>
+                <a href="#demo" class="btn btn-secondary">
+                    🎮 View Demo
+                </a>
+                <a href="https://github.com/gelimorto2/A.A.I.T.I" target="_blank" class="btn btn-secondary">
+                    📚 GitHub
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-title fade-in">
+                <h2>Enterprise-Grade Features</h2>
+                <p>Cutting-edge AI technology meets professional trading requirements</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card fade-in">
+                    <span class="feature-icon">🤖</span>
+                    <h3>16+ ML Algorithms</h3>
+                    <p>Advanced machine learning suite including ARIMA, SARIMA, Prophet, LSTM, SVM, Random Forest, and more for precise market predictions.</p>
+                </div>
+
+                <div class="feature-card fade-in">
+                    <span class="feature-icon">🐳</span>
+                    <h3>Docker-First Architecture</h3>
+                    <p>Production-ready containerized deployment with multi-stage builds, security hardening, and microservices readiness.</p>
+                </div>
+
+                <div class="feature-card fade-in">
+                    <span class="feature-icon">🪟</span>
+                    <h3>Cross-Platform Support</h3>
+                    <p>Native support for Windows, Linux, and macOS with platform-specific installers and comprehensive documentation.</p>
+                </div>
+
+                <div class="feature-card fade-in">
+                    <span class="feature-icon">📊</span>
+                    <h3>Neural Command Deck</h3>
+                    <p>Mission-critical dashboard design with real-time market data, advanced analytics, and professional trading interface.</p>
+                </div>
+
+                <div class="feature-card fade-in">
+                    <span class="feature-icon">🔒</span>
+                    <h3>Enterprise Security</h3>
+                    <p>JWT authentication, Helmet.js protection, rate limiting, CORS, and security-hardened containers for production use.</p>
+                </div>
+
+                <div class="feature-card fade-in">
+                    <span class="feature-icon">📈</span>
+                    <h3>Real-Time Analytics</h3>
+                    <p>Live market data via CoinGecko API, WebSocket communication, performance tracking, and risk analysis with P&L monitoring.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-item fade-in">
+                    <h3>16+</h3>
+                    <p>ML Algorithms</p>
+                </div>
+                <div class="stat-item fade-in">
+                    <h3>50+</h3>
+                    <p>Supported Assets</p>
+                </div>
+                <div class="stat-item fade-in">
+                    <h3>3</h3>
+                    <p>Platforms Supported</p>
+                </div>
+                <div class="stat-item fade-in">
+                    <h3>100%</h3>
+                    <p>Open Source</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation Section -->
+    <section class="installation" id="installation">
+        <div class="container">
+            <div class="section-title fade-in">
+                <h2>Quick Installation</h2>
+                <p>Get A.A.I.T.I running in minutes with our platform-specific installers</p>
+            </div>
+
+            <div class="install-methods">
+                <div class="install-card fade-in">
+                    <h3>🪟 Windows</h3>
+                    <p>Native Windows batch and PowerShell installers with auto-detection and troubleshooting.</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyToClipboard('windows-code')">Copy</button>
+                        <div id="windows-code">git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
+install.bat</div>
+                    </div>
+                </div>
+
+                <div class="install-card fade-in">
+                    <h3>🐧 Linux</h3>
+                    <p>Universal bash installer with Docker and NPM support for all major distributions.</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyToClipboard('linux-code')">Copy</button>
+                        <div id="linux-code">git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
+./install</div>
+                    </div>
+                </div>
+
+                <div class="install-card fade-in">
+                    <h3>🍎 macOS</h3>
+                    <p>Homebrew-compatible installation with Apple Silicon and Intel support.</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyToClipboard('macos-code')">Copy</button>
+                        <div id="macos-code">git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
+./install</div>
+                    </div>
+                </div>
+
+                <div class="install-card fade-in">
+                    <h3>🐳 Docker (Recommended)</h3>
+                    <p>Production-ready containerized deployment for all platforms.</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyToClipboard('docker-code')">Copy</button>
+                        <div id="docker-code">git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
+docker compose up -d</div>
+                    </div>
+                </div>
+
+                <div class="install-card fade-in">
+                    <h3>📦 NPM (Advanced)</h3>
+                    <p>Direct Node.js installation for developers and advanced users.</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyToClipboard('npm-code')">Copy</button>
+                        <div id="npm-code">git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
+npm run setup && npm start</div>
+                    </div>
+                </div>
+
+                <div class="install-card fade-in">
+                    <h3>⚡ One-Click Demo</h3>
+                    <p>Try A.A.I.T.I without installation using our demo mode.</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyToClipboard('demo-code')">Copy</button>
+                        <div id="demo-code">curl -sSL https://git.io/aaiti-demo | bash</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section class="demo" id="demo">
+        <div class="container">
+            <h2 class="fade-in">Live Demo</h2>
+            <p class="fade-in">Experience A.A.I.T.I's Neural Command Deck in action</p>
+            
+            <div class="demo-video fade-in">
+                <div class="demo-placeholder">
+                    <div>
+                        <div class="loading"></div>
+                        <div style="margin-top: 20px;">🚀 Interactive Demo Coming Soon</div>
+                        <div style="font-size: 1rem; margin-top: 10px; opacity: 0.8;">
+                            Access the live dashboard at localhost:5000 after installation
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Documentation</h3>
+                <a href="https://github.com/gelimorto2/A.A.I.T.I/blob/main/README.md">Getting Started</a>
+                <a href="https://github.com/gelimorto2/A.A.I.T.I/blob/main/docs/windows.md">Windows Guide</a>
+                <a href="https://github.com/gelimorto2/A.A.I.T.I/blob/main/docs/installation.md">Installation Guide</a>
+                <a href="https://github.com/gelimorto2/A.A.I.T.I/blob/main/docs/api-reference.md">API Reference</a>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Resources</h3>
+                <a href="https://github.com/gelimorto2/A.A.I.T.I">GitHub Repository</a>
+                <a href="https://github.com/gelimorto2/A.A.I.T.I/issues">Issue Tracker</a>
+                <a href="https://github.com/gelimorto2/A.A.I.T.I/blob/main/TODO-ROADMAP.md">Roadmap</a>
+                <a href="https://github.com/gelimorto2/A.A.I.T.I/blob/main/docs/troubleshooting.md">Troubleshooting</a>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Technical</h3>
+                <a href="https://github.com/gelimorto2/A.A.I.T.I/blob/main/docs/architecture.md">Architecture</a>
+                <a href="https://github.com/gelimorto2/A.A.I.T.I/blob/main/docs/ml-models.md">ML Models</a>
+                <a href="https://github.com/gelimorto2/A.A.I.T.I/blob/main/docs/docker.md">Docker Guide</a>
+                <a href="https://github.com/gelimorto2/A.A.I.T.I/blob/main/docs/development.md">Development</a>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Connect</h3>
+                <a href="https://github.com/gelimorto2/A.A.I.T.I/discussions">Discussions</a>
+                <a href="https://github.com/gelimorto2/A.A.I.T.I/releases">Releases</a>
+                <a href="https://github.com/gelimorto2/A.A.I.T.I/security">Security</a>
+                <a href="https://github.com/gelimorto2/A.A.I.T.I/blob/main/LICENSE">License</a>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2024 A.A.I.T.I - Auto AI Trading Interface. Open source under ISC License.</p>
+            <p>Built with ❤️ for the trading community • Enterprise-Grade • Production-Ready</p>
+        </div>
+    </footer>
+
+    <script>
+        // Scroll animations
+        function revealOnScroll() {
+            const reveals = document.querySelectorAll('.fade-in');
+            
+            reveals.forEach(element => {
+                const windowHeight = window.innerHeight;
+                const elementTop = element.getBoundingClientRect().top;
+                const elementVisible = 150;
+                
+                if (elementTop < windowHeight - elementVisible) {
+                    element.classList.add('visible');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', revealOnScroll);
+        revealOnScroll(); // Run on load
+
+        // Copy to clipboard functionality
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => {
+                    // Show feedback
+                    const button = element.parentNode.querySelector('.copy-btn');
+                    const originalText = button.textContent;
+                    button.textContent = 'Copied!';
+                    button.style.background = '#4caf50';
+                    
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.background = '#3a7bd5';
+                    }, 2000);
+                });
+            } else {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                // Show feedback
+                const button = element.parentNode.querySelector('.copy-btn');
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.background = '#4caf50';
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '#3a7bd5';
+                }, 2000);
+            }
+        }
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add some dynamic stats animation
+        function animateStats() {
+            const statNumbers = document.querySelectorAll('.stat-item h3');
+            
+            statNumbers.forEach(stat => {
+                const target = parseInt(stat.textContent.replace(/\D/g, ''));
+                const suffix = stat.textContent.replace(/\d/g, '');
+                let current = 0;
+                const increment = target / 50;
+                
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        current = target;
+                        clearInterval(timer);
+                    }
+                    stat.textContent = Math.floor(current) + suffix;
+                }, 50);
+            });
+        }
+
+        // Trigger stats animation when section is visible
+        const statsSection = document.querySelector('.stats');
+        let statsAnimated = false;
+
+        function checkStatsAnimation() {
+            if (!statsAnimated && statsSection.getBoundingClientRect().top < window.innerHeight) {
+                animateStats();
+                statsAnimated = true;
+            }
+        }
+
+        window.addEventListener('scroll', checkStatsAnimation);
+        checkStatsAnimation(); // Run on load
+    </script>
+</body>
+</html>

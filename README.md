@@ -1,25 +1,46 @@
 # A.A.I.T.I v2.0.0 - Auto AI Trading Interface 🚀🤖
 
+![A.A.I.T.I Banner](assets/banner.svg)
+
 **A.A.I.T.I v2.0.0** is a production-ready, AI-powered trading platform designed for professional cryptocurrency trading operations. Built with a Docker-first architecture, it provides a comprehensive Neural Command Deck with advanced ML algorithms, real-time market data, and enterprise-grade security.
+
+🎯 **[📖 Live Presentation Page](presentation.html)** | 🚀 **[Quick Installation](#-quick-start)** | 🪟 **[Windows Guide](docs/windows.md)**
 
 ![AAITI Dashboard](https://github.com/user-attachments/assets/02041a91-eaaa-4593-9cd2-1538e23cf6f4)
 
 ## 🚀 Quick Start
 
 ### 🖥️ **One-Command Installation**
+
+#### Windows Users 🪟
+```batch
+git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
+install.bat
+```
+
+#### Linux/macOS Users 🐧🍎
 ```bash
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
 ./install
 ```
 
+#### PowerShell (Advanced Windows) 💻
+```powershell
+git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
+.\install.ps1
+```
+
 The **unified installer toolkit** provides:
+- ✅ **Native Windows support** - Batch and PowerShell installers
 - ✅ **Interactive menu** - Choose Docker, NPM, or Demo
-- ✅ **Auto-detection** of your OS (Linux/macOS/Windows)
+- ✅ **Auto-detection** of your OS (Windows/Linux/macOS)
 - ✅ **System requirements check** (Docker, Node.js, memory, disk)
 - ✅ **Production & development** options
 - ✅ **Built-in demo** functionality
-- ✅ **No complex scripts** - Everything in one file
+- ✅ **Cross-platform commands** - Works on all platforms
 
 ### 🎮 **Try the Demo First**
 ```bash
@@ -84,14 +105,31 @@ make full       # Complete enterprise setup
 
 ## 🖥️ **Cross-Platform Support**
 
-A.A.I.T.I supports all major operating systems:
+A.A.I.T.I provides **native support** for all major operating systems with platform-specific installers:
 
-- **🐧 Linux**: Native Docker support, recommended for production
-- **🍎 macOS**: Full Docker Desktop compatibility  
-- **🪟 Windows**: Complete support with Docker Desktop
-  - Windows 10/11 Pro, Enterprise, or Education
-  - Windows Server 2019+ 
-  - WSL2 backend recommended
+### 🪟 **Windows (Enhanced Support)**
+- **Native Windows Batch Script**: `install.bat` - Easy point-and-click installation
+- **PowerShell Script**: `install.ps1` - Advanced features and system integration
+- **Cross-platform npm scripts**: All commands work natively on Windows
+- **Windows-specific documentation**: Complete Windows setup guide
+- **Automatic platform detection**: Installers detect Windows version and capabilities
+- **WSL2 and Docker Desktop support**: Full containerization support
+
+**Windows Requirements:**
+- Windows 10/11 Pro, Enterprise, or Education (64-bit)
+- Windows Server 2019+ 
+- WSL2 backend recommended for Docker
+- PowerShell 5.1+ or Windows Terminal for best experience
+
+### 🐧 **Linux** 
+- Native Docker support, recommended for production
+- Universal bash installer works on all major distributions
+- Package manager integration (apt, yum, dnf)
+
+### 🍎 **macOS**
+- Full Docker Desktop compatibility
+- Homebrew integration support
+- Apple Silicon and Intel compatibility
 
 ### 📋 **System Requirements**
 
