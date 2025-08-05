@@ -137,7 +137,7 @@ The `scripts/common/utils.sh` file contains shared functions used across all scr
 
 ## Backward Compatibility
 
-The original `demo.sh` and `demo.bat` scripts in the root directory are maintained for backward compatibility. They now:
+The original `demo.sh` script and Windows batch files are maintained for backward compatibility. The Windows files are now organized in `scripts/windows/` but the `demo.sh` script in the root directory now:
 
 1. **Detect the operating system**
 2. **Offer choice** between simple and verbose demos
@@ -214,7 +214,7 @@ These new scripts:
 | `./scripts/macos/install.sh` | `./install` (auto-detects macOS) |
 | `./scripts/windows/install.bat` | `./install` (works in Git Bash/WSL) |
 | `./scripts/linux/demo-verbose.sh` | `./demo --verbose` |
-| `./demo.sh` or `./demo.bat` | `./demo` (provides options) |
+| `./demo.sh` or `scripts/windows/demo.bat` | `./demo` (provides options) |
 
 ---
 
