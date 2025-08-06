@@ -26,6 +26,8 @@ const dataRetentionRoutes = require('./routes/dataRetention');
 // Advanced Features routes
 const aiInsightsRoutes = require('./routes/aiInsights');
 const integrationsRoutes = require('./routes/integrations');
+// Paper Trading routes
+const paperTradingRoutes = require('./routes/paperTrading');
 
 const { initializeDatabase } = require('./database/init');
 const { authenticateSocket } = require('./middleware/auth');
@@ -187,6 +189,9 @@ const initializeMiddleware = () => {
   // Advanced Features routes
   app.use('/api/ai-insights', aiInsightsRoutes);
   app.use('/api/integrations', integrationsRoutes);
+  
+  // Paper Trading routes
+  app.use('/api/paper-trading', paperTradingRoutes);
   
   // Metrics routes (for monitoring)
   app.use('/api', metricsRoutes);

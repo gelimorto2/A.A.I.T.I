@@ -382,18 +382,98 @@ const initializeDatabase = async () => {
         CREATE TABLE IF NOT EXISTS portfolio_optimizations (
           id TEXT PRIMARY KEY,
           user_id TEXT NOT NULL,
+        CREATE TABLE IF NOT EXISTS portfolio_optimizations (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          name TEXT NOT NULL,
           method TEXT NOT NULL,
           assets TEXT NOT NULL,
           result TEXT NOT NULL,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (user_id) REFERENCES users (id)
         )
+      `);
+      
+      // Paper Trading tables
+      database.run(`
+        CREATE TABLE IF NOT EXISTS paper_portfolios (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          initial_balance REAL NOT NULL,
+          current_balance REAL NOT NULL,
+          currency TEXT DEFAULT 'USD',
+          risk_profile TEXT DEFAULT 'moderate',
+          trading_strategy TEXT,
+          status TEXT DEFAULT 'active',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+      `);
+      
+      database.run(`
+        CREATE TABLE IF NOT EXISTS paper_orders (
+          id TEXT PRIMARY KEY,
+          portfolio_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          symbol TEXT NOT NULL,
+          side TEXT NOT NULL, -- 'buy' or 'sell'
+          type TEXT NOT NULL, -- 'market', 'limit', 'stop', 'stop_limit'
+          quantity REAL NOT NULL,
+          price REAL,
+          stop_price REAL,
+          time_in_force TEXT DEFAULT 'GTC',
+          status TEXT DEFAULT 'pending',
+          filled_quantity REAL DEFAULT 0,
+          avg_fill_price REAL DEFAULT 0,
+          commission REAL DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (portfolio_id) REFERENCES paper_portfolios (id),
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+      `);
+      
+      database.run(`
+        CREATE TABLE IF NOT EXISTS paper_trades (
+          id TEXT PRIMARY KEY,
+          portfolio_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          order_id TEXT,
+          symbol TEXT NOT NULL,
+          side TEXT NOT NULL,
+          quantity REAL NOT NULL,
+          price REAL NOT NULL,
+          commission REAL DEFAULT 0,
+          realized_pnl REAL DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (portfolio_id) REFERENCES paper_portfolios (id),
+          FOREIGN KEY (user_id) REFERENCES users (id),
+          FOREIGN KEY (order_id) REFERENCES paper_orders (id)
+        )
+      `);
+      
+      database.run(`
+        CREATE TABLE IF NOT EXISTS paper_positions (
+          id TEXT PRIMARY KEY,
+          portfolio_id TEXT NOT NULL,
+          symbol TEXT NOT NULL,
+          quantity REAL NOT NULL,
+          avg_price REAL NOT NULL,
+          total_cost REAL NOT NULL,
+          unrealized_pnl REAL DEFAULT 0,
+          realized_pnl REAL DEFAULT 0,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (portfolio_id) REFERENCES paper_portfolios (id),
+          UNIQUE(portfolio_id, symbol)
+        )
       `, (err) => {
         if (err) {
           logger.error('Error creating tables:', err);
           reject(err);
         } else {
-          logger.info('Database tables initialized successfully');
+          logger.info('Database tables initialized successfully (including Paper Trading)');
           resolve();
         }
       });
