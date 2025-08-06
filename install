@@ -516,7 +516,364 @@ check_system() {
     print_success "System check complete!"
 }
 
-# Show help
+# Portable installation method
+install_portable() {
+    print_step "Starting Portable Installation..."
+    
+    echo ""
+    print_header "💾 Portable Installation Setup"
+    echo -e "${LIGHT_BLUE}This option creates a portable A.A.I.T.I installation that can run from any drive${NC}"
+    echo ""
+    
+    # Get installation directory
+    echo -e "${CYAN}Enter installation directory (e.g., /mnt/usb/A.A.I.T.I or D:\\A.A.I.T.I):${NC}"
+    read -p "Installation path: " install_path
+    
+    if [ -z "$install_path" ]; then
+        print_error "Installation path cannot be empty"
+        exit 1
+    fi
+    
+    # Expand path
+    install_path=$(eval echo "$install_path")
+    
+    # Create directory if it doesn't exist
+    if [ ! -d "$install_path" ]; then
+        print_step "Creating installation directory: $install_path"
+        mkdir -p "$install_path" || {
+            print_error "Failed to create directory: $install_path"
+            exit 1
+        }
+    fi
+    
+    print_info "Installing A.A.I.T.I to: ${GREEN}$install_path${NC}"
+    
+    # Copy all files to portable location
+    print_step "Copying A.A.I.T.I files..."
+    echo -ne "${GRAY}Copying: "
+    for i in {1..30}; do
+        echo -ne "${BLUE}▓${NC}"
+        sleep 0.05
+    done
+    echo -e " ${GREEN}✓${NC}"
+    
+    # Copy files excluding .git and node_modules
+    rsync -av --exclude='.git' --exclude='node_modules' --exclude='backend/node_modules' --exclude='frontend/node_modules' --exclude='frontend/build' . "$install_path/"
+    
+    # Create portable launcher script
+    print_step "Creating portable launcher..."
+    create_portable_launcher "$install_path"
+    
+    # Create portable configuration
+    create_portable_config "$install_path"
+    
+    # Install dependencies in portable location
+    print_step "Installing dependencies in portable location..."
+    cd "$install_path"
+    
+    if check_node; then
+        echo -e "${YELLOW}Installing with NPM...${NC}"
+        npm run install:deps
+        npm run build
+    else
+        print_warning "Node.js not found. Will use Docker for portable installation."
+        if ! check_docker; then
+            print_error "Neither Node.js nor Docker available. Cannot create portable installation."
+            exit 1
+        fi
+    fi
+    
+    echo ""
+    print_celebration "🎉 Portable A.A.I.T.I installation complete!"
+    echo ""
+    echo -e "${GREEN}${BOLD}${UNDERLINE}Portable Installation Details:${NC}"
+    echo -e "${WHITE}📍 Location:${NC} ${LIGHT_BLUE}$install_path${NC}"
+    echo -e "${WHITE}🚀 Launcher:${NC} ${LIGHT_BLUE}$install_path/run-aaiti${NC}"
+    echo -e "${WHITE}⚙️  Config:${NC} ${LIGHT_BLUE}$install_path/portable.conf${NC}"
+    echo ""
+    echo -e "${CYAN}${BOLD}${UNDERLINE}To Use Your Portable Installation:${NC}"
+    echo -e "${WHITE}1.${NC} Copy the entire folder to any drive/computer"
+    echo -e "${WHITE}2.${NC} Run: ${YELLOW}$install_path/run-aaiti${NC}"
+    echo -e "${WHITE}3.${NC} Access at: ${LIGHT_BLUE}${UNDERLINE}http://localhost:5000${NC}"
+    echo ""
+    echo -e "${ORANGE}${BOLD}Requirements on target system:${NC}"
+    echo -e "${WHITE}•${NC} Node.js 18+ (for NPM version) OR Docker (for containerized version)"
+    echo -e "${WHITE}•${NC} 4GB RAM (recommended)"
+    echo -e "${WHITE}•${NC} Internet connection (for market data)"
+    echo ""
+    
+    # Ask to start now
+    read -p "Would you like to test the portable installation now? (y/N): " test_now
+    if [[ $test_now =~ ^[Yy]$ ]]; then
+        print_info "🚀 Testing portable installation..."
+        "$install_path/run-aaiti" &
+        sleep 5
+        print_success "Portable installation is running! Check http://localhost:5000"
+    fi
+}
+
+# Create portable launcher script
+create_portable_launcher() {
+    local install_path="$1"
+    local launcher_script="$install_path/run-aaiti"
+    
+    cat > "$launcher_script" << 'EOF'
+#!/bin/bash
+
+# A.A.I.T.I Portable Launcher
+# Auto-detects environment and starts A.A.I.T.I appropriately
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+WHITE='\033[1;37m'
+NC='\033[0m'
+
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+cd "$SCRIPT_DIR"
+
+echo -e "${CYAN}🚀 Starting A.A.I.T.I Portable Edition${NC}"
+echo -e "${CYAN}======================================${NC}"
+echo ""
+echo -e "${WHITE}Installation Path:${NC} ${GREEN}$SCRIPT_DIR${NC}"
+echo ""
+
+# Check if portable.conf exists and load it
+if [ -f "portable.conf" ]; then
+    source portable.conf
+    echo -e "${GREEN}✅ Loaded portable configuration${NC}"
+else
+    echo -e "${YELLOW}⚠️  No portable configuration found, using defaults${NC}"
+fi
+
+# Function to check if Node.js is available
+check_node() {
+    if command -v node &> /dev/null; then
+        local node_version=$(node --version | sed 's/v//')
+        local node_major=$(echo $node_version | cut -d. -f1)
+        if [ "$node_major" -ge 18 ]; then
+            echo -e "${GREEN}✅ Node.js $node_version detected${NC}"
+            return 0
+        else
+            echo -e "${YELLOW}⚠️  Node.js $node_version too old (need 18+)${NC}"
+            return 1
+        fi
+    else
+        echo -e "${YELLOW}⚠️  Node.js not found${NC}"
+        return 1
+    fi
+}
+
+# Function to check if Docker is available
+check_docker() {
+    if command -v docker &> /dev/null && docker info &> /dev/null; then
+        echo -e "${GREEN}✅ Docker detected and running${NC}"
+        return 0
+    else
+        echo -e "${YELLOW}⚠️  Docker not available${NC}"
+        return 1
+    fi
+}
+
+# Determine best runtime
+echo -e "${BLUE}🔍 Detecting available runtime...${NC}"
+
+if check_node; then
+    RUNTIME="npm"
+    echo -e "${GREEN}Selected runtime: NPM${NC}"
+elif check_docker; then
+    RUNTIME="docker"
+    echo -e "${GREEN}Selected runtime: Docker${NC}"
+else
+    echo -e "${RED}❌ Neither Node.js 18+ nor Docker available${NC}"
+    echo -e "${WHITE}Please install one of the following:${NC}"
+    echo -e "${WHITE}• Node.js 18+: https://nodejs.org/${NC}"
+    echo -e "${WHITE}• Docker: https://docker.com/${NC}"
+    exit 1
+fi
+
+echo ""
+
+# Start A.A.I.T.I based on available runtime
+case $RUNTIME in
+    "npm")
+        echo -e "${BLUE}🚀 Starting A.A.I.T.I with NPM...${NC}"
+        
+        # Check if node_modules exists
+        if [ ! -d "node_modules" ] || [ ! -d "backend/node_modules" ] || [ ! -d "frontend/node_modules" ]; then
+            echo -e "${YELLOW}📦 Installing dependencies...${NC}"
+            npm run install:deps
+        fi
+        
+        # Build if needed
+        if [ ! -d "frontend/build" ]; then
+            echo -e "${YELLOW}🔨 Building frontend...${NC}"
+            npm run build
+        fi
+        
+        echo -e "${GREEN}✅ Starting A.A.I.T.I...${NC}"
+        echo -e "${WHITE}📊 Dashboard will be available at:${NC} ${CYAN}http://localhost:5000${NC}"
+        echo -e "${WHITE}Press Ctrl+C to stop${NC}"
+        echo ""
+        
+        npm start
+        ;;
+        
+    "docker")
+        echo -e "${BLUE}🐳 Starting A.A.I.T.I with Docker...${NC}"
+        
+        # Use docker-compose if available, otherwise use docker directly
+        if docker compose version &> /dev/null; then
+            COMPOSE_CMD="docker compose"
+        elif command -v docker-compose &> /dev/null; then
+            COMPOSE_CMD="docker-compose"
+        else
+            echo -e "${RED}❌ Docker Compose not available${NC}"
+            exit 1
+        fi
+        
+        echo -e "${GREEN}✅ Starting A.A.I.T.I containers...${NC}"
+        echo -e "${WHITE}📊 Dashboard will be available at:${NC} ${CYAN}http://localhost:5000${NC}"
+        echo -e "${WHITE}Press Ctrl+C to stop${NC}"
+        echo ""
+        
+        $COMPOSE_CMD up --build
+        ;;
+esac
+EOF
+
+    chmod +x "$launcher_script"
+    
+    # Also create Windows batch file
+    cat > "$install_path/run-aaiti.bat" << 'EOF'
+@echo off
+setlocal EnableDelayedExpansion
+
+echo.
+echo ========================================
+echo   A.A.I.T.I Portable Edition (Windows)
+echo ========================================
+echo.
+
+cd /d "%~dp0"
+
+echo Installation Path: %CD%
+echo.
+
+:: Check for Node.js
+node --version >nul 2>&1
+if %errorlevel% == 0 (
+    for /f "tokens=1 delims=v" %%i in ('node --version') do set NODE_VERSION=%%i
+    echo [92m✓ Node.js detected[0m
+    set RUNTIME=npm
+) else (
+    echo [93m⚠ Node.js not found[0m
+    :: Check for Docker
+    docker --version >nul 2>&1
+    if !errorlevel! == 0 (
+        echo [92m✓ Docker detected[0m
+        set RUNTIME=docker
+    ) else (
+        echo [91m✗ Neither Node.js nor Docker available[0m
+        echo Please install Node.js 18+ or Docker
+        pause
+        exit /b 1
+    )
+)
+
+echo.
+
+if "%RUNTIME%"=="npm" (
+    echo [94m🚀 Starting A.A.I.T.I with NPM...[0m
+    
+    if not exist "node_modules" (
+        echo [93m📦 Installing dependencies...[0m
+        npm run install:deps
+    )
+    
+    if not exist "frontend\build" (
+        echo [93m🔨 Building frontend...[0m
+        npm run build
+    )
+    
+    echo [92m✓ Starting A.A.I.T.I...[0m
+    echo Dashboard: http://localhost:5000
+    echo.
+    
+    npm start
+) else (
+    echo [94m🐳 Starting A.A.I.T.I with Docker...[0m
+    
+    docker compose up --build
+)
+EOF
+}
+
+# Create portable configuration file
+create_portable_config() {
+    local install_path="$1"
+    local config_file="$install_path/portable.conf"
+    
+    cat > "$config_file" << EOF
+# A.A.I.T.I Portable Configuration
+# This file contains settings for the portable installation
+
+# Installation metadata
+PORTABLE_VERSION="2.1.0"
+INSTALLATION_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+INSTALLATION_PATH="$install_path"
+
+# Runtime preferences (auto-detected if not set)
+# Uncomment to force a specific runtime:
+# PREFERRED_RUNTIME="npm"    # or "docker"
+
+# Port configuration (change if needed)
+BACKEND_PORT=5000
+FRONTEND_PORT=3000
+
+# Data directory (relative to installation path)
+DATA_DIR="./data"
+LOGS_DIR="./logs"
+
+# Network configuration
+# Uncomment to bind to all interfaces (allows remote access)
+# BIND_ALL_INTERFACES=true
+
+# Environment mode
+NODE_ENV=production
+
+# Database configuration for portable mode
+DB_TYPE=sqlite
+DB_PATH="./data/aaiti.db"
+
+# API Configuration
+API_RATE_LIMIT=100
+API_CACHE_TTL=300
+
+# Market data configuration
+MARKET_DATA_CACHE_SIZE=1000
+MARKET_DATA_UPDATE_INTERVAL=60000
+
+# Security settings for portable mode
+JWT_SECRET=$(openssl rand -hex 32 2>/dev/null || echo "portable-secret-$(date +%s)")
+BCRYPT_ROUNDS=12
+
+# Feature flags for portable mode
+ENABLE_DEMO_MODE=true
+ENABLE_OFFLINE_MODE=true
+ENABLE_PORTABLE_FEATURES=true
+
+echo "Portable configuration loaded from: $config_file"
+EOF
+}
+
+# Update help to include portable installation
 show_help() {
     echo "A.A.I.T.I Universal Installer & Toolkit"
     echo ""
@@ -526,6 +883,7 @@ show_help() {
     echo "  install, i         Interactive installation menu"
     echo "  docker, d          Docker-based installation"
     echo "  npm, n             NPM-based installation"
+    echo "  portable, p        Portable installation (external disk)"
     echo "  demo, run          Run demo"
     echo "  check, status      Check system requirements"
     echo "  help, h            Show this help message"
@@ -534,13 +892,20 @@ show_help() {
     echo "  --production       Production installation"
     echo "  --development      Development installation"
     echo "  --quick            Quick installation"
+    echo "  --path=PATH        Custom installation path (for portable)"
     echo ""
     echo "Examples:"
     echo "  ./install             # Interactive menu"
     echo "  ./install docker      # Docker installation"
     echo "  ./install npm --dev   # NPM development install"
+    echo "  ./install portable    # Portable installation"
     echo "  ./install demo        # Run demo"
     echo "  ./install check       # System check"
+    echo ""
+    echo "Portable Installation:"
+    echo "  Creates a self-contained A.A.I.T.I installation that can"
+    echo "  be copied to external drives, USB sticks, or other computers."
+    echo "  Includes all dependencies and a portable launcher script."
     echo ""
 }
 
@@ -554,13 +919,14 @@ main_menu() {
     echo ""
     echo "1) 🐳 Docker Installation (Recommended)"
     echo "2) 📦 NPM Installation (Advanced)"
-    echo "3) 🎮 Run Demo"
-    echo "4) 🔍 Check System Requirements"
-    echo "5) ❓ Help"
-    echo "6) 🚪 Exit"
+    echo "3) 💾 Portable Installation (External Disk)"
+    echo "4) 🎮 Run Demo"
+    echo "5) 🔍 Check System Requirements"
+    echo "6) ❓ Help"
+    echo "7) 🚪 Exit"
     echo ""
     
-    read -p "Select an option (1-6): " choice
+    read -p "Select an option (1-7): " choice
     
     case $choice in
         1)
@@ -570,15 +936,18 @@ main_menu() {
             install_npm
             ;;
         3)
-            run_demo
+            install_portable
             ;;
         4)
-            check_system
+            run_demo
             ;;
         5)
-            show_help
+            check_system
             ;;
         6)
+            show_help
+            ;;
+        7)
             print_info "Goodbye! 👋"
             exit 0
             ;;
@@ -611,6 +980,9 @@ case "${1:-menu}" in
         else
             install_npm
         fi
+        ;;
+    "portable"|"p")
+        install_portable
         ;;
     "demo"|"run")
         run_demo
