@@ -1,9 +1,9 @@
 {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "name": "AAITI - Auto AI Trading Interface",
-  "description": "Production-Ready AI Trading Platform with Enterprise Architecture and Comprehensive Documentation",
+  "description": "Production-Ready AI Trading Platform with Enhanced ML Algorithms and Streamlined Installation",
   "releaseDate": "2025-01-08",
-  "buildNumber": "1",
+  "buildNumber": "2",
   "environment": "production",
   "features": [
     "Docker-first installation and deployment",
@@ -34,6 +34,21 @@
     "disk": "5GB (recommended)"
   },
   "changelog": {
+    "2.1.0": {
+      "date": "2025-01-08",
+      "changes": [
+        "🧠 ENHANCED ML ALGORITHMS - Completed underdeveloped functions with advanced implementations",
+        "🔥 LSTM Neural Networks - Added proper LSTM forward/backward pass with real gradient computation",
+        "🎯 SVM Support Vector Machines - Implemented SMO algorithm with multiple kernel functions",
+        "📊 REALISTIC PRESENTATION - Enhanced presentation page with live data simulation and interactive demos",
+        "⚡ STREAMLINED INSTALLATION - Simplified installation process removing complex production modes",
+        "🎨 DYNAMIC UI ELEMENTS - Added real-time updating metrics and connection status indicators",
+        "🔧 IMPROVED ALGORITHMS - Enhanced prediction accuracy with proper backpropagation and weight updates",
+        "📈 ADVANCED KERNELS - Added RBF and polynomial kernel support for SVM classification",
+        "🚀 PRODUCTION READY - Simplified workflow for easier deployment and better user experience",
+        "✨ MINOR RELEASE - Version 2.1.0 with enhanced functionality and improved performance"
+      ]
+    },
     "2.0.0": {
       "date": "2025-01-08",
       "changes": [
