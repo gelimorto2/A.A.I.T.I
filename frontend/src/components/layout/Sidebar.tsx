@@ -24,6 +24,7 @@ import {
   Close,
   Extension,
   Lightbulb,
+  AccountTree,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -47,6 +48,12 @@ const menuItems = [
     icon: <Science />, 
     path: '/ml',
     description: 'Machine Learning'
+  },
+  { 
+    text: 'Strategy Creator', 
+    icon: <AccountTree />, 
+    path: '/strategy-creator',
+    description: 'Visual Strategy Builder'
   },
   { 
     text: 'Advanced ML', 

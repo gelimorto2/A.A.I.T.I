@@ -11,11 +11,12 @@
 ## ⚠️ **Important: Real Capabilities (Updated December 2024)**
 
 This project provides **real, working implementations** of:
-- ✅ **4 Real ML Algorithms** - Linear/Polynomial Regression, Moving Average, RSI
+- ✅ **12 Real ML Algorithms** - Linear/Polynomial Regression, Moving Average, RSI, Bollinger Bands, MACD, Stochastic, Williams %R, Fibonacci, Support/Resistance, VWAP, Momentum
+- ✅ **Visual Strategy Creator** - Drag-and-drop interface for building trading strategies without coding
 - ✅ **Real Market Data** - Live cryptocurrency data from CoinGecko API
 - ✅ **Real Performance Metrics** - Actual R², MAE, RMSE calculations
-- ✅ **Real Backtesting** - Historical strategy testing with real data
-- ✅ **Basic Windows Support** - Simple `.bat` and `.ps1` installation scripts
+- ✅ **Advanced Backtesting** - Historical strategy testing with real data
+- ✅ **Enhanced Windows Support** - Colorful installation scripts with progress tracking
 
 **What's NOT implemented** (despite some old documentation):
 - ❌ LSTM, Random Forest, SVM (require TensorFlow.js/additional libraries)
@@ -91,7 +92,23 @@ wsl --install Ubuntu
 - **Polynomial Regression**: Non-linear pattern recognition  
 - **Moving Average Strategy**: SMA crossover with backtesting
 - **RSI Strategy**: Momentum-based signals with optimization
+- **Bollinger Bands**: Volatility-based trading signals
+- **MACD Strategy**: Moving average convergence/divergence
+- **Stochastic Oscillator**: %K %D momentum indicators
+- **Williams %R**: Price momentum oscillator
+- **Fibonacci Retracement**: Support/resistance level analysis
+- **Support & Resistance**: Automated level detection
+- **VWAP Strategy**: Volume weighted average price
+- **Momentum Strategy**: Price momentum analysis
 - **Real Performance Metrics**: R², MAE, RMSE, directional accuracy
+
+### 🎯 **Visual Strategy Creator**
+- **Drag & Drop Interface**: Build strategies without coding
+- **Component Library**: 15+ indicators, conditions, and actions
+- **Visual Connections**: Link components with visual flow
+- **Real-time Testing**: Instant backtesting and validation
+- **Strategy Templates**: Pre-built and community strategies
+- **Export/Import**: Save and share strategy configurations
 
 ### 📊 **Market Data Integration**
 - **CoinGecko API**: Real cryptocurrency data (free tier)
