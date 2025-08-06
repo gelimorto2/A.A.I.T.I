@@ -1,7 +1,6 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   Box,
-  Paper,
   Typography,
   Grid,
   Card,
@@ -13,27 +12,18 @@ import {
   AccordionSummary,
   AccordionDetails,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Slider,
   Switch,
   FormControlLabel,
-  Tooltip,
   IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Alert,
   LinearProgress,
-  Divider,
   List,
   ListItem,
   ListItemText,
   ListItemIcon,
-  Fab,
   Drawer,
   AppBar,
   Toolbar,
@@ -43,7 +33,6 @@ import {
 import {
   ExpandMore as ExpandMoreIcon,
   DragIndicator as DragIcon,
-  Add as AddIcon,
   Delete as DeleteIcon,
   Save as SaveIcon,
   PlayArrow as PlayIcon,
@@ -55,14 +44,8 @@ import {
   Psychology as PsychologyIcon,
   Speed as SpeedIcon,
   Tune as TuneIcon,
-  Info as InfoIcon,
-  Help as HelpIcon,
-  Code as CodeIcon,
   Visibility as VisibilityIcon,
-  Close as CloseIcon,
-  FileCopy as CopyIcon,
-  Download as DownloadIcon,
-  Upload as UploadIcon
+  Download as DownloadIcon
 } from '@mui/icons-material';
 import { DndProvider, useDrag, useDrop, DropTargetMonitor } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -291,7 +274,7 @@ const StrategyCreatorPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [testResults, setTestResults] = useState<any>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen] = useState(true);
   const [previewOpen, setPreviewOpen] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
 
