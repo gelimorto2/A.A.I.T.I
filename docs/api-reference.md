@@ -7,6 +7,15 @@ Complete API documentation for A.A.I.T.I v1.2.1. This reference covers all endpo
 - **Production**: `http://localhost:5000/api`
 - **Development**: `http://localhost:5000/api`
 
+## Key Features
+
+✅ **Function Discovery** - Browse 25+ core functions with comprehensive documentation  
+✅ **Portable Installation** - Deploy to external drives for maximum portability  
+✅ **Real ML Algorithms** - 12 implemented algorithms with actual predictions  
+✅ **Comprehensive Documentation** - Detailed guides for all experience levels  
+
+---
+
 ## Authentication
 
 A.A.I.T.I uses JWT (JSON Web Token) authentication. Include the token in the `Authorization` header:
@@ -231,6 +240,205 @@ Delete an ML model and all associated data.
   "deleted": 1
 }
 ```
+
+---
+
+## Function Discovery API
+
+The Function Discovery API provides comprehensive access to A.A.I.T.I's function catalog, helping developers understand and utilize the available functionality.
+
+### GET `/functions`
+Get all functions with optional filtering.
+
+**Query Parameters:**
+- `category` - Filter by category (ML_ALGORITHMS, TRADING_STRATEGIES, etc.)
+- `importance` - Filter by importance level (CRITICAL, HIGH, MEDIUM, LOW)
+- `module` - Filter by module name
+- `search` - Search in function names and descriptions
+
+**Example Request:**
+```
+GET /api/functions?importance=CRITICAL&category=ML_ALGORITHMS
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "functions": [
+      {
+        "name": "createLinearRegressionModel",
+        "category": "ML_ALGORITHMS",
+        "importance": "CRITICAL",
+        "description": "Creates linear regression model for price trend prediction using real ml-regression library",
+        "module": "realMLService",
+        "usage": "Basic trend analysis and prediction",
+        "parameters": ["data", "config"],
+        "returns": "Trained linear regression model",
+        "example": "createLinearRegressionModel(priceData, {period: 20})"
+      }
+    ],
+    "total": 1,
+    "filters": {
+      "importance": "CRITICAL",
+      "category": "ML_ALGORITHMS"
+    }
+  }
+}
+```
+
+### GET `/functions/critical`
+Get only critical functions for quick reference.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "functions": [
+      {
+        "name": "createLinearRegressionModel",
+        "importance": "CRITICAL",
+        "description": "Creates linear regression model for price trend prediction"
+      },
+      {
+        "name": "getRealTimePrice", 
+        "importance": "CRITICAL",
+        "description": "Fetches current market price and volume data"
+      }
+    ],
+    "total": 2,
+    "description": "Critical functions for core A.A.I.T.I functionality"
+  }
+}
+```
+
+### GET `/functions/categories`
+Get all categories with their functions organized by importance.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "categories": {
+      "ML_ALGORITHMS": {
+        "name": "Machine Learning Algorithms",
+        "description": "Core ML functions for trading predictions and analysis",
+        "icon": "🧠",
+        "priority": 1,
+        "functions": [...]
+      },
+      "TRADING_STRATEGIES": {
+        "name": "Trading Strategies", 
+        "description": "Strategy creation, backtesting, and optimization functions",
+        "icon": "📊",
+        "priority": 2,
+        "functions": [...]
+      }
+    },
+    "total": 9
+  }
+}
+```
+
+### GET `/functions/quick-reference`
+Get functions organized by user experience level.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "beginnerFunctions": [
+      {
+        "name": "getRealTimePrice",
+        "description": "Fetches current market price for a symbol"
+      }
+    ],
+    "intermediateFunctions": [
+      {
+        "name": "createLinearRegressionModel", 
+        "description": "Creates ML model for trend prediction"
+      }
+    ],
+    "advancedFunctions": [
+      {
+        "name": "optimizeStrategy",
+        "description": "Optimizes trading strategy parameters"
+      }
+    ]
+  },
+  "description": "Functions organized by user experience level"
+}
+```
+
+### GET `/functions/:functionName`
+Get detailed information about a specific function.
+
+**Example Request:**
+```
+GET /api/functions/createRSIStrategy
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "name": "createRSIStrategy",
+    "category": "ML_ALGORITHMS",
+    "importance": "CRITICAL",
+    "description": "Generates buy/sell signals based on RSI momentum analysis",
+    "module": "realMLService",
+    "usage": "Momentum-based trading in ranging markets",
+    "parameters": ["symbol", "period", "oversold", "overbought"],
+    "returns": "RSI strategy with trading signals",
+    "example": "createRSIStrategy(\"BTC\", 14, 30, 70)"
+  }
+}
+```
+
+### POST `/functions/search`
+Advanced function search with multiple criteria.
+
+**Request Body:**
+```json
+{
+  "query": "regression",
+  "categories": ["ML_ALGORITHMS"],
+  "importance": ["CRITICAL", "HIGH"],
+  "modules": ["realMLService"],
+  "includeExamples": true
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "results": [
+      {
+        "name": "createLinearRegressionModel",
+        "category": "ML_ALGORITHMS",
+        "importance": "CRITICAL",
+        "description": "Creates linear regression model for price trend prediction",
+        "example": "createLinearRegressionModel(priceData, {period: 20})"
+      }
+    ],
+    "total": 1,
+    "searchCriteria": {
+      "query": "regression",
+      "categories": ["ML_ALGORITHMS"],
+      "importance": ["CRITICAL", "HIGH"]
+    }
+  }
+}
+```
+
+---
 
 ### POST `/ml/models/:id/predict`
 Make predictions using a trained model.

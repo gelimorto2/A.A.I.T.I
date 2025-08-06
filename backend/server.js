@@ -16,6 +16,7 @@ const analyticsRoutes = require('./routes/analytics');
 const userRoutes = require('./routes/users');
 const mlRoutes = require('./routes/ml');
 const notificationRoutes = require('./routes/notifications');
+const functionsRoutes = require('./routes/functions');
 const { router: metricsRoutes, collectRequestMetrics } = require('./routes/metrics');
 // Security & Compliance routes
 const apiKeysRoutes = require('./routes/apiKeys');
@@ -175,6 +176,7 @@ const initializeMiddleware = () => {
   app.use('/api/users', userRoutes);
   app.use('/api/ml', mlRoutes);
   app.use('/api/notifications', notificationRoutes);
+  app.use('/api/functions', functionsRoutes);
   
   // Security & Compliance routes
   app.use('/api/api-keys', apiKeysRoutes);

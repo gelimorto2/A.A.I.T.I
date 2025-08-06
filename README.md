@@ -42,6 +42,21 @@ The installer will:
 - ✅ Start all services
 - ✅ Open at http://localhost:5000
 
+### 💾 Portable Installation (New!)
+
+For external drives and portable use:
+
+```bash
+./install portable
+# Enter your desired path (e.g., /mnt/usb/A.A.I.T.I)
+```
+
+The portable installer creates:
+- ✅ **Self-contained installation** - Works on any compatible system
+- ✅ **Portable launcher** - `run-aaiti` script for easy startup
+- ✅ **Bundled dependencies** - No internet required after setup
+- ✅ **Cross-platform support** - Windows `.bat` and Unix scripts
+
 ### 📦 Manual Installation
 
 ```bash
@@ -109,6 +124,14 @@ wsl --install Ubuntu
 - **Real-time Testing**: Instant backtesting and validation
 - **Strategy Templates**: Pre-built and community strategies
 - **Export/Import**: Save and share strategy configurations
+
+### 📊 **Function Organization & Discovery**
+- **Function Registry**: Comprehensive catalog of 25+ core functions
+- **Importance Levels**: CRITICAL, HIGH, MEDIUM, LOW priority classification
+- **Category Organization**: ML Algorithms, Trading, Risk Management, etc.
+- **Quick Reference**: Beginner, Intermediate, and Advanced function guides
+- **Search & Filter**: Find functions by use case, complexity, or category
+- **API Explorer**: `/api/functions` endpoint for programmatic access
 
 ### 📊 **Market Data Integration**
 - **CoinGecko API**: Real cryptocurrency data (free tier)
@@ -199,6 +222,14 @@ All models provide real metrics:
 - `GET /api/ml/models/:id` - Get model details
 - `POST /api/ml/models/:id/predict` - Make real predictions
 - `DELETE /api/ml/models/:id` - Delete model
+
+### Function Discovery (New!)
+- `GET /api/functions` - Browse all functions with filtering
+- `GET /api/functions/critical` - Get most important functions
+- `GET /api/functions/categories` - Functions organized by category
+- `GET /api/functions/quick-reference` - Functions by user level
+- `GET /api/functions/:name` - Detailed function information
+- `POST /api/functions/search` - Advanced function search
 
 ### Market Data
 - Real-time data from CoinGecko API
