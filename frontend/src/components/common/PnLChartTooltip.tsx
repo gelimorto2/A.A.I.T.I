@@ -30,39 +30,16 @@ const PnLChartTooltip: React.FC<PnLChartTooltipProps> = ({ children, botId, curr
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Generate mock chart data - in real app this would fetch from API
-    const generateMockData = () => {
-      const data = [];
-      const now = new Date();
-      const startValue = Math.random() * 1000;
-      let currentValue = startValue;
-      
-      for (let i = 29; i >= 0; i--) {
-        const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-        const variation = (Math.random() - 0.5) * 100; // Random variation
-        currentValue += variation;
-        
-        data.push({
-          date: date.toISOString().substring(5, 10), // MM-DD format
-          value: Number(currentValue.toFixed(2)),
-          change: variation > 0 ? 'positive' : 'negative'
-        });
-      }
-      
-      // Make sure the last value matches currentPnL
-      if (data.length > 0) {
-        data[data.length - 1].value = currentPnL;
-      }
-      
-      return data;
-    };
-
-    setLoading(true);
-    // Simulate API call delay
-    setTimeout(() => {
-      setChartData(generateMockData());
-      setLoading(false);
-    }, 300);
+    // TODO: Fetch real chart data from API when botId is provided
+    // For now, we'll show a placeholder message
+    if (botId) {
+      setLoading(true);
+      // Simulate API call
+      setTimeout(() => {
+        setChartData([]);
+        setLoading(false);
+      }, 1000);
+    }
   }, [currentPnL, botId]);
 
   const getPnLTrend = () => {
@@ -89,6 +66,24 @@ const PnLChartTooltip: React.FC<PnLChartTooltipProps> = ({ children, botId, curr
     <Box sx={{ display: 'flex', alignItems: 'center', p: 2 }}>
       <CircularProgress size={20} sx={{ mr: 1 }} />
       <Typography variant="body2">Loading P&L chart...</Typography>
+    </Box>
+  ) : chartData.length === 0 ? (
+    <Box sx={{ p: 2, minWidth: 300 }}>
+      <Typography variant="h6" sx={{ mb: 2, color: 'primary.main', fontWeight: 'bold' }}>
+        📈 P&L Performance
+      </Typography>
+      <Box sx={{ textAlign: 'center', py: 2 }}>
+        <Typography variant="body2" color="text.secondary">Current P&L:</Typography>
+        <Typography variant="h6" sx={{ 
+          color: currentPnL >= 0 ? '#00ff88' : '#ff3366',
+          fontWeight: 'bold'
+        }}>
+          ${currentPnL.toFixed(2)}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+          Historical chart data will be available once trading begins
+        </Typography>
+      </Box>
     </Box>
   ) : (
     <Box sx={{ p: 2, minWidth: 400, maxWidth: 450 }}>
