@@ -1,7 +1,19 @@
 const winston = require('winston');
+const fs = require('fs');
+const path = require('path');
 
 // Dashboard instance will be set by the main application
 let dashboardInstance = null;
+
+// Ensure logs directory exists
+const logsDir = path.join(process.cwd(), 'logs');
+if (!fs.existsSync(logsDir)) {
+  try {
+    fs.mkdirSync(logsDir, { recursive: true });
+  } catch (error) {
+    console.error('Failed to create logs directory:', error.message);
+  }
+}
 
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
@@ -12,16 +24,29 @@ const logger = winston.createLogger({
   ),
   defaultMeta: { service: 'aaiti-backend' },
   transports: [
-    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'logs/combined.log' })
-  ]
+    new winston.transports.File({ 
+      filename: path.join(logsDir, 'error.log'), 
+      level: 'error',
+      handleExceptions: true
+    }),
+    new winston.transports.File({ 
+      filename: path.join(logsDir, 'combined.log'),
+      handleExceptions: true
+    })
+  ],
+  exitOnError: false
 });
 
 // Custom transport for dashboard logs
 class DashboardTransport extends winston.Transport {
   log(info, callback) {
-    if (dashboardInstance && dashboardInstance.addLog) {
-      dashboardInstance.addLog(info.level, info.message, info);
+    try {
+      if (dashboardInstance && typeof dashboardInstance.addLog === 'function') {
+        dashboardInstance.addLog(info.level, info.message, info);
+      }
+    } catch (error) {
+      // Don't let dashboard logging errors break the main application
+      console.error('Dashboard logging error:', error.message);
     }
     callback();
   }

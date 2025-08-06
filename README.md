@@ -4,20 +4,13 @@
 
 **A.A.I.T.I v2.0.0** is a production-ready, AI-powered trading platform designed for professional cryptocurrency trading operations. Built with a Docker-first architecture, it provides a comprehensive Neural Command Deck with advanced ML algorithms, real-time market data, and enterprise-grade security.
 
-🎯 **[📖 Live Presentation Page](presentation.html)** | 🚀 **[Quick Installation](#-quick-start)** | 🪟 **[Windows Guide](docs/windows.md)**
+🎯 **[📖 Live Presentation Page](presentation.html)** | 🚀 **[Quick Installation](#-quick-start)**
 
 ![AAITI Dashboard](https://github.com/user-attachments/assets/02041a91-eaaa-4593-9cd2-1538e23cf6f4)
 
 ## 🚀 Quick Start
 
 ### 🖥️ **One-Command Installation**
-
-#### Windows Users 🪟
-```batch
-git clone https://github.com/gelimorto2/A.A.I.T.I.git
-cd A.A.I.T.I
-install.bat
-```
 
 #### Linux/macOS Users 🐧🍎
 ```bash
@@ -26,17 +19,9 @@ cd A.A.I.T.I
 ./install
 ```
 
-#### PowerShell (Advanced Windows) 💻
-```powershell
-git clone https://github.com/gelimorto2/A.A.I.T.I.git
-cd A.A.I.T.I
-.\install.ps1
-```
-
 The **unified installer toolkit** provides:
-- ✅ **Native Windows support** - Batch and PowerShell installers
 - ✅ **Interactive menu** - Choose Docker, NPM, or Demo
-- ✅ **Auto-detection** of your OS (Windows/Linux/macOS)
+- ✅ **Auto-detection** of your OS (Linux/macOS)
 - ✅ **System requirements check** (Docker, Node.js, memory, disk)
 - ✅ **Production & development** options
 - ✅ **Built-in demo** functionality
