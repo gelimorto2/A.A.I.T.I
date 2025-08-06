@@ -7,9 +7,6 @@ This guide provides comprehensive installation instructions for A.A.I.T.I v2.0.0
 A.A.I.T.I supports all major operating systems:
 - **🐧 Linux**: Native Docker support, recommended for production
 - **🍎 macOS**: Full Docker Desktop compatibility  
-- **🪟 Windows**: Complete support with specialized scripts
-
-**For Windows users**: See the dedicated [Windows Installation Guide](windows.md) for platform-specific instructions.
 
 ## Prerequisites
 
@@ -33,15 +30,6 @@ A.A.I.T.I supports all major operating systems:
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
 ./install-docker.sh
-```
-
-#### 🪟 Windows
-```batch
-# Clone and install
-git clone https://github.com/gelimorto2/A.A.I.T.I.git
-cd A.A.I.T.I
-scripts\windows\install.bat
-# Or: .\install.ps1
 ```
 
 ### One-Command Installation (Linux/macOS)

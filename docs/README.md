@@ -11,8 +11,7 @@ Welcome to the comprehensive documentation for A.A.I.T.I (Auto AI Trading Interf
 ## 📚 Documentation Index
 
 ### 🎯 Getting Started
-- **[📖 Installation Guide](installation.md)** - Complete setup for Linux/macOS/Windows
-- **[🪟 Windows Guide](windows.md)** - Windows-specific installation and setup
+- **[📖 Installation Guide](installation.md)** - Complete setup for Linux/macOS
 - **[🎮 Demo Guide](demo.md)** - Quick evaluation with minimal setup
 - **[🚀 Quick Start Guide](quick-start.md)** - 5-minute setup guide with demo
 - **[👤 User Guide](user-guide.md)** - Feature walkthrough with screenshots
@@ -40,7 +39,7 @@ Welcome to the comprehensive documentation for A.A.I.T.I (Auto AI Trading Interf
 **Current Version:** v2.0.0  
 **Architecture:** Docker-First  
 **Environment:** Production-Ready  
-**Platforms:** Linux, macOS, Windows
+**Platforms:** Linux, macOS
 
 ## 🖥️ Platform Support
 
@@ -53,12 +52,6 @@ Welcome to the comprehensive documentation for A.A.I.T.I (Auto AI Trading Interf
 - Full Docker Desktop compatibility
 - Intel and Apple Silicon (M1/M2) support
 - Development environment ready
-
-### 🪟 Windows
-- Windows 10/11 Pro, Enterprise, Education
-- Windows Server 2019+
-- Docker Desktop with WSL2 backend
-- PowerShell and Batch script support
 
 ## 🆘 Need Help?
 

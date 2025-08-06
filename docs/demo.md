@@ -56,13 +56,6 @@ cd A.A.I.T.I
 ./scripts/macos/demo-verbose.sh
 ```
 
-**🪟 Windows:**
-```batch
-git clone https://github.com/gelimorto2/A.A.I.T.I.git
-cd A.A.I.T.I
-scripts\windows\demo-verbose.bat
-```
-
 **Features of Verbose Demo:**
 - 🎯 **8-step progress tracking** with detailed status
 - 🔍 **Comprehensive health checks** and system validation
@@ -80,13 +73,6 @@ scripts\windows\demo-verbose.bat
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
 ./demo.sh
-```
-
-**🪟 Windows:**
-```batch
-git clone https://github.com/gelimorto2/A.A.I.T.I.git
-cd A.A.I.T.I
-scripts\windows\demo.bat
 ```
 
 The quick demo scripts will automatically detect your system and offer to run the enhanced verbose version.
@@ -179,7 +165,6 @@ Located in `scripts/[system]/demo-verbose.*`, these provide:
 **Platform Optimizations:**
 - **Linux**: Distribution detection and package manager support
 - **macOS**: Apple Silicon/Intel detection, Homebrew integration, native notifications
-- **Windows**: Docker Desktop specific checks, dual Command Prompt/PowerShell support
 
 **Troubleshooting:**
 - Built-in troubleshooting commands and tips
@@ -189,7 +174,7 @@ Located in `scripts/[system]/demo-verbose.*`, these provide:
 
 ### Quick Demo Scripts
 
-Located in project root (`demo.sh`, `scripts/windows/demo.bat`), these provide:
+Located in project root (`demo.sh`), these provide:
 
 **Backward Compatibility:**
 - Simple, fast demo startup
@@ -245,15 +230,9 @@ REACT_APP_DEMO_MODE=true
 # macOS
 ./scripts/macos/demo-verbose.sh
 
-# Windows
-scripts\windows\demo-verbose.bat
-
 # Quick Demo (Backward Compatible)
 # Linux/macOS
 ./demo.sh
-
-# Windows
-scripts\windows\demo.bat
 
 # Docker Only
 docker compose -f docker-compose.demo.yml up -d
@@ -276,7 +255,6 @@ docker compose -f docker-compose.demo.yml logs -f
 docker compose -f docker-compose.demo.yml down -v
 ./scripts/linux/demo-verbose.sh   # Linux
 ./scripts/macos/demo-verbose.sh   # macOS
-scripts\windows\demo-verbose.bat  # Windows
 
 # Standard Scripts
 docker compose -f docker-compose.demo.yml down -v
@@ -293,7 +271,6 @@ docker compose -f docker-compose.demo.yml up -d --build
 ```bash
 # Find and kill process using port
 sudo lsof -ti:3000 | xargs kill -9  # Linux/macOS
-netstat -ano | findstr :3000        # Windows (then kill PID)
 ```
 
 #### Docker Issues

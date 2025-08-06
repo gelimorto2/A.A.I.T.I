@@ -150,7 +150,7 @@
       <text x="100" y="25" text-anchor="middle" font-family="Arial, sans-serif" 
             font-size="16" font-weight="bold" fill="#ff6b6b">🪟 Cross-Platform</text>
       <text x="100" y="45" text-anchor="middle" font-family="Arial, sans-serif" 
-            font-size="12" fill="#ffffff" opacity="0.8">Windows • Linux • macOS</text>
+            font-size="12" fill="#ffffff" opacity="0.8">Linux • macOS</text>
     </g>
   </g>
   
@@ -161,7 +161,7 @@
     </rect>
     <text x="200" y="32" text-anchor="middle" font-family="Arial, sans-serif" 
           font-size="18" font-weight="bold" fill="white">
-      🚀 Get Started: ./install or install.bat
+      🚀 Get Started: ./install
     </text>
   </g>
   
