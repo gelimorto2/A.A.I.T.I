@@ -8,21 +8,22 @@
 
 ![AAITI Dashboard](https://github.com/user-attachments/assets/02041a91-eaaa-4593-9cd2-1538e23cf6f4)
 
-## ⚠️ **Important: Real Capabilities**
+## ⚠️ **Important: Real Capabilities (Updated December 2024)**
 
 This project provides **real, working implementations** of:
-- ✅ **Linear and Polynomial Regression** - Real implementations using ml-regression library
-- ✅ **Moving Average Strategies** - Real technical analysis with backtesting
-- ✅ **RSI Strategies** - Real momentum-based trading signals
+- ✅ **4 Real ML Algorithms** - Linear/Polynomial Regression, Moving Average, RSI
 - ✅ **Real Market Data** - Live cryptocurrency data from CoinGecko API
-- ✅ **Performance Metrics** - Actual R², MAE, RMSE calculations
-- ✅ **Backtesting** - Real strategy testing with historical data
+- ✅ **Real Performance Metrics** - Actual R², MAE, RMSE calculations
+- ✅ **Real Backtesting** - Historical strategy testing with real data
+- ✅ **Basic Windows Support** - Simple `.bat` and `.ps1` installation scripts
 
 **What's NOT implemented** (despite some old documentation):
 - ❌ LSTM, Random Forest, SVM (require TensorFlow.js/additional libraries)
 - ❌ ARIMA, SARIMA, Prophet (require specialized statistical libraries)
 - ❌ Advanced portfolio optimization algorithms
 - ❌ Real-time paper trading (manual implementation needed)
+
+**See [ML_STATUS.md](ML_STATUS.md) for detailed implementation status.**
 
 ## 🚀 Quick Start
 
