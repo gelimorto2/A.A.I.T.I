@@ -32,8 +32,8 @@ router.get('/algorithms', authenticateToken, (req, res) => {
       .filter(alg => !basicAlgorithms.find(basic => basic.id === alg))
       .map(alg => ({
         id: alg,
-        name: this.formatAlgorithmName(alg),
-        description: this.getAlgorithmDescription(alg),
+        name: router.formatAlgorithmName(alg),
+        description: router.getAlgorithmDescription(alg),
         implemented: true,
         realImplementation: true,
         category: 'advanced'
@@ -144,13 +144,13 @@ router.post('/models/advanced', authenticateToken, async (req, res) => {
 });
 
 // Helper functions for algorithm information
-function formatAlgorithmName(algorithmId) {
+router.formatAlgorithmName = function(algorithmId) {
   return algorithmId.split('_').map(word => 
     word.charAt(0).toUpperCase() + word.slice(1)
   ).join(' ');
 }
 
-function getAlgorithmDescription(algorithmId) {
+router.getAlgorithmDescription = function(algorithmId) {
   const descriptions = {
     'lstm_neural_network': 'Long Short-Term Memory neural network for time series forecasting',
     'random_forest': 'Ensemble learning method using multiple decision trees',

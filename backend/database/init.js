@@ -382,9 +382,6 @@ const initializeDatabase = async () => {
         CREATE TABLE IF NOT EXISTS portfolio_optimizations (
           id TEXT PRIMARY KEY,
           user_id TEXT NOT NULL,
-        CREATE TABLE IF NOT EXISTS portfolio_optimizations (
-          id TEXT PRIMARY KEY,
-          user_id TEXT NOT NULL,
           name TEXT NOT NULL,
           method TEXT NOT NULL,
           assets TEXT NOT NULL,
