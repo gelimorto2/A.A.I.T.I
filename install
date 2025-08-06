@@ -573,10 +573,7 @@ install_portable() {
     
     if check_node; then
         echo -e "${YELLOW}Installing with NPM...${NC}"
-        npm install --prefer-offline --no-fund --no-audit
-        cd backend && npm install --prefer-offline --no-fund --no-audit
-        cd ../frontend && npm install --prefer-offline --no-fund --no-audit
-        cd ..
+        npm run install:deps
         npm run build
     else
         print_warning "Node.js not found. Will use Docker for portable installation."
@@ -711,10 +708,7 @@ case $RUNTIME in
         # Check if node_modules exists
         if [ ! -d "node_modules" ] || [ ! -d "backend/node_modules" ] || [ ! -d "frontend/node_modules" ]; then
             echo -e "${YELLOW}📦 Installing dependencies...${NC}"
-            npm install --prefer-offline --no-fund --no-audit
-            cd backend && npm install --prefer-offline --no-fund --no-audit
-            cd ../frontend && npm install --prefer-offline --no-fund --no-audit
-            cd ..
+            npm run install:deps
         fi
         
         # Build if needed
@@ -800,10 +794,7 @@ if "%RUNTIME%"=="npm" (
     
     if not exist "node_modules" (
         echo [93m📦 Installing dependencies...[0m
-        npm install --prefer-offline --no-fund --no-audit
-        cd backend && npm install --prefer-offline --no-fund --no-audit
-        cd ..\frontend && npm install --prefer-offline --no-fund --no-audit
-        cd ..
+        npm run install:deps
     )
     
     if not exist "frontend\build" (
