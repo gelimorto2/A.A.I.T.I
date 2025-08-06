@@ -18,6 +18,7 @@ import MLModelDetailPage from '../pages/MLModelDetailPage';
 import AdvancedMLPage from '../pages/AdvancedMLPage';
 import AIInsightsPage from '../pages/AIInsightsPage';
 import IntegrationsPage from '../pages/IntegrationsPage';
+import StrategyCreatorPage from '../pages/StrategyCreatorPage';
 
 import Navbar from './layout/Navbar';
 import Sidebar from './layout/Sidebar';
@@ -78,6 +79,7 @@ const AppRouter: React.FC = () => {
             <Route path="/ml" element={<MLModelsPage />} />
             <Route path="/ml/models/:modelId" element={<MLModelDetailPage />} />
             <Route path="/ml/advanced" element={<AdvancedMLPage />} />
+            <Route path="/strategy-creator" element={<StrategyCreatorPage />} />
             <Route path="/ai-insights" element={<AIInsightsPage />} />
             <Route path="/integrations" element={<IntegrationsPage />} />
             <Route path="/trading" element={<TradingPage />} />

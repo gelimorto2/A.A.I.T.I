@@ -2,230 +2,280 @@
 
 ![A.A.I.T.I Banner](assets/banner.svg)
 
-**A.A.I.T.I v2.0.0** is a production-ready, AI-powered trading platform designed for professional cryptocurrency trading operations. Built with a Docker-first architecture, it provides a comprehensive Neural Command Deck with advanced ML algorithms, real-time market data, and enterprise-grade security.
+**A.A.I.T.I v2.0.0** is a cryptocurrency trading platform with **real machine learning capabilities**. This project provides a professional interface for cryptocurrency analysis with **legitimate ML algorithms** and **real market data integration**.
 
 🎯 **[📖 Live Presentation Page](presentation.html)** | 🚀 **[Quick Installation](#-quick-start)**
 
 ![AAITI Dashboard](https://github.com/user-attachments/assets/02041a91-eaaa-4593-9cd2-1538e23cf6f4)
 
+## ⚠️ **Important: Real Capabilities (Updated December 2024)**
+
+This project provides **real, working implementations** of:
+- ✅ **12 Real ML Algorithms** - Linear/Polynomial Regression, Moving Average, RSI, Bollinger Bands, MACD, Stochastic, Williams %R, Fibonacci, Support/Resistance, VWAP, Momentum
+- ✅ **Visual Strategy Creator** - Drag-and-drop interface for building trading strategies without coding
+- ✅ **Real Market Data** - Live cryptocurrency data from CoinGecko API
+- ✅ **Real Performance Metrics** - Actual R², MAE, RMSE calculations
+- ✅ **Advanced Backtesting** - Historical strategy testing with real data
+- ✅ **Enhanced Windows Support** - Colorful installation scripts with progress tracking
+
+**What's NOT implemented** (despite some old documentation):
+- ❌ LSTM, Random Forest, SVM (require TensorFlow.js/additional libraries)
+- ❌ ARIMA, SARIMA, Prophet (require specialized statistical libraries)
+- ❌ Advanced portfolio optimization algorithms
+- ❌ Real-time paper trading (manual implementation needed)
+
+**See [ML_STATUS.md](ML_STATUS.md) for detailed implementation status.**
+
 ## 🚀 Quick Start
 
-### 🖥️ **One-Command Installation**
+### 🐳 Docker Installation (Recommended)
 
-#### Linux/macOS Users 🐧🍎
 ```bash
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
 ./install
 ```
 
-The **unified installer toolkit** provides:
-- ✅ **Interactive menu** - Choose Docker, NPM, or Demo
-- ✅ **Auto-detection** of your OS (Linux/macOS)
-- ✅ **System requirements check** (Docker, Node.js, memory, disk)
-- ✅ **Production & development** options
-- ✅ **Built-in demo** functionality
-- ✅ **Cross-platform commands** - Works on all platforms
+The installer will:
+- ✅ Check system requirements
+- ✅ Build Docker containers
+- ✅ Start all services
+- ✅ Open at http://localhost:5000
 
-### 🎮 **Try the Demo First**
-```bash
-./install demo              # Run interactive demo
-./install check             # Check system requirements
-./install help              # Show all options
-```
+### 📦 Manual Installation
 
-### 📦 **Direct Installation**
-```bash
-./install docker            # Docker installation (recommended)
-./install npm               # NPM installation (advanced)
-```
-
-### 📦 **Full Installation**
-
-#### Universal Installer (Recommended)
 ```bash
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
-
-# Universal installer - Auto-detects your OS and calls appropriate method
-./install
-
-# Or use specific installation types:
-./install --docker      # Docker-based installation
-./install --dev         # Development installation
-./install --production  # Production installation
+npm run install
+npm run build
+npm start
 ```
 
-#### Alternative Methods
+## 🖥️ **Platform Support**
+
+### ✅ **Fully Supported**
+- **🐧 Linux**: Native Docker support, recommended for production
+- **🍎 macOS**: Full Docker Desktop compatibility
+- **🐳 Docker**: All platforms with Docker support
+
+### ⚠️ **Basic Windows Support**
+- **🪟 Windows**: Basic installation scripts now available
+  - `install.bat` - Simple batch script for Docker installation
+  - `install.ps1` - Enhanced PowerShell script with error handling
+  - Requires WSL2 or Docker Desktop for best experience
+  - **Recommended**: Use WSL2 with Ubuntu for full Linux experience
+
+**Windows Installation Options:**
+```cmd
+# Option 1: Basic batch script
+install.bat
+
+# Option 2: Enhanced PowerShell script  
+.\install.ps1
+
+# Option 3: Use WSL2 (recommended)
+wsl --install Ubuntu
+# Then use Linux installation method
+```
+
+**System Requirements:**
+- Docker 20.0+ (recommended) or Node.js 16+
+- 4GB RAM (recommended)
+- 5GB disk space
+- Windows: WSL2 or Docker Desktop
+
+## ✨ **Real Features**
+
+### 🤖 **Machine Learning (Real Implementations)**
+- **Linear Regression**: Trend prediction with real ml-regression library
+- **Polynomial Regression**: Non-linear pattern recognition  
+- **Moving Average Strategy**: SMA crossover with backtesting
+- **RSI Strategy**: Momentum-based signals with optimization
+- **Bollinger Bands**: Volatility-based trading signals
+- **MACD Strategy**: Moving average convergence/divergence
+- **Stochastic Oscillator**: %K %D momentum indicators
+- **Williams %R**: Price momentum oscillator
+- **Fibonacci Retracement**: Support/resistance level analysis
+- **Support & Resistance**: Automated level detection
+- **VWAP Strategy**: Volume weighted average price
+- **Momentum Strategy**: Price momentum analysis
+- **Real Performance Metrics**: R², MAE, RMSE, directional accuracy
+
+### 🎯 **Visual Strategy Creator**
+- **Drag & Drop Interface**: Build strategies without coding
+- **Component Library**: 15+ indicators, conditions, and actions
+- **Visual Connections**: Link components with visual flow
+- **Real-time Testing**: Instant backtesting and validation
+- **Strategy Templates**: Pre-built and community strategies
+- **Export/Import**: Save and share strategy configurations
+
+### 📊 **Market Data Integration**
+- **CoinGecko API**: Real cryptocurrency data (free tier)
+- **Historical Data**: Up to 365 days of real market data
+- **Multiple Assets**: Bitcoin, Ethereum, and 50+ cryptocurrencies
+- **Rate Limiting**: Proper API usage with caching
+
+### 💼 **Trading Interface**
+- **Dashboard**: Professional trading interface
+- **Model Management**: Create, train, and manage ML models
+- **Backtesting**: Test strategies on historical data
+- **Performance Tracking**: Monitor model accuracy over time
+
+### 🐳 **Production Ready**
+- **Docker-First**: Multi-stage builds with security
+- **Health Checks**: Monitor system status
+- **Logging**: Comprehensive application logging
+- **Authentication**: JWT-based user management
+
+## 🔧 **Real Implementation Examples**
+
+### Create a Real ML Model
+
+```javascript
+// POST /api/ml/models
+{
+  "name": "BTC Linear Trend",
+  "algorithmType": "linear_regression",
+  "targetTimeframe": "1d", 
+  "symbols": ["bitcoin"],
+  "parameters": {},
+  "trainingPeriodDays": 90
+}
+```
+
+### Supported Algorithms
+
+```javascript
+// GET /api/ml/algorithms
+{
+  "algorithms": [
+    {
+      "id": "linear_regression",
+      "name": "Linear Regression", 
+      "description": "Real linear regression using ml-regression library",
+      "implemented": true,
+      "realImplementation": true
+    },
+    {
+      "id": "polynomial_regression",
+      "name": "Polynomial Regression",
+      "description": "Real polynomial regression for non-linear patterns", 
+      "implemented": true,
+      "realImplementation": true
+    },
+    {
+      "id": "moving_average",
+      "name": "Moving Average Strategy",
+      "description": "Real moving average crossover strategy",
+      "implemented": true, 
+      "realImplementation": true
+    },
+    {
+      "id": "rsi_strategy",
+      "name": "RSI Strategy",
+      "description": "Real RSI-based trading strategy",
+      "implemented": true,
+      "realImplementation": true
+    }
+  ]
+}
+```
+
+## 📈 **Performance Metrics**
+
+All models provide real metrics:
+- **R² Score**: Coefficient of determination
+- **MAE**: Mean Absolute Error
+- **RMSE**: Root Mean Square Error  
+- **Directional Accuracy**: Trend prediction accuracy
+- **Sample Size**: Number of real data points used
+
+## 🔄 **Real API Endpoints**
+
+### Model Management
+- `GET /api/ml/algorithms` - Get supported algorithms
+- `POST /api/ml/models` - Create model with real data
+- `GET /api/ml/models/:id` - Get model details
+- `POST /api/ml/models/:id/predict` - Make real predictions
+- `DELETE /api/ml/models/:id` - Delete model
+
+### Market Data
+- Real-time data from CoinGecko API
+- Historical data with proper caching
+- Rate limiting for API compliance
+
+## 🛠 **Development**
+
+### Project Structure
+```
+A.A.I.T.I/
+├── backend/           # Node.js API server
+│   ├── utils/
+│   │   ├── realMLService.js  # Real ML implementations
+│   │   └── mlService.js      # Legacy (being phased out)
+│   └── routes/ml.js          # ML API routes
+├── frontend/          # React dashboard
+├── docker/           # Docker configuration
+└── docs/            # Documentation
+```
+
+### Real Testing
 ```bash
-# Docker-based installation (all platforms)
-./install-docker.sh
+# Test real ML service
+npm run test
 
-# Quick deployment options
-./quick-start.sh
+# Check API health
+curl http://localhost:5000/api/health
 
-# Traditional package managers
-make install    # Production deployment
-make dev        # Development environment
-make monitor    # With Prometheus/Grafana
-make full       # Complete enterprise setup
+# Get supported algorithms
+curl http://localhost:5000/api/ml/algorithms
 ```
 
-The installer automatically:
-- ✅ Detects your operating system
-- ✅ Checks system requirements
-- 🎯 Configures deployment profile  
-- 🔨 Builds optimized containers
-- 🚀 Starts all services
-- 📊 Opens dashboard at appropriate URL
+## 📚 **Honest Documentation**
 
-### ⚡ Alternative Commands
+- **[Installation Guide](docs/installation.md)** - Real setup instructions
+- **[API Reference](docs/api-reference.md)** - Actual endpoints
+- **[Development Guide](docs/development.md)** - Real development setup
 
-```bash
-make install    # Production deployment
-make dev        # Development environment
-make monitor    # With Prometheus/Grafana
-make full       # Complete enterprise setup
-```
+## 🚧 **Known Limitations**
 
-## 🖥️ **Cross-Platform Support**
+1. **Limited ML Algorithms**: Only 4 real implementations vs. claimed 16+
+2. **Basic Windows Scripts**: Simple batch/PowerShell scripts (not enterprise-grade)
+3. **CoinGecko API Limits**: Free tier has rate limits
+4. **No Real-Time Trading**: Manual implementation required
+5. **Basic UI**: Professional but not as advanced as claimed
 
-A.A.I.T.I provides **native support** for all major operating systems with platform-specific installers:
+## 🔮 **Future Development**
 
-### 🪟 **Windows (Enhanced Support)**
-- **Native Windows Batch Script**: `install.bat` - Easy point-and-click installation
-- **PowerShell Script**: `install.ps1` - Advanced features and system integration
-- **Cross-platform npm scripts**: All commands work natively on Windows
-- **Windows-specific documentation**: Complete Windows setup guide
-- **Automatic platform detection**: Installers detect Windows version and capabilities
-- **WSL2 and Docker Desktop support**: Full containerization support
+To implement missing features legitimately:
 
-**Windows Requirements:**
-- Windows 10/11 Pro, Enterprise, or Education (64-bit)
-- Windows Server 2019+ 
-- WSL2 backend recommended for Docker
-- PowerShell 5.1+ or Windows Terminal for best experience
+1. **LSTM**: Add TensorFlow.js dependency
+2. **Random Forest**: Implement proper ensemble methods
+3. **Real-Time Trading**: Add exchange API integration
+4. **Advanced Portfolios**: Implement proper optimization
+5. **Enhanced Windows Support**: Improve Windows native experience
 
-### 🐧 **Linux** 
-- Native Docker support, recommended for production
-- Universal bash installer works on all major distributions
-- Package manager integration (apt, yum, dnf)
+## 🆘 **Getting Help**
 
-### 🍎 **macOS**
-- Full Docker Desktop compatibility
-- Homebrew integration support
-- Apple Silicon and Intel compatibility
+1. **📖 Documentation**: [Real guides](docs/README.md)
+2. **🔍 Issues**: [GitHub Issues](https://github.com/gelimorto2/A.A.I.T.I/issues)
+3. **🏥 Health Check**: http://localhost:5000/api/health
+4. **📊 Algorithms**: http://localhost:5000/api/ml/algorithms
 
-### 📋 **System Requirements**
+## ⚠️ **Disclaimer**
 
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| RAM | 4GB | 8GB+ |
-| CPU | 2 cores | 4+ cores |
-| Storage | 5GB | 20GB+ |
-| Docker | 20.0+ | Latest |
+- **Development Version**: Not for live trading without proper testing
+- **Educational Purpose**: Use for learning and research
+- **Risk Warning**: Cryptocurrency trading involves significant risk
+- **No Financial Advice**: This tool is for analysis only
 
-## ✨ Key Features
-
-### 🤖 **Advanced AI Trading Suite**
-- **16+ ML Algorithms**: ARIMA, SARIMA, Prophet, LSTM, SVM, Random Forest
-- **Real-time Adaptation**: Dynamic model retraining and selection
-- **Portfolio Intelligence**: Risk parity, Monte Carlo simulation, dynamic hedging
-- **Multi-Asset Analysis**: Vector Autoregression (VAR), change point detection
-
-### 🐳 **Enterprise Architecture**
-- **Docker-First Design**: Multi-stage builds with security hardening
-- **Microservices Ready**: Scalable service orchestration
-- **Production Monitoring**: Prometheus, Grafana, health checks
-- **Security Hardened**: Non-root containers, minimal attack surface
-
-### 📊 **Professional Trading Interface**
-- **Neural Command Deck**: Mission-critical dashboard design
-- **Real-time Market Data**: Live cryptocurrency feeds via CoinGecko API
-- **Multi-Bot Management**: Deploy and manage multiple trading strategies
-- **Advanced Analytics**: Performance tracking, risk analysis, P&L monitoring
-
-### 🔧 **Development Ready**
-- **Zero Configuration**: UI-based settings management
-- **Comprehensive Documentation**: 15+ detailed guides
-- **TypeScript Support**: Full type safety for frontend
-- **Testing Framework**: Built-in test suites and validation
-
-## 📚 Documentation
-
-Comprehensive documentation is available to guide you through every aspect of A.A.I.T.I:
-
-### 🎯 Getting Started
-- **[📖 Installation Guide](docs/installation.md)** - Complete setup instructions
-- **[🪟 Windows Guide](docs/windows.md)** - Windows-specific installation  
-- **[🎮 Demo Guide](docs/demo.md)** - Quick evaluation with minimal setup
-- **[🚀 Quick Start Guide](docs/quick-start.md)** - 5-minute setup guide
-- **[👤 User Guide](docs/user-guide.md)** - Feature walkthrough with screenshots
-
-### 🔧 Technical Documentation
-- **[🔌 API Reference](docs/api-reference.md)** - Complete REST API documentation
-- **[🧠 ML Models Guide](docs/ml-models.md)** - 16 algorithms with examples
-- **[🐳 Docker Guide](docs/docker.md)** - Container deployment guide
-- **[🏗️ Architecture Overview](docs/architecture.md)** - System design and components
-
-### 🛠 Development
-- **[💻 Development Guide](docs/development.md)** - Developer setup and guidelines
-- **[🚀 TODO Roadmap](TODO-ROADMAP.md)** - Planned features and roadmap
-- **[🆘 Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
-
-**[📖 Browse All Documentation](docs/README.md)**
-
-## 🛠 Tech Stack
-
-- **Backend**: Node.js + Express.js + SQLite + Socket.IO
-- **Frontend**: React 19 + TypeScript + Material-UI v7 + Redux Toolkit
-- **ML Stack**: 16 algorithms including ARIMA, SARIMA, Prophet, LSTM
-- **Deployment**: Docker-first with multi-stage builds
-- **Monitoring**: Prometheus + Grafana + health checks
-- **Security**: JWT auth, Helmet.js, rate limiting, CORS
-
-## 🎯 What's New in v2.0.0
-
-### 🚀 **Major Enhancements**
-- **Complete Documentation Overhaul**: Comprehensive 15+ guide structure
-- **Enhanced ML Suite**: 16+ algorithms with advanced time series forecasting
-- **Production Architecture**: Microservices-ready with enterprise monitoring
-- **Developer Experience**: Improved development guidelines and contribution workflow
-- **Performance Optimization**: Advanced container tuning and resource management
-
-## 💰 Supported Assets
-
-A.A.I.T.I supports **50+ cryptocurrencies** via CoinGecko API (no API key required):
-- Bitcoin (BTC), Ethereum (ETH), Binance Coin (BNB)
-- Cardano (ADA), Solana (SOL), Polkadot (DOT)
-- And many more with real-time data and historical analysis
-
-## 🔄 Real-Time Features
-
-- **Live Market Data**: Real-time price updates and WebSocket communication
-- **Bot Monitoring**: Live status tracking and performance metrics
-- **System Health**: Real-time monitoring and alerting
-- **Portfolio Analytics**: Live P&L tracking and risk analysis
-
-## 🆘 Need Help?
-
-1. **📖 Documentation**: Check our [comprehensive guides](docs/README.md)
-2. **🔍 Troubleshooting**: See the [troubleshooting guide](docs/troubleshooting.md)
-3. **🏥 Health Check**: Visit `http://localhost:5000/api/health`
-4. **🐛 Issues**: Report bugs on [GitHub Issues](https://github.com/gelimorto2/A.A.I.T.I/issues)
-
-## ⚠️ Important Notes
-
-- **Development Version**: For live trading, implement proper security hardening
-- **System Requirements**: 4GB RAM, Docker 20.0+, 5GB disk space recommended
-- **Production Use**: Review security guidelines before live deployment
-
-## 📝 License
+## 📝 **License**
 
 ISC License - see LICENSE file for details.
 
 ---
 
-**A.A.I.T.I v2.0.0**: AI-Powered Trading Platform • 16+ ML Algorithms • Production-Ready • Enterprise-Grade
+**A.A.I.T.I v2.0.0**: Real AI Trading Interface • 4 Real ML Algorithms • Honest Documentation • Real Market Data
 
-**[📖 Get Started with Documentation](docs/README.md)**
+**[📖 Get Started with Real Documentation](docs/README.md)**

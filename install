@@ -6,13 +6,23 @@
 
 set -e
 
-# Colors for output
+# Colors for output - Enhanced with more vibrant colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
+WHITE='\033[1;37m'
+ORANGE='\033[0;33m'
+MAGENTA='\033[1;35m'
+LIGHT_BLUE='\033[1;34m'
+LIGHT_GREEN='\033[1;32m'
+LIGHT_RED='\033[1;31m'
+GRAY='\033[0;90m'
+BOLD='\033[1m'
+UNDERLINE='\033[4m'
+BLINK='\033[5m'
 NC='\033[0m' # No Color
 
 # Configuration
@@ -20,8 +30,8 @@ PROJECT_NAME="A.A.I.T.I"
 VERSION="2.0.0"
 COMPOSE_FILE="docker-compose.yml"
 
-# Print header
-echo -e "${BLUE}"
+# Print header with animated colors
+echo -e "${LIGHT_BLUE}"
 cat << "EOF"
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║                              🚀 A.A.I.T.I v2.0.0 - Universal Installer & Toolkit                                  ║
@@ -30,47 +40,71 @@ cat << "EOF"
 EOF
 echo -e "${NC}"
 
-# Function to print messages
+# Add animated loading effect
+echo -e "${CYAN}${BOLD}Initializing A.A.I.T.I Installation System...${NC}"
+echo -e "${GRAY}["
+for i in {1..30}; do
+    echo -ne "${GREEN}█"
+    sleep 0.02
+done
+echo -e "${GRAY}] ${GREEN}✓ Ready!${NC}"
+echo ""
+
+# Function to print messages with enhanced colors and symbols
 print_success() {
-    echo -e "${GREEN}✅ $1${NC}"
+    echo -e "${LIGHT_GREEN}${BOLD}✅ $1${NC}"
 }
 
 print_info() {
-    echo -e "${BLUE}ℹ️  $1${NC}"
+    echo -e "${LIGHT_BLUE}${BOLD}ℹ️  $1${NC}"
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠️  $1${NC}"
+    echo -e "${ORANGE}${BOLD}⚠️  $1${NC}"
 }
 
 print_error() {
-    echo -e "${RED}❌ $1${NC}"
+    echo -e "${LIGHT_RED}${BOLD}❌ $1${NC}"
 }
 
 print_step() {
-    echo -e "${PURPLE}🔧 $1${NC}"
+    echo -e "${MAGENTA}${BOLD}🔧 $1${NC}"
 }
 
-# Detect operating system
+print_header() {
+    echo -e "${CYAN}${BOLD}${UNDERLINE}$1${NC}"
+}
+
+print_progress() {
+    echo -e "${YELLOW}⏳ $1${NC}"
+}
+
+print_celebration() {
+    echo -e "${GREEN}${BOLD}🎉 $1${NC}"
+}
+
+# Detect operating system with colored output
 detect_os() {
+    print_header "🔍 System Detection"
     case "$(uname -s)" in
         Linux*)
             OS="linux"
-            print_info "Detected: Linux"
+            print_info "Detected: ${LIGHT_GREEN}Linux${NC} 🐧"
             ;;
         Darwin*)
             OS="macos"
-            print_info "Detected: macOS"
+            print_info "Detected: ${GRAY}macOS${NC} 🍎"
             ;;
         CYGWIN*|MINGW*|MSYS*)
             OS="windows"
-            print_info "Detected: Windows (WSL/Git Bash)"
+            print_info "Detected: ${LIGHT_BLUE}Windows${NC} (WSL/Git Bash) 🪟"
             ;;
         *)
             OS="linux"
-            print_warning "Unknown OS, defaulting to Linux"
+            print_warning "Unknown OS, defaulting to ${LIGHT_GREEN}Linux${NC}"
             ;;
     esac
+    echo ""
 }
 
 # Check if Docker is installed and running
@@ -168,36 +202,45 @@ install_docker() {
     fi
     
     echo ""
-    echo -e "${BLUE}Select Docker installation type:${NC}"
-    echo "1) 🎯 Production (Recommended)"
-    echo "2) 🔧 Development (with hot reload)"
-    echo "3) 📊 Production + Monitoring (Prometheus/Grafana)"
-    echo "4) 🚀 Full Stack (All services)"
-    echo "5) ⚡ Quick Start (Just run it)"
+    print_header "🐳 Docker Installation Options"
+    echo -e "${LIGHT_BLUE}Select Docker installation type:${NC}"
+    echo -e "${GREEN}1)${NC} ${BOLD}🎯 Production${NC} (Recommended)"
+    echo -e "${YELLOW}2)${NC} ${BOLD}🔧 Development${NC} (with hot reload)"
+    echo -e "${PURPLE}3)${NC} ${BOLD}📊 Production + Monitoring${NC} (Prometheus/Grafana)"
+    echo -e "${ORANGE}4)${NC} ${BOLD}🚀 Full Stack${NC} (All services)"
+    echo -e "${CYAN}5)${NC} ${BOLD}⚡ Quick Start${NC} (Just run it)"
     echo ""
     
-    read -p "Enter your choice (1-5): " docker_choice
+    echo -ne "${CYAN}Enter your choice (1-5): ${NC}"
+    read docker_choice
     
+    # Add loading animation for choice confirmation
+    echo -e "${YELLOW}Processing selection...${NC}"
+    for i in {1..10}; do
+        echo -ne "${GREEN}.${NC}"
+        sleep 0.1
+    done
+    echo ""
     case $docker_choice in
         1)
             PROFILES=""
-            DESCRIPTION="Production A.A.I.T.I"
+            DESCRIPTION="${GREEN}Production A.A.I.T.I${NC}"
             ;;
         2)
             PROFILES="--profile development"
-            DESCRIPTION="Development A.A.I.T.I"
+            DESCRIPTION="${YELLOW}Development A.A.I.T.I${NC}"
             ;;
         3)
             PROFILES="--profile production --profile monitoring"
-            DESCRIPTION="Production + Monitoring"
+            DESCRIPTION="${PURPLE}Production + Monitoring${NC}"
             ;;
         4)
             PROFILES="--profile production --profile monitoring --profile nginx --profile redis"
-            DESCRIPTION="Full Stack"
+            DESCRIPTION="${ORANGE}Full Stack${NC}"
             ;;
         5)
             PROFILES=""
-            DESCRIPTION="Quick Start"
+            DESCRIPTION="${CYAN}Quick Start${NC}"
             ;;
         *)
             print_error "Invalid selection"
@@ -206,45 +249,63 @@ install_docker() {
     esac
     
     print_info "Installing: $DESCRIPTION"
-    print_info "This may take a few minutes..."
+    print_progress "This may take a few minutes... ☕"
     
-    # Build and start services
+    # Enhanced progress indicators
     print_step "Building Docker images..."
+    echo -ne "${GRAY}Building: "
+    for i in {1..20}; do
+        echo -ne "${BLUE}▓${NC}"
+        sleep 0.1
+    done
+    echo -e " ${GREEN}✓${NC}"
+    
     $COMPOSE_CMD build aaiti
     
     print_step "Starting services..."
+    echo -ne "${GRAY}Starting: "
+    for i in {1..15}; do
+        echo -ne "${GREEN}▓${NC}"
+        sleep 0.1
+    done
+    echo -e " ${GREEN}✓${NC}"
     if [ -n "$PROFILES" ]; then
         $COMPOSE_CMD $PROFILES up -d
     else
         $COMPOSE_CMD up -d aaiti
     fi
     
-    # Wait for services
+    # Wait for services with animated dots
     print_step "Waiting for services to be ready..."
-    sleep 10
+    echo -ne "${CYAN}Initializing"
+    for i in {1..30}; do
+        echo -ne "${CYAN}.${NC}"
+        sleep 0.3
+    done
+    echo -e " ${GREEN}Ready!${NC}"
     
-    # Show success information
+    # Show success information with enhanced styling
     echo ""
-    print_success "🎉 A.A.I.T.I Docker installation complete!"
+    print_celebration "🎉 A.A.I.T.I Docker installation complete!"
     echo ""
-    echo -e "${GREEN}Access URLs:${NC}"
-    echo "📊 A.A.I.T.I Dashboard: http://localhost:5000"
+    echo -e "${GREEN}${BOLD}${UNDERLINE}Access URLs:${NC}"
+    echo -e "${WHITE}📊 A.A.I.T.I Dashboard:${NC} ${LIGHT_BLUE}${UNDERLINE}http://localhost:5000${NC}"
     
     if [[ "$PROFILES" == *"monitoring"* ]]; then
-        echo "📈 Prometheus: http://localhost:9090"
-        echo "📋 Grafana: http://localhost:3001 (admin/admin)"
+        echo -e "${WHITE}📈 Prometheus:${NC} ${LIGHT_BLUE}${UNDERLINE}http://localhost:9090${NC}"
+        echo -e "${WHITE}📋 Grafana:${NC} ${LIGHT_BLUE}${UNDERLINE}http://localhost:3001${NC} ${GRAY}(admin/admin)${NC}"
     fi
     
     if [[ "$PROFILES" == *"nginx"* ]]; then
-        echo "🌐 Nginx Proxy: http://localhost"
+        echo -e "${WHITE}🌐 Nginx Proxy:${NC} ${LIGHT_BLUE}${UNDERLINE}http://localhost${NC}"
     fi
     
     echo ""
-    echo -e "${BLUE}Management Commands:${NC}"
-    echo "📋 View logs: $COMPOSE_CMD logs -f"
-    echo "📊 Check status: $COMPOSE_CMD ps"
-    echo "⏹️  Stop: $COMPOSE_CMD down"
-    echo "🔄 Restart: $COMPOSE_CMD restart"
+    echo -e "${CYAN}${BOLD}${UNDERLINE}Management Commands:${NC}"
+    echo -e "${WHITE}📋 View logs:${NC} ${YELLOW}$COMPOSE_CMD logs -f${NC}"
+    echo -e "${WHITE}📊 Check status:${NC} ${YELLOW}$COMPOSE_CMD ps${NC}"
+    echo -e "${WHITE}⏹️  Stop:${NC} ${YELLOW}$COMPOSE_CMD down${NC}"
+    echo -e "${WHITE}🔄 Restart:${NC} ${YELLOW}$COMPOSE_CMD restart${NC}"
     echo ""
 }
 
