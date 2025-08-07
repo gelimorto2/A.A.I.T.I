@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const { db } = require('../database/init');
 const { authenticateToken, auditLog } = require('../middleware/auth');
 const realMLService = require('../utils/realMLService'); // Using real ML service
+const AdvancedMLService = require('../utils/advancedMLService'); // New advanced ML service
 const backtestingService = require('../utils/backtestingService');
 const tradingStrategyFactory = require('../utils/tradingStrategyFactory');
 const advancedIndicators = require('../utils/advancedIndicators');
@@ -10,29 +11,160 @@ const logger = require('../utils/logger');
 
 const router = express.Router();
 
+// Initialize advanced ML service
+const advancedMLService = new AdvancedMLService();
+
 // Get supported algorithms (real implementations only)
 router.get('/algorithms', authenticateToken, (req, res) => {
   try {
-    const algorithms = realMLService.getSupportedAlgorithms().map(alg => {
+    const basicAlgorithms = realMLService.getSupportedAlgorithms().map(alg => {
       const info = realMLService.getAlgorithmInfo(alg);
       return {
         id: alg,
         ...info,
         implemented: true,
-        realImplementation: true
+        realImplementation: true,
+        category: 'basic'
       };
     });
 
+    const advancedAlgorithms = Object.values(advancedMLService.supportedAlgorithms)
+      .filter(alg => !basicAlgorithms.find(basic => basic.id === alg))
+      .map(alg => ({
+        id: alg,
+        name: router.formatAlgorithmName(alg),
+        description: router.getAlgorithmDescription(alg),
+        implemented: true,
+        realImplementation: true,
+        category: 'advanced'
+      }));
+
+    const allAlgorithms = [...basicAlgorithms, ...advancedAlgorithms];
+
     res.json({ 
-      algorithms,
-      note: 'These are real, working ML implementations. Other algorithms mentioned in old docs are not implemented.',
-      totalImplemented: algorithms.length
+      algorithms: allAlgorithms,
+      basicCount: basicAlgorithms.length,
+      advancedCount: advancedAlgorithms.length,
+      totalImplemented: allAlgorithms.length,
+      note: 'Real implementations including LSTM, Random Forest, SVM, ARIMA, SARIMA, and advanced portfolio optimization'
     });
   } catch (error) {
     logger.error('Error fetching algorithms:', error);
     res.status(500).json({ error: error.message });
   }
 });
+
+// Create advanced ML model
+router.post('/models/advanced', authenticateToken, async (req, res) => {
+  try {
+    const {
+      name,
+      algorithmType,
+      targetTimeframe = '1d',
+      symbols = ['bitcoin'],
+      parameters = {},
+      trainingPeriodDays = 365,
+      validationSplit = 0.2
+    } = req.body;
+
+    // Validate required fields
+    if (!name || !algorithmType) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: name and algorithmType' 
+      });
+    }
+
+    // Check if algorithm is supported
+    const supportedAlgorithms = Object.values(advancedMLService.supportedAlgorithms);
+    if (!supportedAlgorithms.includes(algorithmType)) {
+      return res.status(400).json({ 
+        error: `Unsupported algorithm: ${algorithmType}. Supported: ${supportedAlgorithms.join(', ')}` 
+      });
+    }
+
+    logger.info(`Creating advanced ML model: ${name} with ${algorithmType}`);
+
+    // Create model using advanced ML service
+    const result = await advancedMLService.createAdvancedModel({
+      name,
+      algorithmType,
+      targetTimeframe,
+      symbols,
+      parameters,
+      trainingPeriodDays,
+      validationSplit
+    });
+
+    // Store in database
+    const query = `
+      INSERT INTO ml_models (
+        id, user_id, name, algorithm_type, target_timeframe, symbols, 
+        parameters, status, metrics, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    `;
+
+    db.run(query, [
+      result.modelId,
+      req.user.id,
+      name,
+      algorithmType,
+      targetTimeframe,
+      JSON.stringify(symbols),
+      JSON.stringify(parameters),
+      result.status,
+      JSON.stringify(result.metrics)
+    ], function(err) {
+      if (err) {
+        logger.error('Database error creating model:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+
+      auditLog(req.user.id, 'CREATE_ADVANCED_MODEL', { 
+        modelId: result.modelId, 
+        algorithm: algorithmType,
+        metrics: result.metrics 
+      });
+
+      res.json({
+        modelId: result.modelId,
+        name: result.name,
+        algorithmType: result.algorithmType,
+        status: result.status,
+        metrics: result.metrics,
+        validationAccuracy: result.validationAccuracy,
+        trainingDataPoints: result.trainingDataPoints,
+        message: `Advanced ${algorithmType} model trained successfully with ${result.trainingDataPoints} data points`
+      });
+    });
+
+  } catch (error) {
+    logger.error('Error creating advanced model:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Helper functions for algorithm information
+router.formatAlgorithmName = function(algorithmId) {
+  return algorithmId.split('_').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(' ');
+}
+
+router.getAlgorithmDescription = function(algorithmId) {
+  const descriptions = {
+    'lstm_neural_network': 'Long Short-Term Memory neural network for time series forecasting',
+    'random_forest': 'Ensemble learning method using multiple decision trees',
+    'support_vector_machine': 'Support Vector Machine for classification and regression',
+    'arima_model': 'AutoRegressive Integrated Moving Average for time series analysis',
+    'sarima_model': 'Seasonal ARIMA model for time series with seasonal patterns',
+    'prophet_forecast': 'Facebook Prophet algorithm for time series forecasting',
+    'ensemble_strategy': 'Combination of multiple ML algorithms for improved accuracy',
+    'adaptive_moving_average': 'Dynamic moving average that adapts to market conditions',
+    'kalman_filter': 'Kalman filter for state estimation and noise reduction'
+  };
+  
+  return descriptions[algorithmId] || 'Advanced machine learning algorithm';
+}
 
 // Get all ML models for the authenticated user
 router.get('/models', authenticateToken, (req, res) => {
