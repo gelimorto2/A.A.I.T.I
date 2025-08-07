@@ -1,627 +1,7 @@
 #!/bin/bash
 
-# A.A.I.T.I Universal Installer & Toolkit
-# All-in-one installer that handles Docker, npm, and demo functionality
-# Cross-platform installer that auto-detects your system
-
-set -e
-
-# Colors for output - Enhanced with more vibrant colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-WHITE='\033[1;37m'
-ORANGE='\033[0;33m'
-MAGENTA='\033[1;35m'
-LIGHT_BLUE='\033[1;34m'
-LIGHT_GREEN='\033[1;32m'
-LIGHT_RED='\033[1;31m'
-GRAY='\033[0;90m'
-BOLD='\033[1m'
-UNDERLINE='\033[4m'
-BLINK='\033[5m'
-NC='\033[0m' # No Color
-
-# Configuration
-PROJECT_NAME="A.A.I.T.I"
-VERSION="2.0.0"
-COMPOSE_FILE="docker-compose.yml"
-
-# Print header with animated colors
-echo -e "${LIGHT_BLUE}"
-cat << "EOF"
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║                              🚀 A.A.I.T.I v2.0.0 - Universal Installer & Toolkit                                  ║
-║                               Auto AI Trading Interface - All-in-One Setup                                         ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-EOF
-echo -e "${NC}"
-
-# Add animated loading effect
-echo -e "${CYAN}${BOLD}Initializing A.A.I.T.I Installation System...${NC}"
-echo -e "${GRAY}["
-for i in {1..30}; do
-    echo -ne "${GREEN}█"
-    sleep 0.02
-done
-echo -e "${GRAY}] ${GREEN}✓ Ready!${NC}"
-echo ""
-
-# Function to print messages with enhanced colors and symbols
-print_success() {
-    echo -e "${LIGHT_GREEN}${BOLD}✅ $1${NC}"
-}
-
-print_info() {
-    echo -e "${LIGHT_BLUE}${BOLD}ℹ️  $1${NC}"
-}
-
-print_warning() {
-    echo -e "${ORANGE}${BOLD}⚠️  $1${NC}"
-}
-
-print_error() {
-    echo -e "${LIGHT_RED}${BOLD}❌ $1${NC}"
-}
-
-print_step() {
-    echo -e "${MAGENTA}${BOLD}🔧 $1${NC}"
-}
-
-print_header() {
-    echo -e "${CYAN}${BOLD}${UNDERLINE}$1${NC}"
-}
-
-print_progress() {
-    echo -e "${YELLOW}⏳ $1${NC}"
-}
-
-print_celebration() {
-    echo -e "${GREEN}${BOLD}🎉 $1${NC}"
-}
-
-# Detect operating system with colored output
-detect_os() {
-    print_header "🔍 System Detection"
-    case "$(uname -s)" in
-        Linux*)
-            OS="linux"
-            print_info "Detected: ${LIGHT_GREEN}Linux${NC} 🐧"
-            ;;
-        Darwin*)
-            OS="macos"
-            print_info "Detected: ${GRAY}macOS${NC} 🍎"
-            ;;
-        CYGWIN*|MINGW*|MSYS*)
-            OS="windows"
-            print_info "Detected: ${LIGHT_BLUE}Windows${NC} (WSL/Git Bash) 🪟"
-            ;;
-        *)
-            OS="linux"
-            print_warning "Unknown OS, defaulting to ${LIGHT_GREEN}Linux${NC}"
-            ;;
-    esac
-    echo ""
-}
-
-# Check if Docker is installed and running
-check_docker() {
-    print_step "Checking Docker installation..."
-    
-    if ! command -v docker &> /dev/null; then
-        print_error "Docker is not installed. Please install Docker first:"
-        case "$OS" in
-            "linux")
-                echo "  Ubuntu/Debian: curl -fsSL https://get.docker.com | sh"
-                echo "  CentOS/RHEL: sudo yum install docker-ce"
-                echo "  Fedora: sudo dnf install docker-ce"
-                ;;
-            "macos")
-                echo "  macOS: Download Docker Desktop from https://docker.com"
-                ;;
-            "windows")
-                echo "  Windows: Download Docker Desktop from https://docker.com"
-                ;;
-        esac
-        return 1
-    fi
-    
-    if ! docker info &> /dev/null; then
-        print_error "Docker daemon is not running. Please start Docker:"
-        case "$OS" in
-            "linux")
-                echo "  sudo systemctl start docker"
-                ;;
-            "macos"|"windows")
-                echo "  Start Docker Desktop"
-                ;;
-        esac
-        return 1
-    fi
-    
-    print_success "Docker is installed and running"
-    
-    # Check Docker Compose
-    if ! docker compose version &> /dev/null; then
-        if ! command -v docker-compose &> /dev/null; then
-            print_error "Docker Compose is not available"
-            return 1
-        else
-            COMPOSE_CMD="docker-compose"
-        fi
-    else
-        COMPOSE_CMD="docker compose"
-    fi
-    
-    print_success "Docker Compose is available"
-    return 0
-}
-
-# Check Node.js installation
-check_node() {
-    print_step "Checking Node.js installation..."
-    
-    if ! command -v node &> /dev/null; then
-        print_warning "Node.js is not installed"
-        case "$OS" in
-            "linux")
-                echo "Install with: curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash - && sudo apt-get install -y nodejs"
-                ;;
-            "macos")
-                echo "Install with Homebrew: brew install node"
-                ;;
-            "windows")
-                echo "Download from: https://nodejs.org/"
-                ;;
-        esac
-        return 1
-    fi
-    
-    local node_version=$(node --version | sed 's/v//')
-    local node_major=$(echo $node_version | cut -d. -f1)
-    
-    if [ "$node_major" -lt 18 ]; then
-        print_warning "Node.js version $node_version is too old. Please install Node.js 18+"
-        return 1
-    fi
-    
-    print_success "Node.js $node_version is installed"
-    return 0
-}
-
-# Docker installation method
-install_docker() {
-    print_step "Starting Docker installation..."
-    
-    if ! check_docker; then
-        print_error "Docker setup failed. Please install Docker and try again."
-        exit 1
-    fi
-    
-    echo ""
-    print_header "🐳 Docker Installation Options"
-    echo -e "${LIGHT_BLUE}Select Docker installation type:${NC}"
-    echo -e "${GREEN}1)${NC} ${BOLD}🎯 Production${NC} (Recommended)"
-    echo -e "${YELLOW}2)${NC} ${BOLD}🔧 Development${NC} (with hot reload)"
-    echo -e "${PURPLE}3)${NC} ${BOLD}📊 Production + Monitoring${NC} (Prometheus/Grafana)"
-    echo -e "${ORANGE}4)${NC} ${BOLD}🚀 Full Stack${NC} (All services)"
-    echo -e "${CYAN}5)${NC} ${BOLD}⚡ Quick Start${NC} (Just run it)"
-    echo ""
-    
-    echo -ne "${CYAN}Enter your choice (1-5): ${NC}"
-    read docker_choice
-    
-    # Add loading animation for choice confirmation
-    echo -e "${YELLOW}Processing selection...${NC}"
-    for i in {1..10}; do
-        echo -ne "${GREEN}.${NC}"
-        sleep 0.1
-    done
-    echo ""
-    case $docker_choice in
-        1)
-            PROFILES=""
-            DESCRIPTION="${GREEN}Production A.A.I.T.I${NC}"
-            ;;
-        2)
-            PROFILES="--profile development"
-            DESCRIPTION="${YELLOW}Development A.A.I.T.I${NC}"
-            ;;
-        3)
-            PROFILES="--profile production --profile monitoring"
-            DESCRIPTION="${PURPLE}Production + Monitoring${NC}"
-            ;;
-        4)
-            PROFILES="--profile production --profile monitoring --profile nginx --profile redis"
-            DESCRIPTION="${ORANGE}Full Stack${NC}"
-            ;;
-        5)
-            PROFILES=""
-            DESCRIPTION="${CYAN}Quick Start${NC}"
-            ;;
-        *)
-            print_error "Invalid selection"
-            exit 1
-            ;;
-    esac
-    
-    print_info "Installing: $DESCRIPTION"
-    print_progress "This may take a few minutes... ☕"
-    
-    # Enhanced progress indicators
-    print_step "Building Docker images..."
-    echo -ne "${GRAY}Building: "
-    for i in {1..20}; do
-        echo -ne "${BLUE}▓${NC}"
-        sleep 0.1
-    done
-    echo -e " ${GREEN}✓${NC}"
-    
-    $COMPOSE_CMD build aaiti
-    
-    print_step "Starting services..."
-    echo -ne "${GRAY}Starting: "
-    for i in {1..15}; do
-        echo -ne "${GREEN}▓${NC}"
-        sleep 0.1
-    done
-    echo -e " ${GREEN}✓${NC}"
-    if [ -n "$PROFILES" ]; then
-        $COMPOSE_CMD $PROFILES up -d
-    else
-        $COMPOSE_CMD up -d aaiti
-    fi
-    
-    # Wait for services with animated dots
-    print_step "Waiting for services to be ready..."
-    echo -ne "${CYAN}Initializing"
-    for i in {1..30}; do
-        echo -ne "${CYAN}.${NC}"
-        sleep 0.3
-    done
-    echo -e " ${GREEN}Ready!${NC}"
-    
-    # Show success information with enhanced styling
-    echo ""
-    print_celebration "🎉 A.A.I.T.I Docker installation complete!"
-    echo ""
-    echo -e "${GREEN}${BOLD}${UNDERLINE}Access URLs:${NC}"
-    echo -e "${WHITE}📊 A.A.I.T.I Dashboard:${NC} ${LIGHT_BLUE}${UNDERLINE}http://localhost:5000${NC}"
-    
-    if [[ "$PROFILES" == *"monitoring"* ]]; then
-        echo -e "${WHITE}📈 Prometheus:${NC} ${LIGHT_BLUE}${UNDERLINE}http://localhost:9090${NC}"
-        echo -e "${WHITE}📋 Grafana:${NC} ${LIGHT_BLUE}${UNDERLINE}http://localhost:3001${NC} ${GRAY}(admin/admin)${NC}"
-    fi
-    
-    if [[ "$PROFILES" == *"nginx"* ]]; then
-        echo -e "${WHITE}🌐 Nginx Proxy:${NC} ${LIGHT_BLUE}${UNDERLINE}http://localhost${NC}"
-    fi
-    
-    echo ""
-    echo -e "${CYAN}${BOLD}${UNDERLINE}Management Commands:${NC}"
-    echo -e "${WHITE}📋 View logs:${NC} ${YELLOW}$COMPOSE_CMD logs -f${NC}"
-    echo -e "${WHITE}📊 Check status:${NC} ${YELLOW}$COMPOSE_CMD ps${NC}"
-    echo -e "${WHITE}⏹️  Stop:${NC} ${YELLOW}$COMPOSE_CMD down${NC}"
-    echo -e "${WHITE}🔄 Restart:${NC} ${YELLOW}$COMPOSE_CMD restart${NC}"
-    echo ""
-}
-
-# NPM installation method
-install_npm() {
-    print_step "Starting NPM installation..."
-    
-    if ! check_node; then
-        print_error "Node.js setup failed. Please install Node.js 18+ and try again."
-        exit 1
-    fi
-    
-    echo ""
-    echo -e "${BLUE}Select NPM installation type:${NC}"
-    echo "1) 🚀 Production (recommended for live trading)"
-    echo "2) 🔧 Development (for testing and development)"
-    echo "3) ⚡ Fast Install (skip some optimizations)"
-    echo ""
-    
-    read -p "Enter your choice (1-3): " npm_choice
-    
-    case $npm_choice in
-        1)
-            INSTALL_CMD="npm run install:production"
-            BUILD_CMD="npm run build:production"
-            START_CMD="npm start"
-            MODE="Production"
-            ;;
-        2)
-            INSTALL_CMD="npm run setup:dev"
-            BUILD_CMD=""
-            START_CMD="npm run dev"
-            MODE="Development"
-            ;;
-        3)
-            INSTALL_CMD="npm run install:fast"
-            BUILD_CMD="npm run build"
-            START_CMD="npm start"
-            MODE="Fast"
-            ;;
-        *)
-            print_error "Invalid selection"
-            exit 1
-            ;;
-    esac
-    
-    print_info "Installing: $MODE installation"
-    
-    # Clean previous installation if requested
-    if [ -d "node_modules" ] || [ -d "backend/node_modules" ] || [ -d "frontend/node_modules" ]; then
-        echo ""
-        read -p "Previous installation detected. Clean it? (y/N): " clean_install
-        if [[ $clean_install =~ ^[Yy]$ ]]; then
-            print_step "Cleaning previous installation..."
-            npm run clean 2>/dev/null || true
-        fi
-    fi
-    
-    # Install dependencies
-    print_step "Installing dependencies (this may take several minutes)..."
-    $INSTALL_CMD
-    
-    # Build if needed
-    if [ ! -z "$BUILD_CMD" ]; then
-        print_step "Building application..."
-        $BUILD_CMD
-    fi
-    
-    # Success information
-    echo ""
-    print_success "🎉 A.A.I.T.I NPM installation complete!"
-    echo ""
-    echo -e "${GREEN}Next steps:${NC}"
-    echo "1. Start the application: $START_CMD"
-    echo "2. Open your browser to: http://localhost:3000"
-    echo "3. Backend API: http://localhost:5000"
-    echo "4. Check health: npm run health"
-    echo ""
-    
-    # Ask to start now
-    read -p "Would you like to start A.A.I.T.I now? (y/N): " start_now
-    if [[ $start_now =~ ^[Yy]$ ]]; then
-        print_info "🚀 Starting A.A.I.T.I..."
-        echo "Press Ctrl+C to stop"
-        sleep 2
-        $START_CMD
-    fi
-}
-
-# Demo functionality
-run_demo() {
-    print_step "Starting A.A.I.T.I Demo..."
-    
-    if check_docker; then
-        echo ""
-        echo -e "${BLUE}Demo Options:${NC}"
-        echo "1) 🎯 Quick Demo (Production setup)"
-        echo "2) 🔧 Development Demo (with hot reload)"
-        echo "3) 📊 Full Demo (with monitoring)"
-        echo ""
-        
-        read -p "Choose demo type (1-3): " demo_choice
-        
-        case $demo_choice in
-            1)
-                print_info "Starting quick production demo..."
-                $COMPOSE_CMD up -d aaiti
-                ;;
-            2)
-                print_info "Starting development demo..."
-                $COMPOSE_CMD --profile development up -d
-                ;;
-            3)
-                print_info "Starting full demo with monitoring..."
-                $COMPOSE_CMD --profile monitoring up -d
-                ;;
-            *)
-                print_error "Invalid selection"
-                exit 1
-                ;;
-        esac
-        
-        print_step "Waiting for services to start..."
-        sleep 10
-        
-        echo ""
-        print_success "🎉 Demo is running!"
-        echo "📊 Dashboard: http://localhost:5000"
-        
-        if [ "$demo_choice" = "3" ]; then
-            echo "📈 Monitoring: http://localhost:9090"
-        fi
-        
-        echo ""
-        read -p "View logs? (y/N): " view_logs
-        if [[ $view_logs =~ ^[Yy]$ ]]; then
-            $COMPOSE_CMD logs -f
-        fi
-    else
-        print_error "Docker is required for demo. Please install Docker first."
-        exit 1
-    fi
-}
-
-# System requirements check
-check_system() {
-    print_step "Checking system requirements..."
-    
-    detect_os
-    
-    echo ""
-    echo -e "${BLUE}System Information:${NC}"
-    echo "Operating System: $OS"
-    echo "Architecture: $(uname -m)"
-    
-    if [ "$OS" = "linux" ]; then
-        if [ -f /etc/os-release ]; then
-            echo "Distribution: $(grep PRETTY_NAME /etc/os-release | cut -d'"' -f2)"
-        fi
-    elif [ "$OS" = "macos" ]; then
-        echo "macOS Version: $(sw_vers -productVersion)"
-    fi
-    
-    echo ""
-    
-    # Check Docker
-    if check_docker; then
-        docker_version=$(docker --version | cut -d' ' -f3 | sed 's/,//')
-        echo "✅ Docker: $docker_version"
-    else
-        echo "❌ Docker: Not installed or not running"
-    fi
-    
-    # Check Node.js
-    if check_node; then
-        node_version=$(node --version)
-        npm_version=$(npm --version)
-        echo "✅ Node.js: $node_version"
-        echo "✅ npm: $npm_version"
-    else
-        echo "❌ Node.js: Not installed or too old"
-    fi
-    
-    # Check system resources
-    echo ""
-    print_step "System Resources:"
-    
-    case "$OS" in
-        "linux")
-            if [ -f /proc/meminfo ]; then
-                total_memory=$(grep MemTotal /proc/meminfo | awk '{print int($2/1024/1024)}')
-                echo "Memory: ${total_memory}GB"
-            fi
-            
-            available_space=$(df -BG . | tail -1 | awk '{print $4}' | sed 's/G//')
-            echo "Disk Space: ${available_space}GB available"
-            ;;
-        "macos")
-            total_memory=$(sysctl -n hw.memsize | awk '{print int($1/1024/1024/1024)}')
-            echo "Memory: ${total_memory}GB"
-            
-            available_space=$(df -g . | tail -1 | awk '{print $4}')
-            echo "Disk Space: ${available_space}GB available"
-            ;;
-    esac
-    
-    echo ""
-    print_success "System check complete!"
-}
-
-# Portable installation method
-install_portable() {
-    print_step "Starting Portable Installation..."
-    
-    echo ""
-    print_header "💾 Portable Installation Setup"
-    echo -e "${LIGHT_BLUE}This option creates a portable A.A.I.T.I installation that can run from any drive${NC}"
-    echo ""
-    
-    # Get installation directory
-    echo -e "${CYAN}Enter installation directory (e.g., /mnt/usb/A.A.I.T.I or D:\\A.A.I.T.I):${NC}"
-    read -p "Installation path: " install_path
-    
-    if [ -z "$install_path" ]; then
-        print_error "Installation path cannot be empty"
-        exit 1
-    fi
-    
-    # Expand path
-    install_path=$(eval echo "$install_path")
-    
-    # Create directory if it doesn't exist
-    if [ ! -d "$install_path" ]; then
-        print_step "Creating installation directory: $install_path"
-        mkdir -p "$install_path" || {
-            print_error "Failed to create directory: $install_path"
-            exit 1
-        }
-    fi
-    
-    print_info "Installing A.A.I.T.I to: ${GREEN}$install_path${NC}"
-    
-    # Copy all files to portable location
-    print_step "Copying A.A.I.T.I files..."
-    echo -ne "${GRAY}Copying: "
-    for i in {1..30}; do
-        echo -ne "${BLUE}▓${NC}"
-        sleep 0.05
-    done
-    echo -e " ${GREEN}✓${NC}"
-    
-    # Copy files excluding .git and node_modules
-    rsync -av --exclude='.git' --exclude='node_modules' --exclude='backend/node_modules' --exclude='frontend/node_modules' --exclude='frontend/build' . "$install_path/"
-    
-    # Create portable launcher script
-    print_step "Creating portable launcher..."
-    create_portable_launcher "$install_path"
-    
-    # Create portable configuration
-    create_portable_config "$install_path"
-    
-    # Install dependencies in portable location
-    print_step "Installing dependencies in portable location..."
-    cd "$install_path"
-    
-    if check_node; then
-        echo -e "${YELLOW}Installing with NPM...${NC}"
-        npm run install:deps
-        npm run build
-    else
-        print_warning "Node.js not found. Will use Docker for portable installation."
-        if ! check_docker; then
-            print_error "Neither Node.js nor Docker available. Cannot create portable installation."
-            exit 1
-        fi
-    fi
-    
-    echo ""
-    print_celebration "🎉 Portable A.A.I.T.I installation complete!"
-    echo ""
-    echo -e "${GREEN}${BOLD}${UNDERLINE}Portable Installation Details:${NC}"
-    echo -e "${WHITE}📍 Location:${NC} ${LIGHT_BLUE}$install_path${NC}"
-    echo -e "${WHITE}🚀 Launcher:${NC} ${LIGHT_BLUE}$install_path/run-aaiti${NC}"
-    echo -e "${WHITE}⚙️  Config:${NC} ${LIGHT_BLUE}$install_path/portable.conf${NC}"
-    echo ""
-    echo -e "${CYAN}${BOLD}${UNDERLINE}To Use Your Portable Installation:${NC}"
-    echo -e "${WHITE}1.${NC} Copy the entire folder to any drive/computer"
-    echo -e "${WHITE}2.${NC} Run: ${YELLOW}$install_path/run-aaiti${NC}"
-    echo -e "${WHITE}3.${NC} Access at: ${LIGHT_BLUE}${UNDERLINE}http://localhost:5000${NC}"
-    echo ""
-    echo -e "${ORANGE}${BOLD}Requirements on target system:${NC}"
-    echo -e "${WHITE}•${NC} Node.js 18+ (for NPM version) OR Docker (for containerized version)"
-    echo -e "${WHITE}•${NC} 4GB RAM (recommended)"
-    echo -e "${WHITE}•${NC} Internet connection (for market data)"
-    echo ""
-    
-    # Ask to start now
-    read -p "Would you like to test the portable installation now? (y/N): " test_now
-    if [[ $test_now =~ ^[Yy]$ ]]; then
-        print_info "🚀 Testing portable installation..."
-        "$install_path/run-aaiti" &
-        sleep 5
-        print_success "Portable installation is running! Check http://localhost:5000"
-    fi
-}
-
-# Create portable launcher script
-create_portable_launcher() {
-    local install_path="$1"
-    local launcher_script="$install_path/run-aaiti"
-    
-    cat > "$launcher_script" << 'EOF'
-#!/bin/bash
-
-# A.A.I.T.I Portable Launcher
-# Auto-detects environment and starts A.A.I.T.I appropriately
+# A.A.I.T.I Interactive Docker Installer
+# One program for everything - Docker-based installation only
 
 set -e
 
@@ -630,373 +10,306 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 WHITE='\033[1;37m'
-NC='\033[0m'
+NC='\033[0m' # No Color
 
-# Get the directory where this script is located
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-cd "$SCRIPT_DIR"
+# Configuration
+PROJECT_NAME="A.A.I.T.I"
+VERSION="2.1.0"
 
-echo -e "${CYAN}🚀 Starting A.A.I.T.I Portable Edition${NC}"
-echo -e "${CYAN}======================================${NC}"
-echo ""
-echo -e "${WHITE}Installation Path:${NC} ${GREEN}$SCRIPT_DIR${NC}"
-echo ""
+# Print header
+echo -e "${BLUE}"
+cat << "EOF"
+╔══════════════════════════════════════════════════════════════════════════════════════╗
+║                    🚀 A.A.I.T.I v2.1.0 - Interactive Installer                     ║
+║                      Auto AI Trading Interface - Docker Edition                     ║
+╚══════════════════════════════════════════════════════════════════════════════════════╝
+EOF
+echo -e "${NC}"
 
-# Check if portable.conf exists and load it
-if [ -f "portable.conf" ]; then
-    source portable.conf
-    echo -e "${GREEN}✅ Loaded portable configuration${NC}"
-else
-    echo -e "${YELLOW}⚠️  No portable configuration found, using defaults${NC}"
-fi
-
-# Function to check if Node.js is available
-check_node() {
-    if command -v node &> /dev/null; then
-        local node_version=$(node --version | sed 's/v//')
-        local node_major=$(echo $node_version | cut -d. -f1)
-        if [ "$node_major" -ge 18 ]; then
-            echo -e "${GREEN}✅ Node.js $node_version detected${NC}"
-            return 0
-        else
-            echo -e "${YELLOW}⚠️  Node.js $node_version too old (need 18+)${NC}"
-            return 1
-        fi
-    else
-        echo -e "${YELLOW}⚠️  Node.js not found${NC}"
-        return 1
-    fi
+# Print functions
+print_success() {
+    echo -e "${GREEN}✅ $1${NC}"
 }
 
-# Function to check if Docker is available
+print_info() {
+    echo -e "${BLUE}ℹ️  $1${NC}"
+}
+
+print_warning() {
+    echo -e "${YELLOW}⚠️  $1${NC}"
+}
+
+print_error() {
+    echo -e "${RED}❌ $1${NC}"
+}
+
+print_step() {
+    echo -e "${PURPLE}🔧 $1${NC}"
+}
+
+# Check if Docker is installed and running
 check_docker() {
-    if command -v docker &> /dev/null && docker info &> /dev/null; then
-        echo -e "${GREEN}✅ Docker detected and running${NC}"
-        return 0
-    else
-        echo -e "${YELLOW}⚠️  Docker not available${NC}"
+    print_step "Checking Docker installation..."
+    
+    if ! command -v docker &> /dev/null; then
+        print_error "Docker is not installed. Please install Docker first:"
+        echo ""
+        echo "🐧 Linux: curl -fsSL https://get.docker.com | sh"
+        echo "🍎 macOS: Download Docker Desktop from https://docker.com"
+        echo ""
         return 1
+    fi
+    
+    if ! docker info &> /dev/null; then
+        print_error "Docker daemon is not running. Please start Docker:"
+        echo ""
+        echo "🐧 Linux: sudo systemctl start docker"
+        echo "🍎 macOS: Start Docker Desktop"
+        echo ""
+        return 1
+    fi
+    
+    print_success "Docker is installed and running"
+    
+    # Check Docker Compose
+    if docker compose version &> /dev/null; then
+        COMPOSE_CMD="docker compose"
+    elif command -v docker-compose &> /dev/null; then
+        COMPOSE_CMD="docker-compose"
+    else
+        print_error "Docker Compose is not available"
+        return 1
+    fi
+    
+    print_success "Docker Compose is available"
+    return 0
+}
+
+# Main installation function
+install_aaiti() {
+    print_step "Starting A.A.I.T.I installation..."
+    
+    if ! check_docker; then
+        print_error "Docker setup failed. Please install Docker and try again."
+        echo ""
+        echo "Visit: https://docs.docker.com/get-docker/"
+        exit 1
+    fi
+    
+    echo ""
+    print_info "🐳 A.A.I.T.I will be installed using Docker"
+    print_info "📊 This creates a production-ready trading platform"
+    echo ""
+    
+    # Ask for confirmation
+    echo -ne "${CYAN}Continue with installation? (y/N): ${NC}"
+    read -r confirm
+    
+    if [[ ! $confirm =~ ^[Yy]$ ]]; then
+        print_info "Installation cancelled"
+        exit 0
+    fi
+    
+    # Build and start
+    print_step "Building Docker containers (this may take a few minutes)..."
+    echo -ne "${YELLOW}Building: "
+    for i in {1..20}; do
+        echo -ne "▓"
+        sleep 0.1
+    done
+    echo -e " ${GREEN}✓${NC}"
+    
+    if ! $COMPOSE_CMD build aaiti; then
+        print_error "Failed to build Docker containers"
+        exit 1
+    fi
+    
+    print_step "Starting A.A.I.T.I services..."
+    echo -ne "${YELLOW}Starting: "
+    for i in {1..15}; do
+        echo -ne "▓"
+        sleep 0.1
+    done
+    echo -e " ${GREEN}✓${NC}"
+    
+    if ! $COMPOSE_CMD up -d aaiti; then
+        print_error "Failed to start services"
+        exit 1
+    fi
+    
+    # Wait for services
+    print_step "Waiting for services to initialize..."
+    echo -ne "${CYAN}Initializing"
+    for i in {1..30}; do
+        echo -ne "."
+        sleep 0.3
+    done
+    echo -e " ${GREEN}Ready!${NC}"
+    
+    # Success message
+    echo ""
+    echo -e "${GREEN}${WHITE}╔════════════════════════════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}${WHITE}║                           🎉 Installation Complete! 🎉                                  ║${NC}"
+    echo -e "${GREEN}${WHITE}╚════════════════════════════════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "${WHITE}📊 A.A.I.T.I Dashboard:${NC} ${BLUE}http://localhost:5000${NC}"
+    echo ""
+    echo -e "${WHITE}Management Commands:${NC}"
+    echo -e "${CYAN}📋 View logs:${NC} $COMPOSE_CMD logs -f aaiti"
+    echo -e "${CYAN}📊 Check status:${NC} $COMPOSE_CMD ps"
+    echo -e "${CYAN}⏹️  Stop:${NC} $COMPOSE_CMD down"
+    echo -e "${CYAN}🔄 Restart:${NC} $COMPOSE_CMD restart aaiti"
+    echo ""
+}
+
+# Check status of existing installation
+check_status() {
+    print_step "Checking A.A.I.T.I status..."
+    
+    if ! check_docker; then
+        print_error "Docker is not available"
+        return 1
+    fi
+    
+    # Check if containers are running
+    if $COMPOSE_CMD ps aaiti | grep -q "Up"; then
+        print_success "A.A.I.T.I is running"
+        echo -e "${BLUE}📊 Dashboard: http://localhost:5000${NC}"
+        
+        # Try health check
+        if command -v curl &> /dev/null; then
+            if curl -f http://localhost:5000/api/health &> /dev/null; then
+                print_success "Backend is healthy"
+            else
+                print_warning "Backend may still be starting up"
+            fi
+        fi
+    else
+        print_warning "A.A.I.T.I is not running"
+        echo "Use option 1 to start installation"
     fi
 }
 
-# Determine best runtime
-echo -e "${BLUE}🔍 Detecting available runtime...${NC}"
-
-if check_node; then
-    RUNTIME="npm"
-    echo -e "${GREEN}Selected runtime: NPM${NC}"
-elif check_docker; then
-    RUNTIME="docker"
-    echo -e "${GREEN}Selected runtime: Docker${NC}"
-else
-    echo -e "${RED}❌ Neither Node.js 18+ nor Docker available${NC}"
-    echo -e "${WHITE}Please install one of the following:${NC}"
-    echo -e "${WHITE}• Node.js 18+: https://nodejs.org/${NC}"
-    echo -e "${WHITE}• Docker: https://docker.com/${NC}"
-    exit 1
-fi
-
-echo ""
-
-# Start A.A.I.T.I based on available runtime
-case $RUNTIME in
-    "npm")
-        echo -e "${BLUE}🚀 Starting A.A.I.T.I with NPM...${NC}"
-        
-        # Check if node_modules exists
-        if [ ! -d "node_modules" ] || [ ! -d "backend/node_modules" ] || [ ! -d "frontend/node_modules" ]; then
-            echo -e "${YELLOW}📦 Installing dependencies...${NC}"
-            npm run install:deps
-        fi
-        
-        # Build if needed
-        if [ ! -d "frontend/build" ]; then
-            echo -e "${YELLOW}🔨 Building frontend...${NC}"
-            npm run build
-        fi
-        
-        echo -e "${GREEN}✅ Starting A.A.I.T.I...${NC}"
-        echo -e "${WHITE}📊 Dashboard will be available at:${NC} ${CYAN}http://localhost:5000${NC}"
-        echo -e "${WHITE}Press Ctrl+C to stop${NC}"
-        echo ""
-        
-        npm start
-        ;;
-        
-    "docker")
-        echo -e "${BLUE}🐳 Starting A.A.I.T.I with Docker...${NC}"
-        
-        # Use docker-compose if available, otherwise use docker directly
-        if docker compose version &> /dev/null; then
-            COMPOSE_CMD="docker compose"
-        elif command -v docker-compose &> /dev/null; then
-            COMPOSE_CMD="docker-compose"
-        else
-            echo -e "${RED}❌ Docker Compose not available${NC}"
-            exit 1
-        fi
-        
-        echo -e "${GREEN}✅ Starting A.A.I.T.I containers...${NC}"
-        echo -e "${WHITE}📊 Dashboard will be available at:${NC} ${CYAN}http://localhost:5000${NC}"
-        echo -e "${WHITE}Press Ctrl+C to stop${NC}"
-        echo ""
-        
-        $COMPOSE_CMD up --build
-        ;;
-esac
-EOF
-
-    chmod +x "$launcher_script"
+# Stop A.A.I.T.I
+stop_aaiti() {
+    print_step "Stopping A.A.I.T.I..."
     
-    # Also create Windows batch file
-    cat > "$install_path/run-aaiti.bat" << 'EOF'
-@echo off
-setlocal EnableDelayedExpansion
-
-echo.
-echo ========================================
-echo   A.A.I.T.I Portable Edition (Windows)
-echo ========================================
-echo.
-
-cd /d "%~dp0"
-
-echo Installation Path: %CD%
-echo.
-
-:: Check for Node.js
-node --version >nul 2>&1
-if %errorlevel% == 0 (
-    for /f "tokens=1 delims=v" %%i in ('node --version') do set NODE_VERSION=%%i
-    echo [92m✓ Node.js detected[0m
-    set RUNTIME=npm
-) else (
-    echo [93m⚠ Node.js not found[0m
-    :: Check for Docker
-    docker --version >nul 2>&1
-    if !errorlevel! == 0 (
-        echo [92m✓ Docker detected[0m
-        set RUNTIME=docker
-    ) else (
-        echo [91m✗ Neither Node.js nor Docker available[0m
-        echo Please install Node.js 18+ or Docker
-        pause
-        exit /b 1
-    )
-)
-
-echo.
-
-if "%RUNTIME%"=="npm" (
-    echo [94m🚀 Starting A.A.I.T.I with NPM...[0m
+    if ! check_docker; then
+        print_error "Docker is not available"
+        return 1
+    fi
     
-    if not exist "node_modules" (
-        echo [93m📦 Installing dependencies...[0m
-        npm run install:deps
-    )
-    
-    if not exist "frontend\build" (
-        echo [93m🔨 Building frontend...[0m
-        npm run build
-    )
-    
-    echo [92m✓ Starting A.A.I.T.I...[0m
-    echo Dashboard: http://localhost:5000
-    echo.
-    
-    npm start
-) else (
-    echo [94m🐳 Starting A.A.I.T.I with Docker...[0m
-    
-    docker compose up --build
-)
-EOF
+    if $COMPOSE_CMD down; then
+        print_success "A.A.I.T.I stopped successfully"
+    else
+        print_error "Failed to stop A.A.I.T.I"
+    fi
 }
 
-# Create portable configuration file
-create_portable_config() {
-    local install_path="$1"
-    local config_file="$install_path/portable.conf"
+# Show logs
+show_logs() {
+    print_step "Showing A.A.I.T.I logs..."
     
-    cat > "$config_file" << EOF
-# A.A.I.T.I Portable Configuration
-# This file contains settings for the portable installation
-
-# Installation metadata
-PORTABLE_VERSION="2.1.0"
-INSTALLATION_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-INSTALLATION_PATH="$install_path"
-
-# Runtime preferences (auto-detected if not set)
-# Uncomment to force a specific runtime:
-# PREFERRED_RUNTIME="npm"    # or "docker"
-
-# Port configuration (change if needed)
-BACKEND_PORT=5000
-FRONTEND_PORT=3000
-
-# Data directory (relative to installation path)
-DATA_DIR="./data"
-LOGS_DIR="./logs"
-
-# Network configuration
-# Uncomment to bind to all interfaces (allows remote access)
-# BIND_ALL_INTERFACES=true
-
-# Environment mode
-NODE_ENV=production
-
-# Database configuration for portable mode
-DB_TYPE=sqlite
-DB_PATH="./data/aaiti.db"
-
-# API Configuration
-API_RATE_LIMIT=100
-API_CACHE_TTL=300
-
-# Market data configuration
-MARKET_DATA_CACHE_SIZE=1000
-MARKET_DATA_UPDATE_INTERVAL=60000
-
-# Security settings for portable mode
-JWT_SECRET=$(openssl rand -hex 32 2>/dev/null || echo "portable-secret-$(date +%s)")
-BCRYPT_ROUNDS=12
-
-# Feature flags for portable mode
-ENABLE_DEMO_MODE=true
-ENABLE_OFFLINE_MODE=true
-ENABLE_PORTABLE_FEATURES=true
-
-echo "Portable configuration loaded from: $config_file"
-EOF
+    if ! check_docker; then
+        print_error "Docker is not available"
+        return 1
+    fi
+    
+    print_info "Press Ctrl+C to exit logs"
+    sleep 2
+    $COMPOSE_CMD logs -f aaiti
 }
 
-# Update help to include portable installation
+# Show help
 show_help() {
-    echo "A.A.I.T.I Universal Installer & Toolkit"
+    echo "A.A.I.T.I Interactive Docker Installer"
     echo ""
-    echo "Usage: ./install [command] [options]"
+    echo "This installer creates a production-ready A.A.I.T.I trading platform using Docker."
     echo ""
-    echo "Commands:"
-    echo "  install, i         Interactive installation menu"
-    echo "  docker, d          Docker-based installation"
-    echo "  npm, n             NPM-based installation"
-    echo "  portable, p        Portable installation (external disk)"
-    echo "  demo, run          Run demo"
-    echo "  check, status      Check system requirements"
-    echo "  help, h            Show this help message"
+    echo "Requirements:"
+    echo "  • Docker 20.0+ with Docker Compose"
+    echo "  • 4GB RAM (recommended)"
+    echo "  • 2GB disk space"
+    echo "  • Internet connection"
     echo ""
-    echo "Options:"
-    echo "  --production       Production installation"
-    echo "  --development      Development installation"
-    echo "  --quick            Quick installation"
-    echo "  --path=PATH        Custom installation path (for portable)"
+    echo "Supported Platforms:"
+    echo "  • Linux (all distributions with Docker support)"
+    echo "  • macOS with Docker Desktop"
     echo ""
-    echo "Examples:"
-    echo "  ./install             # Interactive menu"
-    echo "  ./install docker      # Docker installation"
-    echo "  ./install npm --dev   # NPM development install"
-    echo "  ./install portable    # Portable installation"
-    echo "  ./install demo        # Run demo"
-    echo "  ./install check       # System check"
-    echo ""
-    echo "Portable Installation:"
-    echo "  Creates a self-contained A.A.I.T.I installation that can"
-    echo "  be copied to external drives, USB sticks, or other computers."
-    echo "  Includes all dependencies and a portable launcher script."
+    echo "Usage:"
+    echo "  ./install           # Interactive menu"
+    echo "  ./install help      # Show this help"
     echo ""
 }
 
-# Main installation menu
+# Main menu
 main_menu() {
-    detect_os
-    
-    echo ""
-    echo -e "${CYAN}🔧 A.A.I.T.I Installation Toolkit${NC}"
-    echo -e "${CYAN}===================================${NC}"
-    echo ""
-    echo "1) 🐳 Docker Installation (Recommended)"
-    echo "2) 📦 NPM Installation (Advanced)"
-    echo "3) 💾 Portable Installation (External Disk)"
-    echo "4) 🎮 Run Demo"
-    echo "5) 🔍 Check System Requirements"
-    echo "6) ❓ Help"
-    echo "7) 🚪 Exit"
-    echo ""
-    
-    read -p "Select an option (1-7): " choice
-    
-    case $choice in
-        1)
-            install_docker
-            ;;
-        2)
-            install_npm
-            ;;
-        3)
-            install_portable
-            ;;
-        4)
-            run_demo
-            ;;
-        5)
-            check_system
-            ;;
-        6)
-            show_help
-            ;;
-        7)
-            print_info "Goodbye! 👋"
-            exit 0
-            ;;
-        *)
-            print_error "Invalid selection"
-            exit 1
-            ;;
-    esac
+    while true; do
+        echo ""
+        echo -e "${CYAN}🔧 A.A.I.T.I Interactive Installer${NC}"
+        echo -e "${CYAN}===================================${NC}"
+        echo ""
+        echo "1) 🚀 Install A.A.I.T.I (Production Ready)"
+        echo "2) 📊 Check Status"
+        echo "3) ⏹️  Stop A.A.I.T.I"
+        echo "4) 📋 View Logs"
+        echo "5) ❓ Help"
+        echo "6) 🚪 Exit"
+        echo ""
+        
+        echo -ne "${CYAN}Select an option (1-6): ${NC}"
+        read -r choice
+        
+        case $choice in
+            1)
+                install_aaiti
+                ;;
+            2)
+                check_status
+                ;;
+            3)
+                stop_aaiti
+                ;;
+            4)
+                show_logs
+                ;;
+            5)
+                show_help
+                ;;
+            6)
+                print_info "Goodbye! 👋"
+                exit 0
+                ;;
+            *)
+                print_error "Invalid selection. Please choose 1-6."
+                sleep 2
+                ;;
+        esac
+        
+        echo ""
+        echo -ne "${YELLOW}Press Enter to continue...${NC}"
+        read -r
+    done
 }
 
 # Handle command line arguments
-case "${1:-menu}" in
-    "install"|"i"|"menu"|"")
-        main_menu
-        ;;
-    "docker"|"d")
-        if [[ "$2" == "--production" ]]; then
-            install_docker
-        elif [[ "$2" == "--development" ]]; then
-            install_docker
-        else
-            install_docker
-        fi
-        ;;
-    "npm"|"n")
-        if [[ "$2" == "--production" ]]; then
-            install_npm
-        elif [[ "$2" == "--development" ]]; then
-            install_npm
-        else
-            install_npm
-        fi
-        ;;
-    "portable"|"p")
-        install_portable
-        ;;
-    "demo"|"run")
-        run_demo
-        ;;
-    "check"|"status")
-        check_system
-        ;;
-    "help"|"h"|"--help"|"-h")
+case "${1:-}" in
+    "help"|"--help"|"-h")
         show_help
+        ;;
+    "status"|"check")
+        check_status
+        ;;
+    "stop")
+        stop_aaiti
+        ;;
+    "logs")
+        show_logs
         ;;
     *)
-        print_error "Unknown command: $1"
-        echo ""
-        show_help
-        exit 1
+        main_menu
         ;;
 esac
