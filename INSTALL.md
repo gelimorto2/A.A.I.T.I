@@ -1,176 +1,257 @@
-# 🚀 A.A.I.T.I Installation Guide - Simplified & Unified
+# 🚀 A.A.I.T.I Installation Guide - Simplified & Production-Ready
 
-## Quick Start (One Command!)
+## One-Command Installation
 
-### Universal Installer (All-in-One)
+### Universal Docker Installer
+
 ```bash
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
 ./install
 ```
 
-The unified installer toolkit includes:
-- ✅ **Auto-detection** of your OS (Linux/macOS/Windows)
-- ✅ **System requirements check** (Docker, Node.js, memory, disk)
-- ✅ **Docker installation** (Recommended - Production ready)
-- ✅ **NPM installation** (Advanced users)
-- ✅ **Demo functionality** (Try before installing)
-- ✅ **Interactive menu** - Choose what you need
-- ✅ **No complex scripts** - Everything in one file
+**That's it!** The interactive installer provides a production-ready A.A.I.T.I trading platform in minutes.
 
-## Available Commands
+## What the Installer Does
 
-### Interactive Menu
-```bash
-./install                    # Main menu with all options
-```
-
-### Direct Commands
-```bash
-./install docker             # Docker installation (recommended)
-./install npm                # NPM installation
-./install demo               # Run demo
-./install check              # System requirements check
-./install help               # Show help
-```
-
-## Installation Options
-
-### 🐳 Docker Installation (Recommended)
-- **Production**: Just A.A.I.T.I with optimized settings
-- **Development**: With hot reload for development
-- **Monitoring**: Production + Prometheus/Grafana
-- **Full Stack**: All services (nginx, redis, monitoring)
-- **Quick Start**: Just run it without configuration
-
-### 📦 NPM Installation (Advanced)
-- **Production**: Optimized for live trading
-- **Development**: All dev tools included
-- **Fast**: Quick setup with minimal features
+The unified installer:
+- ✅ **Checks system requirements** (Docker, memory, disk space)
+- ✅ **Builds production containers** with all ML dependencies
+- ✅ **Configures optimized settings** for trading performance
+- ✅ **Starts all services** with health monitoring
+- ✅ **Provides management commands** for ongoing operations
 
 ## System Requirements
 
 ### Minimum Requirements
-- **Memory**: 4GB RAM (2GB minimum)
+- **Docker**: Version 20.0+ with Docker Compose
+- **Memory**: 4GB RAM
 - **Disk**: 2GB available space
-- **Docker**: Version 20.0+ (for Docker installation)
-- **Node.js**: Version 18+ (for NPM installation)
+- **Network**: Internet connection for market data
 
 ### Supported Operating Systems
-- **Linux**: Ubuntu 18.04+, CentOS 7+, Fedora 30+
-- **macOS**: 10.15+ (Intel and Apple Silicon)
-- **Windows**: 10+ with WSL2 or Git Bash
+- **Linux**: All distributions with Docker support
+- **macOS**: Docker Desktop required
+
+## Interactive Installer Menu
+
+When you run `./install`, you get an interactive menu:
+
+```
+🔧 A.A.I.T.I Interactive Installer
+===================================
+
+1) 🚀 Install A.A.I.T.I (Production Ready)
+2) 📊 Check Status
+3) ⏹️  Stop A.A.I.T.I
+4) 📋 View Logs
+5) ❓ Help
+6) 🚪 Exit
+```
+
+### Installation Process
+
+1. **System Check**: Verifies Docker is installed and running
+2. **Container Build**: Creates optimized production containers
+3. **Service Start**: Launches A.A.I.T.I with health monitoring
+4. **Ready**: Access at http://localhost:5000
+
+## Management Commands
+
+After installation, manage A.A.I.T.I with these commands:
+
+### Check Status
+```bash
+# Interactive status check
+./install status
+
+# Direct Docker command
+docker compose ps
+```
+
+### View Logs
+```bash
+# Interactive log viewer
+./install logs
+
+# Direct Docker command
+docker compose logs -f aaiti
+```
+
+### Stop/Start Services
+```bash
+# Stop A.A.I.T.I
+./install stop
+# OR
+docker compose down
+
+# Restart A.A.I.T.I
+docker compose restart aaiti
+
+# Start if stopped
+docker compose up -d aaiti
+```
+
+### Update A.A.I.T.I
+```bash
+# Pull latest code and rebuild
+git pull
+docker compose build
+docker compose up -d aaiti
+```
 
 ## Troubleshooting
 
-### Installation Issues
+### Docker Not Found
 ```bash
-# Check system requirements
-./install check
+# Install Docker on Linux
+curl -fsSL https://get.docker.com | sh
 
-# Clean installation
-npm run clean
-
-# Try Docker instead of NPM
-./install docker
+# Start Docker service
+sudo systemctl start docker
+sudo systemctl enable docker
 ```
 
-### Common Solutions
-1. **"Docker not found"**: Install Docker Desktop
-2. **"Node.js too old"**: Update to Node.js 18+
-3. **"Permission denied"**: Don't run as root
-4. **"Out of memory"**: Try Docker installation (lighter)
+### Docker Not Running
+- **Linux**: `sudo systemctl start docker`
+- **macOS**: Start Docker Desktop application
 
-### Getting Help
-```bash
-./install help              # Show all options
-./install check             # Diagnose issues
+### Port Already in Use
+If port 5000 is busy, edit `docker-compose.yml`:
+```yaml
+ports:
+  - "5001:5000"  # Change 5000 to 5001 or another port
 ```
 
-## What's New - Simplified Architecture
+### Memory Issues
+Ensure at least 4GB RAM is available:
+```bash
+# Check available memory
+free -h
+
+# Stop other Docker containers if needed
+docker stop $(docker ps -q)
+```
+
+### Health Check Failures
+```bash
+# Check container status
+docker compose ps
+
+# View detailed logs
+docker compose logs -f aaiti
+
+# Restart if needed
+docker compose restart aaiti
+```
+
+## Production Configuration
+
+The installer creates a production-ready setup with:
+
+### Performance Optimizations
+- **Resource Limits**: 2GB RAM, 1 CPU core maximum
+- **Thread Pool**: 16 threads for optimal performance
+- **Memory Management**: Optimized Node.js heap settings
+- **Database**: SQLite with WAL mode for better concurrency
+
+### Security Features
+- **Non-root User**: Container runs as user `aaiti` (UID 1001)
+- **Minimal Base**: Alpine Linux with only required packages
+- **Network Isolation**: Dedicated Docker network
+- **Data Persistence**: Separate volumes for data and logs
+
+### Monitoring & Reliability
+- **Health Checks**: Automatic service health monitoring
+- **Restart Policies**: Automatic restart on failure
+- **Log Management**: Rotating logs with size limits
+- **Graceful Shutdown**: Proper signal handling
+
+## Data Persistence
+
+Your A.A.I.T.I data is stored in Docker volumes:
+
+```bash
+# View volumes
+docker volume ls | grep aaiti
+
+# Backup data (example)
+docker run --rm -v aaiti_data:/data -v $(pwd):/backup alpine tar czf /backup/aaiti-backup.tar.gz /data
+
+# Restore data (example)
+docker run --rm -v aaiti_data:/data -v $(pwd):/backup alpine tar xzf /backup/aaiti-backup.tar.gz -C /
+```
+
+## What's Removed - Simplified Architecture
 
 ### ✅ Before (Complex)
-- Multiple OS-specific scripts
-- Complex dependency chains
-- Platform-specific implementations
-- Separate demo scripts
+- Multiple installation methods (Docker, NPM, portable)
+- Platform-specific scripts (Windows .bat/.ps1)
+- Complex docker-compose profiles
+- Separate build steps and production modes
+- Multiple Dockerfile variants
 
 ### ✅ After (Simple)
+- **Single installation method** (Docker only)
 - **One install script** handles everything
-- **Toolkit approach** - choose what you need
-- **Auto-detection** of optimal installation method
-- **Built-in demo** functionality
+- **Simple docker-compose** with production settings
+- **Production-ready on install** (no build steps)
+- **Single Dockerfile** optimized for production
 
-### Key Improvements
-- 🚀 **Faster**: Reduced from 12+ scripts to 1
-- 🛡️ **More reliable**: Single point of control
-- 🎯 **Simpler**: Interactive menu vs command-line complexity
-- 🔧 **Easier maintenance**: One file to update
-npm cache verify     # Verify npm cache
-./install.sh         # Use interactive installer
+### Key Benefits
+- 🚀 **Faster**: One command gets you started
+- 🛡️ **More reliable**: Single, tested deployment method
+- 🎯 **Simpler**: No complex configuration options
+- 🔧 **Easier maintenance**: Single configuration to maintain
+
+## Advanced Usage
+
+### Custom Configuration
+
+Edit `docker-compose.yml` for custom settings:
+
+```yaml
+environment:
+  - NODE_ENV=production
+  - PORT=5000
+  - LOG_LEVEL=info        # debug, info, warn, error
+  - API_RATE_LIMIT_MAX=1000
+  - CACHE_TTL=300
 ```
 
-### Common Solutions
-- **Node.js too old**: Install Node.js 18+ from https://nodejs.org/
-- **Low memory**: Ensure at least 2GB RAM available
-- **Permission errors**: Don't run as root, use regular user
-- **Network issues**: Check firewall and proxy settings
+### Development Mode
 
-### Performance Issues
-```bash
-# If installation is slow:
-npm run install:fast    # Skip some optimizations
-npm run clean:cache     # Clear npm cache
+For development with hot reload:
+
+1. Create `docker-compose.override.yml`:
+```yaml
+services:
+  aaiti:
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
 ```
 
-## System Requirements
+2. Start: `docker compose up -d`
 
-### Minimum
-- Node.js 18.0+
-- npm 8.0+
-- 2GB RAM
-- 2GB free disk space
+### Network Access
 
-### Recommended
-- Node.js 20.0+
-- npm 10.0+
-- 4GB RAM
-- 5GB free disk space
-- SSD storage
-
-## Quick Commands
-
-```bash
-# Check system
-npm run check
-
-# Install dependencies
-npm run install:all      # Full installation
-npm run install:fast     # Fast installation
-npm run install:production # Production only
-
-# Build & Start
-npm run build           # Build frontend
-npm start              # Production mode
-npm run dev            # Development mode
-
-# Maintenance
-npm run clean          # Clean build artifacts
-npm run clean:cache    # Clean npm cache
-npm run health         # Check backend health
-npm run version:show   # Show version info
+To allow external access, modify `docker-compose.yml`:
+```yaml
+ports:
+  - "0.0.0.0:5000:5000"  # Bind to all interfaces
 ```
 
-## 🎉 What's New in Build #4
+## Getting Help
 
-- ⚡ **60% Faster Installation** - Optimized npm configuration and caching
-- 🔒 **Security Hardened** - Fixed vulnerabilities, updated packages
-- 📊 **Portfolio Optimizer** - 5 algorithms: equal weight, risk parity, minimum variance, momentum, mean reversion
-- 📧 **Email Notifications** - HTML templates, rate limiting, event filtering
-- 🔗 **Webhook System** - Retry logic, authentication, comprehensive event support
-- 🐳 **Docker Ready** - Multi-stage builds, health checks, production-ready containers
-- 🛠️ **Interactive Installer** - System checks, progress indicators, guided setup
+1. **Interactive Help**: `./install help`
+2. **Check Status**: `./install status`
+3. **View Logs**: `./install logs`
+4. **GitHub Issues**: [Report problems](https://github.com/gelimorto2/A.A.I.T.I/issues)
 
 ---
 
-**Need Help?** Check the full documentation in the main README.md or open an issue on GitHub.
+**Ready to start trading?** Run `./install` and access your A.A.I.T.I platform at http://localhost:5000!

@@ -8,47 +8,9 @@
 
 ![AAITI Dashboard](https://github.com/user-attachments/assets/02041a91-eaaa-4593-9cd2-1538e23cf6f4)
 
-## ✨ **Major Update: Fully Implemented Advanced Features (December 2024)**
-
-This project now provides **complete, working implementations** of:
-
-### 🧠 **Advanced Machine Learning Algorithms (22 Total)**
-- ✅ **LSTM Neural Networks** - Long Short-Term Memory for time series forecasting
-- ✅ **Random Forest** - Ensemble learning with multiple decision trees
-- ✅ **Support Vector Machines (SVM)** - Classification and regression analysis
-- ✅ **ARIMA Models** - AutoRegressive Integrated Moving Average for time series
-- ✅ **SARIMA Models** - Seasonal ARIMA for seasonal pattern analysis
-- ✅ **Prophet Forecasting** - Facebook's Prophet algorithm for forecasting
-- ✅ **Ensemble Strategies** - Combination of multiple ML algorithms
-- ✅ **Black-Litterman Model** - Advanced portfolio optimization
-- ✅ **Hierarchical Risk Parity** - Modern portfolio construction
-- ✅ **Kelly Criterion** - Optimal position sizing
-
-### 📊 **Real-Time Paper Trading System**
-- ✅ **Virtual Portfolio Management** - Multiple portfolios with different strategies
-- ✅ **Order Execution Simulation** - Market, limit, stop, and stop-limit orders
-- ✅ **Real-Time P&L Tracking** - Live profit and loss calculations
-- ✅ **Risk Management** - Automated stop-loss and position sizing
-- ✅ **Performance Analytics** - Comprehensive trading statistics
-- ✅ **Real Market Data Integration** - Live cryptocurrency prices from CoinGecko
-
-### 💼 **Advanced Portfolio Optimization**
-- ✅ **8 Optimization Methods** - From basic equal-weight to advanced Black-Litterman
-- ✅ **Risk Analysis** - VaR, CVaR, maximum drawdown, Sharpe ratio
-- ✅ **Constraint Handling** - Position limits, leverage controls, sector allocation
-- ✅ **Stress Testing** - Market crash, inflation, and interest rate scenarios
-- ✅ **Backtesting Integration** - Historical strategy performance testing
-
-### 🎯 **Visual Strategy Creator (Enhanced)**
-- ✅ **22+ ML Components** - All algorithms available as drag-and-drop components
-- ✅ **Advanced Conditions** - Complex logical operations and signal combinations
-- ✅ **Risk Management Tools** - Stop-loss, take-profit, position sizing components
-- ✅ **Real-Time Testing** - Instant validation with live market data
-- ✅ **Strategy Templates** - Pre-built strategies using advanced algorithms
-
 ## 🚀 Quick Start
 
-### 🐳 Docker Installation (Recommended)
+### One-Command Installation (Docker Only)
 
 ```bash
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
@@ -56,59 +18,23 @@ cd A.A.I.T.I
 ./install
 ```
 
-The installer will:
-- ✅ Check system requirements
-- ✅ Install advanced ML dependencies (ARIMA, Random Forest, SVM libraries)
-- ✅ Build Docker containers with TensorFlow support
-- ✅ Initialize paper trading database
-- ✅ Start all services including real-time market data
+**That's it!** The interactive installer will:
+- ✅ Check system requirements (Docker)
+- ✅ Build production-ready containers
+- ✅ Start all services optimized for trading
 - ✅ Open at http://localhost:5000 with full functionality
 
-### 💾 Portable Installation (Enhanced)
+### System Requirements
 
-For external drives and portable use with full ML capabilities:
+- **Docker 20.0+** with Docker Compose
+- **4GB RAM** (recommended)
+- **2GB disk space**
+- **Internet connection** for market data
 
-```bash
-./install portable
-# Enter your desired path (e.g., /mnt/usb/A.A.I.T.I)
-```
+### Supported Platforms
 
-The portable installer creates:
-- ✅ **Self-contained installation** - All ML libraries bundled
-- ✅ **Paper trading database** - Pre-configured SQLite database
-- ✅ **Advanced algorithms** - LSTM, Random Forest, SVM, ARIMA ready to use
-- ✅ **Real-time data feeds** - Market data integration configured
-- ✅ **Cross-platform launchers** - Works on any compatible system
-
-### 📦 Manual Installation
-
-```bash
-git clone https://github.com/gelimorto2/A.A.I.T.I.git
-cd A.A.I.T.I
-npm run install:deps
-npm run build
-npm start
-```
-
-## 🖥️ **Platform Support**
-
-### ✅ **Fully Supported**
-- **🐧 Linux**: Native Docker support with full ML library compatibility
-- **🍎 macOS**: Complete Docker Desktop support including TensorFlow
-- **🐳 Docker**: All platforms with advanced ML dependencies
-
-### ⚠️ **Enhanced Windows Support**
-- **🪟 Windows**: Improved installation scripts with ML library support
-  - `install.bat` - Enhanced batch script with dependency checking
-  - `install.ps1` - PowerShell script with advanced ML library installation
-  - Includes pre-compiled TensorFlow and statistical libraries
-  - **Recommended**: Use WSL2 with Ubuntu for optimal ML performance
-
-**System Requirements:**
-- Docker 20.0+ (recommended) or Node.js 16+ with Python 3.8+
-- 8GB RAM (recommended for ML algorithms)
-- 10GB disk space (includes ML libraries)
-- GPU support (optional, for accelerated LSTM training)
+- **🐧 Linux**: All distributions with Docker support
+- **🍎 macOS**: Docker Desktop required
 
 ## 🤖 **Complete Machine Learning Suite (22 Algorithms)**
 
@@ -160,13 +86,6 @@ npm start
 - **Commission Simulation** - Realistic trading costs (0.1% default)
 - **Slippage Modeling** - Market impact simulation for large orders
 
-### **Performance Analytics**
-- **P&L Tracking** - Real-time profit and loss calculations
-- **Win Rate Analysis** - Success rate statistics
-- **Sharpe Ratio** - Risk-adjusted returns
-- **Maximum Drawdown** - Peak-to-trough loss analysis
-- **Trade History** - Complete audit trail of all transactions
-
 ## 💼 **Advanced Portfolio Optimization**
 
 ### **Optimization Methods (8)**
@@ -178,21 +97,6 @@ npm start
 6. **Hierarchical Risk Parity** - Tree-based diversification
 7. **Maximum Diversification** - Highest diversification ratio
 8. **Kelly Criterion** - Optimal position sizing for growth
-
-### **Risk Management**
-- **Value at Risk (VaR)** - 95% and 99% confidence levels
-- **Conditional VaR** - Expected shortfall analysis
-- **Stress Testing** - Market crash, inflation, rate shock scenarios
-- **Correlation Analysis** - Dynamic correlation monitoring
-- **Leverage Controls** - Configurable leverage limits
-- **Position Limits** - Maximum allocation per asset
-
-### **Advanced Analytics**
-- **Monte Carlo Simulation** - Portfolio path analysis
-- **Efficient Frontier** - Risk-return optimization curves
-- **Factor Analysis** - Multi-factor risk attribution
-- **Rebalancing Alerts** - Automatic drift notifications
-- **Performance Attribution** - Asset and sector contribution analysis
 
 ## 🔧 **Real Implementation Examples**
 
@@ -211,9 +115,7 @@ npm start
     "learningRate": 0.001,
     "epochs": 200,
     "batchSize": 32
-  },
-  "trainingPeriodDays": 180,
-  "validationSplit": 0.2
+  }
 }
 ```
 
@@ -226,8 +128,7 @@ POST /api/paper-trading/portfolios
   "name": "Crypto Alpha Strategy",
   "initialBalance": 100000,
   "currency": "USD",
-  "riskProfile": "aggressive",
-  "tradingStrategy": "lstm_momentum_combined"
+  "riskProfile": "aggressive"
 }
 
 // Place Order
@@ -240,98 +141,52 @@ POST /api/paper-trading/portfolios/{id}/orders
 }
 ```
 
-### **Advanced Portfolio Optimization**
+## 📊 **Management Commands**
 
-```javascript
-// POST /api/portfolio/optimize
-{
-  "method": "black_litterman",
-  "assets": ["bitcoin", "ethereum", "cardano", "polkadot"],
-  "constraints": {
-    "maxWeight": 0.4,
-    "minWeight": 0.1,
-    "riskTolerance": 0.2,
-    "leverage": 1.0
-  },
-  "views": {
-    "bitcoin": 0.15,  // Expected 15% return
-    "ethereum": 0.12   // Expected 12% return
-  }
-}
+After installation, use these Docker commands to manage A.A.I.T.I:
+
+```bash
+# Check status
+docker compose ps
+
+# View logs
+docker compose logs -f aaiti
+
+# Stop A.A.I.T.I
+docker compose down
+
+# Restart A.A.I.T.I
+docker compose restart aaiti
+
+# Update A.A.I.T.I (rebuild containers)
+git pull && docker compose build && docker compose up -d
 ```
-
-## 📊 **Comprehensive API Endpoints**
-
-### **Advanced ML Models**
-- `POST /api/ml/models/advanced` - Create LSTM, Random Forest, SVM models
-- `GET /api/ml/algorithms` - Get all 22 supported algorithms
-- `POST /api/ml/models/{id}/predict` - Real predictions with validation
-- `GET /api/ml/models/{id}/performance` - Detailed performance metrics
-
-### **Paper Trading**
-- `POST /api/paper-trading/portfolios` - Create virtual portfolio
-- `POST /api/paper-trading/portfolios/{id}/orders` - Place orders
-- `GET /api/paper-trading/portfolios/{id}/stats` - Trading statistics
-- `GET /api/paper-trading/dashboard` - Complete trading dashboard
-
-### **Portfolio Optimization**
-- `POST /api/portfolio/optimize` - Advanced optimization methods
-- `GET /api/portfolio/backtest` - Historical performance testing
-- `POST /api/portfolio/rebalance` - Automated rebalancing
-- `GET /api/portfolio/risk-analysis` - Comprehensive risk metrics
-
-## 🎯 **Performance Metrics & Validation**
-
-All models provide comprehensive metrics:
-- **Accuracy Metrics** - MAE, RMSE, MAPE, R²
-- **Trading Metrics** - Sharpe ratio, Calmar ratio, Sortino ratio
-- **Risk Metrics** - VaR, CVaR, maximum drawdown
-- **Directional Accuracy** - Trend prediction success rate
-- **Validation** - Out-of-sample testing with real market data
 
 ## 🛠 **Development & Architecture**
 
 ### **Project Structure**
 ```
 A.A.I.T.I/
-├── backend/
+├── backend/                         # Node.js API server
 │   ├── utils/
 │   │   ├── advancedMLService.js     # LSTM, Random Forest, SVM, ARIMA
 │   │   ├── paperTradingService.js   # Real-time paper trading
-│   │   ├── portfolioOptimizer.js    # Advanced optimization methods
-│   │   └── realMLService.js         # Basic ML implementations
-│   ├── routes/
-│   │   ├── ml.js                    # ML model endpoints
-│   │   ├── paperTrading.js          # Paper trading API
-│   │   └── portfolio.js             # Portfolio optimization
-│   └── database/
-│       └── init.js                  # Database schema with paper trading
-├── frontend/                        # React dashboard with advanced features
-└── docs/                           # Comprehensive documentation
+│   │   └── portfolioOptimizer.js    # Advanced optimization methods
+│   └── routes/                      # API endpoints
+├── frontend/                        # React dashboard (built for production)
+├── Dockerfile                       # Single production-ready container
+├── docker-compose.yml               # Simple Docker Compose configuration
+└── install                          # Interactive installer script
 ```
 
 ### **Technology Stack**
 - **Backend**: Node.js, Express, SQLite
-- **ML Libraries**: TensorFlow.js, ml-random-forest, ml-svm, ARIMA, ts-arima-forecast
-- **Frontend**: React, Material-UI, Chart.js
+- **ML Libraries**: TensorFlow.js, ml-random-forest, ml-svm, ARIMA
+- **Frontend**: React, Material-UI, Chart.js (built into container)
 - **Database**: SQLite with paper trading schema
 - **Real-Time**: Socket.io for live updates
 - **APIs**: CoinGecko for market data
-
-### **Testing & Validation**
-```bash
-# Test advanced ML algorithms
-npm run test:ml
-
-# Test paper trading functionality  
-npm run test:paper-trading
-
-# Test portfolio optimization
-npm run test:portfolio
-
-# Full integration test
-npm run test:integration
-```
+- **Deployment**: Docker with production optimizations
 
 ## 📚 **Complete Documentation**
 
@@ -342,65 +197,28 @@ npm run test:integration
 - **[API Reference](docs/api-reference.md)** - Complete endpoint documentation
 - **[Development Guide](docs/development.md)** - Contributing and extending
 
-## 🆕 **What's New in v2.1.0**
-
-### **Advanced ML Algorithms Added**
-- ✅ LSTM Neural Networks with TensorFlow.js
-- ✅ Random Forest with configurable parameters
-- ✅ Support Vector Machines (SVM) with multiple kernels
-- ✅ ARIMA/SARIMA statistical time series models
-- ✅ Prophet forecasting algorithm
-- ✅ Ensemble methods combining multiple algorithms
-
-### **Complete Paper Trading System**
-- ✅ Real-time order execution simulation
-- ✅ Multiple portfolio management
-- ✅ Live P&L tracking and analytics
-- ✅ Risk management with stop-losses
-- ✅ Commission and slippage modeling
-
-### **Advanced Portfolio Optimization**
-- ✅ Black-Litterman model implementation
-- ✅ Hierarchical Risk Parity (HRP)
-- ✅ Maximum diversification optimization
-- ✅ Kelly Criterion position sizing
-- ✅ Comprehensive risk analysis with VaR/CVaR
-
-### **Enhanced Infrastructure**
-- ✅ Advanced database schema for paper trading
-- ✅ Real-time market data integration
-- ✅ Improved error handling and logging
-- ✅ Performance monitoring and metrics
-- ✅ Comprehensive API documentation
-
-## 🚧 **Roadmap & Future Features**
-
-### **Short Term (Q1 2025)**
-- [ ] **TensorFlow.js GPU Support** - Accelerated LSTM training
-- [ ] **More Exchange Integrations** - Binance, Coinbase Pro APIs
-- [ ] **Advanced Charting** - TradingView integration
-- [ ] **Mobile App** - React Native implementation
-
-### **Medium Term (Q2-Q3 2025)**
-- [ ] **Live Trading Integration** - Real exchange connectivity
-- [ ] **Social Trading** - Copy trading and strategy sharing
-- [ ] **Options Trading** - Derivatives and complex strategies
-- [ ] **Multi-Asset Support** - Stocks, forex, commodities
-
-### **Long Term (Q4 2025)**
-- [ ] **Institutional Features** - Multi-user, compliance, reporting
-- [ ] **AI Strategy Generation** - GPT-powered strategy creation
-- [ ] **Quantum Computing** - Quantum ML algorithms
-- [ ] **DeFi Integration** - Decentralized trading protocols
-
 ## 🆘 **Getting Help & Support**
 
 1. **📖 Documentation**: [Complete guides and tutorials](docs/README.md)
 2. **🔍 Issues**: [GitHub Issues](https://github.com/gelimorto2/A.A.I.T.I/issues)
 3. **🏥 Health Check**: http://localhost:5000/api/health
-4. **📊 ML Algorithms**: http://localhost:5000/api/ml/algorithms
-5. **💼 Paper Trading**: http://localhost:5000/api/paper-trading/dashboard
-6. **📈 Portfolio Tools**: http://localhost:5000/api/portfolio/methods
+4. **📊 Dashboard**: http://localhost:5000
+
+### **Troubleshooting**
+
+```bash
+# Check if Docker is running
+docker info
+
+# Check A.A.I.T.I status
+./install status
+
+# View detailed logs
+docker compose logs -f aaiti
+
+# Restart if needed
+docker compose restart aaiti
+```
 
 ## ⚠️ **Legal Disclaimer**
 
@@ -408,29 +226,33 @@ npm run test:integration
 - **Paper Trading Only**: Default configuration uses simulated trading
 - **Risk Warning**: Cryptocurrency trading involves significant financial risk
 - **No Financial Advice**: This tool provides analysis only, not investment advice
-- **Live Trading**: Use extreme caution if connecting to real exchanges
-- **Compliance**: Ensure compliance with local financial regulations
 
 ## 📝 **License & Contributing**
 
 **License**: ISC License - see LICENSE file for details.
 
-**Contributing**: We welcome contributions! Please read our [Contributing Guide](docs/contributing.md) for:
-- Code style guidelines
-- Testing requirements
-- Pull request process
-- Community guidelines
+**Contributing**: We welcome contributions! Please read our [Contributing Guide](docs/contributing.md) for guidelines.
 
-## 🎉 **Acknowledgments**
+## 🎉 **What's New in v2.1.0**
 
-- **TensorFlow.js Team** - For neural network capabilities
-- **ml-js Organization** - For machine learning libraries
-- **CoinGecko** - For reliable cryptocurrency data
-- **React Community** - For the excellent frontend framework
-- **All Contributors** - For making this project possible
+### **Simplified Installation**
+- ✅ **One Command Setup** - Single interactive installer
+- ✅ **Docker Only** - Consistent, production-ready deployment
+- ✅ **No Complex Options** - Streamlined experience
+- ✅ **Auto-Configuration** - Production settings by default
+
+### **Enhanced Production Readiness**
+- ✅ **Optimized Containers** - Single-stage, efficient Docker builds
+- ✅ **Resource Management** - Memory and CPU limits configured
+- ✅ **Health Monitoring** - Automatic health checks and restart policies
+- ✅ **Security Hardened** - Non-root user, minimal attack surface
+
+### **Removed Complexity**
+- ✅ **No Windows Scripts** - Focus on Docker-compatible platforms
+- ✅ **No NPM Installation** - Docker provides consistent environment
+- ✅ **No Build Steps** - Production-ready on install
+- ✅ **Single Configuration** - One docker-compose.yml for all needs
 
 ---
 
-**A.A.I.T.I v2.1.0**: Complete AI Trading Platform • 22 Real ML Algorithms • Full Paper Trading • Advanced Portfolio Optimization • Real Market Data
-
-**[📖 Get Started with Complete Documentation](docs/README.md)** | **[🚀 Try Paper Trading Demo](http://localhost:5000/paper-trading)**
+**A.A.I.T.I v2.1.0**: Complete AI Trading Platform • Docker-First • Production-Ready • One-Command Install
