@@ -1,6 +1,7 @@
 const axios = require('axios');
 const logger = require('./logger');
 const { getMetrics } = require('./prometheusMetrics');
+const { getGitHubIssueReporter } = require('./githubIssueReporter');
 
 /**
  * AAITI Enhanced Notification System
@@ -57,6 +58,16 @@ class NotificationManager {
     
     // Metrics integration
     this.metrics = getMetrics();
+    
+    // GitHub issue reporter integration
+    this.githubReporter = getGitHubIssueReporter();
+    
+    // Add GitHub to config
+    this.config.github = {
+      enabled: config.githubEnabled !== false && (process.env.GITHUB_TOKEN || config.githubToken),
+      autoCreateIssues: config.autoCreateIssues !== false,
+      minSeverityForIssues: config.minSeverityForIssues || 'error' // error, critical
+    };
 
     // Initialize notification providers
     this.initializeProviders();
@@ -65,7 +76,8 @@ class NotificationManager {
       slack: this.config.slack.enabled,
       discord: this.config.discord.enabled,
       sms: this.config.sms.enabled,
-      email: this.config.email.enabled
+      email: this.config.email.enabled,
+      github: this.config.github.enabled
     });
   }
 
@@ -164,6 +176,20 @@ class NotificationManager {
         results.failed.push({ channel: 'email', error: error.message });
       }
       results.total++;
+    }
+
+    // Create GitHub issue for critical errors
+    if (this.config.github.enabled && this.config.github.autoCreateIssues) {
+      const shouldCreateIssue = this.shouldCreateGitHubIssue(normalizedAlert);
+      if (shouldCreateIssue) {
+        try {
+          await this.createGitHubIssue(normalizedAlert);
+          results.sent.push('github');
+        } catch (error) {
+          results.failed.push({ channel: 'github', error: error.message });
+        }
+        results.total++;
+      }
     }
 
     // Record metrics
@@ -468,6 +494,51 @@ class NotificationManager {
         this.metrics.recordNotificationFailure(failure.channel, alert.type, alert.level);
       }
     });
+  }
+
+  /**
+   * Check if GitHub issue should be created
+   */
+  shouldCreateGitHubIssue(alert) {
+    if (!this.config.github.enabled || !this.config.github.autoCreateIssues) {
+      return false;
+    }
+
+    const minSeverity = this.config.github.minSeverityForIssues;
+    const severityLevels = { info: 1, warning: 2, error: 3, critical: 4 };
+    const alertLevel = severityLevels[alert.level] || 1;
+    const minLevel = severityLevels[minSeverity] || 3;
+
+    return alertLevel >= minLevel;
+  }
+
+  /**
+   * Create GitHub issue for alert
+   */
+  async createGitHubIssue(alert) {
+    if (!this.githubReporter) {
+      throw new Error('GitHub issue reporter not initialized');
+    }
+
+    // Convert alert to error format for GitHub reporter
+    const error = new Error(alert.title);
+    error.description = alert.description;
+    error.type = alert.type;
+    error.level = alert.level;
+
+    const context = {
+      severity: alert.level,
+      type: 'notification_alert',
+      alert: {
+        id: alert.id,
+        type: alert.type,
+        timestamp: alert.timestamp,
+        fields: alert.fields
+      },
+      additionalInfo: `Alert Details:\n${JSON.stringify(alert, null, 2)}`
+    };
+
+    return await this.githubReporter.reportError(error, context);
   }
 
   /**

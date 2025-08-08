@@ -49,6 +49,10 @@ const dataRetentionService = require('./utils/dataRetentionService');
 // Performance configuration
 const performanceConfig = require('./config/performance');
 
+// Performance and GitHub reporting services
+const { getPerformanceMonitor } = require('./utils/performanceMonitor');
+const { getGitHubIssueReporter } = require('./utils/githubIssueReporter');
+
 const app = express();
 const server = http.createServer(app);
 
@@ -64,11 +68,44 @@ const dashboard = new ASCIIDashboard();
 // Connect logger to dashboard
 logger.setDashboard(dashboard);
 
+// Initialize performance monitor and GitHub issue reporter
+let performanceMonitor;
+let githubReporter;
+
+const initializePerformanceServices = () => {
+  try {
+    // Initialize GitHub issue reporter
+    githubReporter = getGitHubIssueReporter({
+      enabled: process.env.GITHUB_TOKEN ? true : false,
+      autoCreate: process.env.GITHUB_AUTO_CREATE_ISSUES !== 'false'
+    });
+    
+    // Connect GitHub reporter to logger
+    logger.setGitHubReporter(githubReporter);
+    
+    // Initialize performance monitor
+    performanceMonitor = getPerformanceMonitor({
+      reportToGitHub: process.env.GITHUB_TOKEN ? true : false,
+      alertOnThresholds: true
+    });
+    
+    logger.info('🚀 Performance services initialized', {
+      githubReporting: githubReporter.getStatus().enabled,
+      performanceMonitoring: true
+    });
+  } catch (error) {
+    logger.error('Failed to initialize performance services', error);
+  }
+};
+
 // Initialize credentials and get configuration
 let config = {};
 
 const initializeConfig = async () => {
   logger.info('🔧 Initializing AAITI configuration...', { service: 'aaiti-backend' });
+  
+  // Initialize performance services first
+  initializePerformanceServices();
   
   await initializeUserCredentials();
   const credentials = getCredentials();
@@ -167,6 +204,30 @@ const initializeMiddleware = () => {
   // Performance metrics middleware (before routes)
   app.use(collectRequestMetrics);
 
+  // Add performance monitoring middleware
+  app.use((req, res, next) => {
+    if (performanceMonitor) {
+      const endpoint = `${req.method} ${req.route?.path || req.path}`;
+      
+      // Monitor API call performance
+      performanceMonitor.monitorAPICall(endpoint, async () => {
+        return new Promise((resolve) => {
+          const originalSend = res.send;
+          res.send = function(data) {
+            resolve(data);
+            return originalSend.call(this, data);
+          };
+          next();
+        });
+      }).catch(error => {
+        logger.error(`API monitoring error for ${endpoint}`, error);
+        next();
+      });
+    } else {
+      next();
+    }
+  });
+
   logger.info('🛣️ Registering API routes...', { service: 'aaiti-backend' });
 
   // Routes
@@ -179,6 +240,10 @@ const initializeMiddleware = () => {
   app.use('/api/ml', mlRoutes);
   app.use('/api/notifications', notificationRoutes);
   app.use('/api/functions', functionsRoutes);
+  
+  // Performance and Issue Reporting routes
+  const performanceRoutes = require('./routes/performance');
+  app.use('/api/performance', performanceRoutes);
   
   // Security & Compliance routes
   app.use('/api/api-keys', apiKeysRoutes);

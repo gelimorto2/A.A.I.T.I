@@ -1,6 +1,7 @@
 const axios = require('axios');
 const logger = require('./logger');
 const { getCredentials } = require('./credentials');
+const { getPerformanceMonitor } = require('./performanceMonitor');
 
 class MarketDataService {
   constructor() {
@@ -15,11 +16,21 @@ class MarketDataService {
     this.symbols = ['bitcoin', 'ethereum', 'binancecoin', 'cardano', 'solana', 'polkadot', 'dogecoin', 'chainlink', 'polygon'];
     this.baseUrl = 'https://api.coingecko.com/api/v3';
     
-    logger.info('MarketDataService initialized with enhanced rate limiting', { 
+    // Performance monitoring
+    this.performanceMonitor = getPerformanceMonitor();
+    this.requestStats = {
+      total: 0,
+      cached: 0,
+      failed: 0,
+      avgResponseTime: 0
+    };
+    
+    logger.info('MarketDataService initialized with enhanced rate limiting and performance monitoring', { 
       service: 'market-data',
       cacheTimeout: this.cacheTimeout,
       rateLimitDelay: this.rateLimitDelay,
-      supportedSymbols: this.symbols.length 
+      supportedSymbols: this.symbols.length,
+      performanceMonitoring: true
     });
   }
 
@@ -119,94 +130,107 @@ class MarketDataService {
   }
 
   /**
-   * Fetch real-time quote data from CoinGecko with rate limiting
+   * Fetch real-time quote data from CoinGecko with rate limiting and performance monitoring
    */
   async getQuote(symbol) {
-    try {
-      const startTime = Date.now();
-      const convertedSymbol = this.validateAndConvertSymbol(symbol);
-      const cacheKey = `quote_${convertedSymbol}`;
-      
-      logger.debug('Fetching quote data', { 
-        symbol: convertedSymbol, 
-        originalSymbol: symbol,
-        cacheKey,
-        service: 'market-data'
-      });
-      
-      const cached = this.cache.get(cacheKey);
-      
-      if (cached && (Date.now() - cached.timestamp) < this.cacheTimeout) {
-        logger.debug('Returning cached quote data', { 
-          symbol: convertedSymbol, 
-          cacheAge: Date.now() - cached.timestamp,
-          service: 'market-data'
-        });
-        return cached.data;
-      }
-
-      // Make rate-limited request
-      const response = await this.makeRateLimitedRequest(async () => {
-        return this.retryRequest(async () => {
-          return axios.get(`${this.baseUrl}/simple/price`, {
-            params: {
-              ids: convertedSymbol,
-              vs_currencies: 'usd',
-              include_24hr_change: 'true',
-              include_24hr_vol: 'true',
-              include_last_updated_at: 'true'
-            },
-            timeout: 15000,
-            headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'AAITI-Trading-Bot/1.1.0'
-            }
-          });
-        });
-      });
-
-      const data = response.data[convertedSymbol];
-      
-      if (!data) {
-        logger.warn('No data available for symbol', { 
+    const scriptName = `marketData.getQuote[${symbol}]`;
+    
+    return await this.performanceMonitor.monitorScript(scriptName, async () => {
+      try {
+        this.requestStats.total++;
+        const startTime = Date.now();
+        const convertedSymbol = this.validateAndConvertSymbol(symbol);
+        const cacheKey = `quote_${convertedSymbol}`;
+        
+        logger.debug('Fetching quote data', { 
           symbol: convertedSymbol, 
           originalSymbol: symbol,
+          cacheKey,
           service: 'market-data'
         });
-        throw new Error(`No data available for symbol: ${symbol}`);
-      }
+        
+        const cached = this.cache.get(cacheKey);
+        
+        if (cached && (Date.now() - cached.timestamp) < this.cacheTimeout) {
+          this.requestStats.cached++;
+          logger.debug('Returning cached quote data', { 
+            symbol: convertedSymbol, 
+            cacheAge: Date.now() - cached.timestamp,
+            service: 'market-data'
+          });
+          return cached.data;
+        }
 
-      const quote = {
-        symbol: convertedSymbol,
-        originalSymbol: symbol,
-        price: data.usd,
-        change: data.usd_24h_change || 0,
-        changePercent: data.usd_24h_change || 0,
-        volume: data.usd_24h_vol || 0,
-        lastUpdated: new Date(data.last_updated_at ? data.last_updated_at * 1000 : Date.now()).toISOString(),
-        lastRefreshed: new Date().toISOString(),
-        provider: 'CoinGecko',
-        isReal: true
-      };
+        // Make rate-limited request with performance monitoring
+        const response = await this.performanceMonitor.monitorAPICall(
+          `coingecko.simple.price[${convertedSymbol}]`,
+          async () => {
+            return this.makeRateLimitedRequest(async () => {
+              return this.retryRequest(async () => {
+                return axios.get(`${this.baseUrl}/simple/price`, {
+                  params: {
+                    ids: convertedSymbol,
+                    vs_currencies: 'usd',
+                    include_24hr_change: 'true',
+                    include_24hr_vol: 'true',
+                    include_last_updated_at: 'true'
+                  },
+                  timeout: 15000,
+                  headers: {
+                    'Accept': 'application/json',
+                    'User-Agent': 'AAITI-Trading-Bot/1.1.0'
+                  }
+                });
+              });
+            });
+          }
+        );
 
-      // Cache the result
-      this.cache.set(cacheKey, {
-        data: quote,
-        timestamp: Date.now()
-      });
+        const data = response.data[convertedSymbol];
+      
+        if (!data) {
+          logger.warn('No data available for symbol', { 
+            symbol: convertedSymbol, 
+            originalSymbol: symbol,
+            service: 'market-data'
+          });
+          throw new Error(`No data available for symbol: ${symbol}`);
+        }
 
-      const responseTime = Date.now() - startTime;
-      logger.info('Successfully fetched quote data', { 
-        symbol: convertedSymbol, 
-        price: quote.price,
-        change: quote.change,
-        responseTime: `${responseTime}ms`,
-        service: 'market-data'
-      });
+        const quote = {
+          symbol: convertedSymbol,
+          originalSymbol: symbol,
+          price: data.usd,
+          change: data.usd_24h_change || 0,
+          changePercent: data.usd_24h_change || 0,
+          volume: data.usd_24h_vol || 0,
+          lastUpdated: new Date(data.last_updated_at ? data.last_updated_at * 1000 : Date.now()).toISOString(),
+          lastRefreshed: new Date().toISOString(),
+          provider: 'CoinGecko',
+          isReal: true
+        };
 
-      return quote;
-    } catch (error) {
-      logger.error('Error fetching quote data', { 
+        // Cache the result
+        this.cache.set(cacheKey, {
+          data: quote,
+          timestamp: Date.now()
+        });
+
+        const responseTime = Date.now() - startTime;
+        this.updateRequestStats(responseTime);
+        
+        logger.info('Successfully fetched quote data', { 
+          symbol: convertedSymbol, 
+          price: quote.price,
+          change: quote.change,
+          responseTime: `${responseTime}ms`,
+          service: 'market-data'
+        });
+
+        return quote;
+      } catch (error) {
+        this.requestStats.failed++;
+        logger.error('Error fetching quote data', { 
         symbol, 
         error: error.message,
         status: error.response?.status,
@@ -217,7 +241,31 @@ class MarketDataService {
       // Return mock data as fallback
       logger.info('Falling back to mock data', { symbol, service: 'market-data' });
       return this.getMockQuote(symbol);
-    }
+      }
+    });
+  }
+
+  /**
+   * Update request statistics for performance monitoring
+   */
+  updateRequestStats(responseTime) {
+    this.requestStats.avgResponseTime = 
+      (this.requestStats.avgResponseTime + responseTime) / 2;
+  }
+
+  /**
+   * Get request statistics
+   */
+  getRequestStats() {
+    return {
+      ...this.requestStats,
+      successRate: this.requestStats.total > 0 
+        ? ((this.requestStats.total - this.requestStats.failed) / this.requestStats.total) * 100
+        : 100,
+      cacheHitRate: this.requestStats.total > 0
+        ? (this.requestStats.cached / this.requestStats.total) * 100
+        : 0
+    };
   }
 
   /**
