@@ -14,7 +14,7 @@
 *Build sophisticated trading strategies without coding using our drag-and-drop interface with technical indicators, logic components, and trading actions.*
 
 ### **📊 Neural Command Deck - Live Dashboard**
-![A.A.I.T.I Neural Command Deck](https://github.com/user-attachments/assets/736a2c10-dded-4d85-8a78-407c715d1419)
+![A.A.I.T.I Neural Command Deck](assets/screenshots/aaiti-demo-dashboard.png)
 
 *Real-time AI-powered trading interface showing portfolio performance, active strategies, and live market data with professional-grade analytics.*
 
@@ -90,12 +90,26 @@ cd A.A.I.T.I
 
 ### System Requirements
 
+<div align="center">
+<img src="https://img.shields.io/badge/Docker-20.0%2B%20Required-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/>
+<img src="https://img.shields.io/badge/RAM-4GB%20Recommended-FF6B6B?style=for-the-badge&logo=memory&logoColor=white" alt="RAM"/>
+<img src="https://img.shields.io/badge/Disk-2GB%20Space-28A745?style=for-the-badge&logo=hard-drive&logoColor=white" alt="Disk"/>
+<img src="https://img.shields.io/badge/Internet-Market%20Data-4285F4?style=for-the-badge&logo=wifi&logoColor=white" alt="Internet"/>
+</div>
+
 - **Docker 20.0+** with Docker Compose
 - **4GB RAM** (recommended)
 - **2GB disk space**
 - **Internet connection** for market data
 
 ### Supported Platforms
+
+<div align="center">
+<img src="https://img.shields.io/badge/Linux-All%20Distributions-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Linux"/>
+<img src="https://img.shields.io/badge/macOS-Docker%20Desktop-000000?style=for-the-badge&logo=apple&logoColor=white" alt="macOS"/>
+<img src="https://img.shields.io/badge/Cross%20Platform-Docker%20Support-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Cross Platform"/>
+<img src="https://img.shields.io/badge/Containers-Portable%20Deploy-FF6B6B?style=for-the-badge&logo=package&logoColor=white" alt="Containers"/>
+</div>
 
 - **🐧 Linux**: All distributions with Docker support
 - **🍎 macOS**: Docker Desktop required
@@ -110,6 +124,14 @@ cd A.A.I.T.I
 </div>
 
 ### **Basic Technical Indicators (12)**
+
+<div align="center">
+<img src="https://img.shields.io/badge/12%20Indicators-Technical%20Analysis-45B7D1?style=for-the-badge&logo=chart-line&logoColor=white" alt="12 Indicators"/>
+<img src="https://img.shields.io/badge/Real%20ML-Regression%20Library-FF6B6B?style=for-the-badge&logo=trending-up&logoColor=white" alt="Real ML"/>
+<img src="https://img.shields.io/badge/Backtesting-Performance%20Validation-28A745?style=for-the-badge&logo=history&logoColor=white" alt="Backtesting"/>
+<img src="https://img.shields.io/badge/Optimization-Signal%20Enhancement-9C27B0?style=for-the-badge&logo=settings&logoColor=white" alt="Optimization"/>
+</div>
+
 1. **Linear Regression** - Trend prediction with real ml-regression library
 2. **Polynomial Regression** - Non-linear pattern recognition
 3. **Moving Average Strategy** - SMA crossover with backtesting
@@ -124,6 +146,14 @@ cd A.A.I.T.I
 12. **Momentum Strategy** - Price momentum analysis
 
 ### **Advanced Machine Learning (10)**
+
+<div align="center">
+<img src="https://img.shields.io/badge/10%20Algorithms-Advanced%20ML-FF6B6B?style=for-the-badge&logo=brain&logoColor=white" alt="10 Algorithms"/>
+<img src="https://img.shields.io/badge/TensorFlow-Deep%20Learning-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white" alt="TensorFlow"/>
+<img src="https://img.shields.io/badge/Time%20Series-Specialized%20Models-4ECDC4?style=for-the-badge&logo=clock&logoColor=white" alt="Time Series"/>
+<img src="https://img.shields.io/badge/Meta%20Learning-Ensemble%20Methods-96CEB4?style=for-the-badge&logo=layers&logoColor=white" alt="Meta Learning"/>
+</div>
+
 13. **LSTM Neural Networks** - Deep learning for time series with TensorFlow
 14. **Random Forest** - Ensemble learning with configurable trees and depth
 15. **Support Vector Machines** - Classification with RBF, linear, and polynomial kernels
@@ -145,12 +175,28 @@ cd A.A.I.T.I
 </div>
 
 ### **Portfolio Management**
+
+<div align="center">
+<img src="https://img.shields.io/badge/Unlimited-Virtual%20Accounts-6F42C1?style=for-the-badge&logo=wallet&logoColor=white" alt="Unlimited Accounts"/>
+<img src="https://img.shields.io/badge/Balance%20Range-$1K%20to%20$1M-28A745?style=for-the-badge&logo=dollar-sign&logoColor=white" alt="Balance Range"/>
+<img src="https://img.shields.io/badge/Multi%20Currency-USD%20EUR%20BTC-F7931E?style=for-the-badge&logo=coins&logoColor=white" alt="Multi Currency"/>
+<img src="https://img.shields.io/badge/Risk%20Profiles-3%20Presets-E74C3C?style=for-the-badge&logo=target&logoColor=white" alt="Risk Profiles"/>
+</div>
+
 - **Multiple Portfolios** - Create unlimited virtual trading accounts
 - **Initial Balance Configuration** - Start with any amount from $1,000 to $1,000,000
 - **Currency Support** - USD, EUR, BTC base currencies
 - **Risk Profiles** - Conservative, moderate, aggressive presets
 
 ### **Order Types & Execution**
+
+<div align="center">
+<img src="https://img.shields.io/badge/Market%20Orders-Instant%20Execution-28A745?style=for-the-badge&logo=zap&logoColor=white" alt="Market Orders"/>
+<img src="https://img.shields.io/badge/Limit%20Orders-Price%20Control-4285F4?style=for-the-badge&logo=target&logoColor=white" alt="Limit Orders"/>
+<img src="https://img.shields.io/badge/Stop%20Orders-Risk%20Management-E74C3C?style=for-the-badge&logo=stop-circle&logoColor=white" alt="Stop Orders"/>
+<img src="https://img.shields.io/badge/Time%20Control-GTC%20IOC-9C27B0?style=for-the-badge&logo=clock&logoColor=white" alt="Time Control"/>
+</div>
+
 - **Market Orders** - Instant execution at current market price
 - **Limit Orders** - Buy/sell at specific price levels
 - **Stop Orders** - Risk management with stop-loss triggers
@@ -158,6 +204,14 @@ cd A.A.I.T.I
 - **Time in Force** - GTC (Good Till Canceled), IOC (Immediate or Cancel)
 
 ### **Real-Time Features**
+
+<div align="center">
+<img src="https://img.shields.io/badge/Live%20Order%20Book-Real%20Time%20Matching-6F42C1?style=for-the-badge&logo=book-open&logoColor=white" alt="Live Order Book"/>
+<img src="https://img.shields.io/badge/Sub%20Second-Ultra%20Fast%20Processing-FF6B6B?style=for-the-badge&logo=lightning&logoColor=white" alt="Sub Second"/>
+<img src="https://img.shields.io/badge/CoinGecko-Live%20Market%20Data-F7931E?style=for-the-badge&logo=bitcoin&logoColor=white" alt="CoinGecko"/>
+<img src="https://img.shields.io/badge/Realistic%20Costs-0.1%25%20Commission-FFC107?style=for-the-badge&logo=percentage&logoColor=white" alt="Realistic Costs"/>
+</div>
+
 - **Live Order Book** - Real-time order matching simulation
 - **Instant Execution** - Sub-second order processing
 - **Real Market Data** - Live prices from CoinGecko API
@@ -174,6 +228,14 @@ cd A.A.I.T.I
 </div>
 
 ### **Optimization Methods (8)**
+
+<div align="center">
+<img src="https://img.shields.io/badge/8%20Methods-Advanced%20Optimization-E74C3C?style=for-the-badge&logo=calculator&logoColor=white" alt="8 Methods"/>
+<img src="https://img.shields.io/badge/Diversification-Smart%20Allocation-4ECDC4?style=for-the-badge&logo=pie-chart&logoColor=white" alt="Diversification"/>
+<img src="https://img.shields.io/badge/Risk%20Control-Volatility%20Management-9C27B0?style=for-the-badge&logo=shield&logoColor=white" alt="Risk Control"/>
+<img src="https://img.shields.io/badge/Returns-Maximum%20Optimization-28A745?style=for-the-badge&logo=trending-up&logoColor=white" alt="Returns"/>
+</div>
+
 1. **Equal Weight** - Simple diversification
 2. **Risk Parity** - Equal risk contribution
 3. **Minimum Variance** - Lowest volatility portfolio
@@ -286,6 +348,14 @@ A.A.I.T.I/
 ```
 
 ### **Technology Stack**
+
+<div align="center">
+<img src="https://img.shields.io/badge/Backend-Node.js%20Express-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Backend"/>
+<img src="https://img.shields.io/badge/ML%20Stack-TensorFlow%20ML%20Libraries-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white" alt="ML Stack"/>
+<img src="https://img.shields.io/badge/Frontend-React%20Material%20UI-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="Frontend"/>
+<img src="https://img.shields.io/badge/Database-SQLite%20Schema-003B57?style=for-the-badge&logo=sqlite&logoColor=white" alt="Database"/>
+</div>
+
 - **Backend**: Node.js, Express, SQLite
 - **ML Libraries**: TensorFlow.js, ml-random-forest, ml-svm, ARIMA
 - **Frontend**: React, Material-UI, Chart.js (built into container)
@@ -312,12 +382,26 @@ A.A.I.T.I/
 
 ## 🆘 **Getting Help & Support**
 
+<div align="center">
+<img src="https://img.shields.io/badge/Documentation-Complete%20Guides-4285F4?style=for-the-badge&logo=book-open&logoColor=white" alt="Documentation"/>
+<img src="https://img.shields.io/badge/GitHub%20Issues-Community%20Support-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Issues"/>
+<img src="https://img.shields.io/badge/Health%20Check-Live%20Status-28A745?style=for-the-badge&logo=activity&logoColor=white" alt="Health Check"/>
+<img src="https://img.shields.io/badge/Dashboard-Live%20Access-FF6B6B?style=for-the-badge&logo=dashboard&logoColor=white" alt="Dashboard"/>
+</div>
+
 1. **📖 Documentation**: [Complete guides and tutorials](docs/README.md)
 2. **🔍 Issues**: [GitHub Issues](https://github.com/gelimorto2/A.A.I.T.I/issues)
 3. **🏥 Health Check**: http://localhost:5000/api/health
 4. **📊 Dashboard**: http://localhost:5000
 
 ### **Troubleshooting**
+
+<div align="center">
+<img src="https://img.shields.io/badge/Docker%20Check-System%20Validation-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Check"/>
+<img src="https://img.shields.io/badge/Status%20Monitor-Live%20Diagnostics-17A2B8?style=for-the-badge&logo=monitor&logoColor=white" alt="Status Monitor"/>
+<img src="https://img.shields.io/badge/Log%20Analysis-Real%20Time%20Debug-FFC107?style=for-the-badge&logo=file-text&logoColor=white" alt="Log Analysis"/>
+<img src="https://img.shields.io/badge/Auto%20Restart-Quick%20Recovery-28A745?style=for-the-badge&logo=refresh-cw&logoColor=white" alt="Auto Restart"/>
+</div>
 
 ```bash
 # Check if Docker is running
@@ -335,12 +419,26 @@ docker compose restart aaiti
 
 ## ⚠️ **Legal Disclaimer**
 
+<div align="center">
+<img src="https://img.shields.io/badge/Educational%20Use-Research%20Only-FF6B6B?style=for-the-badge&logo=graduation-cap&logoColor=white" alt="Educational Use"/>
+<img src="https://img.shields.io/badge/Paper%20Trading-Simulation%20Only-FFC107?style=for-the-badge&logo=shield-check&logoColor=white" alt="Paper Trading"/>
+<img src="https://img.shields.io/badge/Risk%20Warning-High%20Financial%20Risk-E74C3C?style=for-the-badge&logo=alert-triangle&logoColor=white" alt="Risk Warning"/>
+<img src="https://img.shields.io/badge/No%20Advice-Analysis%20Tool%20Only-6C757D?style=for-the-badge&logo=info&logoColor=white" alt="No Advice"/>
+</div>
+
 - **Educational Purpose**: This software is for educational and research purposes
 - **Paper Trading Only**: Default configuration uses simulated trading
 - **Risk Warning**: Cryptocurrency trading involves significant financial risk
 - **No Financial Advice**: This tool provides analysis only, not investment advice
 
 ## 📝 **License & Contributing**
+
+<div align="center">
+<img src="https://img.shields.io/badge/License-ISC%20Open%20Source-00D4AA?style=for-the-badge&logo=open-source-initiative&logoColor=white" alt="License"/>
+<img src="https://img.shields.io/badge/Contributing-Welcome-FF6B6B?style=for-the-badge&logo=handshake&logoColor=white" alt="Contributing"/>
+<img src="https://img.shields.io/badge/Community-Driven-9C27B0?style=for-the-badge&logo=users&logoColor=white" alt="Community"/>
+<img src="https://img.shields.io/badge/Guidelines-Available-4285F4?style=for-the-badge&logo=checklist&logoColor=white" alt="Guidelines"/>
+</div>
 
 **License**: ISC License - see LICENSE file for details.
 
@@ -356,18 +454,42 @@ docker compose restart aaiti
 </div>
 
 ### **Simplified Installation**
+
+<div align="center">
+<img src="https://img.shields.io/badge/One%20Command-Interactive%20Setup-FF6B6B?style=for-the-badge&logo=terminal&logoColor=white" alt="One Command"/>
+<img src="https://img.shields.io/badge/Docker%20Only-Consistent%20Deploy-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Only"/>
+<img src="https://img.shields.io/badge/Zero%20Config-Streamlined%20UX-28A745?style=for-the-badge&logo=settings&logoColor=white" alt="Zero Config"/>
+<img src="https://img.shields.io/badge/Auto%20Setup-Production%20Defaults-FFC107?style=for-the-badge&logo=magic&logoColor=white" alt="Auto Setup"/>
+</div>
+
 - ✅ **One Command Setup** - Single interactive installer
 - ✅ **Docker Only** - Consistent, production-ready deployment
 - ✅ **No Complex Options** - Streamlined experience
 - ✅ **Auto-Configuration** - Production settings by default
 
 ### **Enhanced Production Readiness**
+
+<div align="center">
+<img src="https://img.shields.io/badge/Optimized-Single%20Stage%20Builds-28A745?style=for-the-badge&logo=layers&logoColor=white" alt="Optimized"/>
+<img src="https://img.shields.io/badge/Resource%20Control-CPU%20Memory%20Limits-E74C3C?style=for-the-badge&logo=cpu&logoColor=white" alt="Resource Control"/>
+<img src="https://img.shields.io/badge/Health%20Monitor-Auto%20Restart%20Policy-4285F4?style=for-the-badge&logo=heart&logoColor=white" alt="Health Monitor"/>
+<img src="https://img.shields.io/badge/Security-Non%20Root%20Hardened-6C757D?style=for-the-badge&logo=shield&logoColor=white" alt="Security"/>
+</div>
+
 - ✅ **Optimized Containers** - Single-stage, efficient Docker builds
 - ✅ **Resource Management** - Memory and CPU limits configured
 - ✅ **Health Monitoring** - Automatic health checks and restart policies
 - ✅ **Security Hardened** - Non-root user, minimal attack surface
 
 ### **Removed Complexity**
+
+<div align="center">
+<img src="https://img.shields.io/badge/No%20Windows-Docker%20Compatible-FFC107?style=for-the-badge&logo=windows&logoColor=white" alt="No Windows"/>
+<img src="https://img.shields.io/badge/No%20NPM-Docker%20Environment-FF6B6B?style=for-the-badge&logo=npm&logoColor=white" alt="No NPM"/>
+<img src="https://img.shields.io/badge/No%20Build-Production%20Ready-28A745?style=for-the-badge&logo=package&logoColor=white" alt="No Build"/>
+<img src="https://img.shields.io/badge/Single%20Config-One%20YAML%20File-9C27B0?style=for-the-badge&logo=file&logoColor=white" alt="Single Config"/>
+</div>
+
 - ✅ **No Windows Scripts** - Focus on Docker-compatible platforms
 - ✅ **No NPM Installation** - Docker provides consistent environment
 - ✅ **No Build Steps** - Production-ready on install
