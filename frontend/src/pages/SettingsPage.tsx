@@ -46,10 +46,12 @@ import {
   Brightness7,
   SettingsBrightness,
   Info,
+  Palette,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
+import PreferencesManager from '../components/settings/PreferencesManager';
 
 const SettingsPage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -365,6 +367,7 @@ const SettingsPage: React.FC = () => {
         sx={{ mb: 3 }}
       >
         <Tab icon={<Settings />} label="General" />
+        <Tab icon={<Palette />} label="Preferences" />
         <Tab icon={<Api />} label="Trading & APIs" />
         <Tab icon={<Security />} label="Security" />
         <Tab icon={<Storage />} label="System" />
@@ -583,8 +586,13 @@ const SettingsPage: React.FC = () => {
         </Grid>
       )}
 
-      {/* Trading & APIs Tab */}
+      {/* Preferences Tab */}
       {activeTab === 1 && (
+        <PreferencesManager />
+      )}
+
+      {/* Trading & APIs Tab */}
+      {activeTab === 2 && (
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
@@ -756,7 +764,7 @@ const SettingsPage: React.FC = () => {
       )}
 
       {/* Security Tab */}
-      {activeTab === 2 && (
+      {activeTab === 3 && (
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
@@ -885,7 +893,7 @@ const SettingsPage: React.FC = () => {
       )}
 
       {/* System Tab */}
-      {activeTab === 3 && (
+      {activeTab === 4 && (
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
