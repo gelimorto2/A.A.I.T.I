@@ -23,7 +23,56 @@
 
 *Professional AI trading platform homepage showcasing comprehensive features, ML algorithms, and Docker-first architecture.*
 
+---
+
+## 🎯 **Core Platform Features**
+
+### **🤖 Advanced Machine Learning Suite**
+<div align="center">
+<img src="https://img.shields.io/badge/ML%20Algorithms-22%20Available-blue?style=for-the-badge&logo=tensorflow&logoColor=white" alt="ML Algorithms"/>
+<img src="https://img.shields.io/badge/Neural%20Networks-LSTM%20%7C%20Deep%20Learning-orange?style=for-the-badge&logo=brain&logoColor=white" alt="Neural Networks"/>
+<img src="https://img.shields.io/badge/Ensemble%20Methods-Random%20Forest%20%7C%20SVM-green?style=for-the-badge&logo=tree&logoColor=white" alt="Ensemble Methods"/>
+</div>
+
+*Complete ML suite with LSTM neural networks, ensemble methods, and statistical forecasting for intelligent trading decisions.*
+
+### **📈 Real-Time Paper Trading**
+<div align="center">
+<img src="https://img.shields.io/badge/Live%20Trading-Real%20Market%20Data-success?style=for-the-badge&logo=chart-line&logoColor=white" alt="Live Trading"/>
+<img src="https://img.shields.io/badge/Order%20Types-Market%20%7C%20Limit%20%7C%20Stop-blue?style=for-the-badge&logo=shopping-cart&logoColor=white" alt="Order Types"/>
+<img src="https://img.shields.io/badge/Risk%20Free-Paper%20Money%20Only-yellow?style=for-the-badge&logo=shield&logoColor=white" alt="Risk Free"/>
+</div>
+
+*Professional-grade paper trading with instant execution, real market prices, and complete risk management tools.*
+
+### **💼 Portfolio Optimization Engine**
+<div align="center">
+<img src="https://img.shields.io/badge/Optimization-8%20Methods-purple?style=for-the-badge&logo=balance-scale&logoColor=white" alt="Optimization"/>
+<img src="https://img.shields.io/badge/Risk%20Management-Sharpe%20%7C%20Kelly%20%7C%20Parity-red?style=for-the-badge&logo=calculator&logoColor=white" alt="Risk Management"/>
+<img src="https://img.shields.io/badge/Diversification-Smart%20Allocation-teal?style=for-the-badge&logo=pie-chart&logoColor=white" alt="Diversification"/>
+</div>
+
+*Advanced portfolio optimization with Black-Litterman, risk parity, and Kelly criterion for maximum returns.*
+
+### **⚡ High-Performance Architecture**
+<div align="center">
+<img src="https://img.shields.io/badge/Docker-Production%20Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/>
+<img src="https://img.shields.io/badge/Real%20Time-Socket.io%20Updates-black?style=for-the-badge&logo=socket.io&logoColor=white" alt="Real Time"/>
+<img src="https://img.shields.io/badge/One%20Command-Install-brightgreen?style=for-the-badge&logo=terminal&logoColor=white" alt="One Command"/>
+</div>
+
+*Docker-first architecture with real-time updates, professional security, and one-command deployment.*
+
+---
+
 ## 🚀 Quick Start
+
+<div align="center">
+<img src="https://img.shields.io/badge/Installation-One%20Command-FF6B6B?style=for-the-badge&logo=rocket&logoColor=white" alt="One Command Installation"/>
+<img src="https://img.shields.io/badge/Docker%20Only-No%20Dependencies-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Only"/>
+<img src="https://img.shields.io/badge/Production%20Ready-Instant%20Deploy-28A745?style=for-the-badge&logo=check-circle&logoColor=white" alt="Production Ready"/>
+<img src="https://img.shields.io/badge/Auto%20Setup-No%20Configuration-FFC107?style=for-the-badge&logo=settings&logoColor=white" alt="Auto Setup"/>
+</div>
 
 ### One-Command Installation (Docker Only)
 
@@ -53,6 +102,13 @@ cd A.A.I.T.I
 
 ## 🤖 **Complete Machine Learning Suite (22 Algorithms)**
 
+<div align="center">
+<img src="https://img.shields.io/badge/Deep%20Learning-LSTM%20Neural%20Networks-FF6B6B?style=for-the-badge&logo=tensorflow&logoColor=white" alt="Deep Learning"/>
+<img src="https://img.shields.io/badge/Statistical-ARIMA%20%7C%20SARIMA%20%7C%20Prophet-4ECDC4?style=for-the-badge&logo=statistics&logoColor=white" alt="Statistical"/>
+<img src="https://img.shields.io/badge/Technical-RSI%20%7C%20MACD%20%7C%20Bollinger-45B7D1?style=for-the-badge&logo=chart-line&logoColor=white" alt="Technical"/>
+<img src="https://img.shields.io/badge/Ensemble-Random%20Forest%20%7C%20Boosting-96CEB4?style=for-the-badge&logo=tree&logoColor=white" alt="Ensemble"/>
+</div>
+
 ### **Basic Technical Indicators (12)**
 1. **Linear Regression** - Trend prediction with real ml-regression library
 2. **Polynomial Regression** - Non-linear pattern recognition
@@ -81,6 +137,13 @@ cd A.A.I.T.I
 
 ## 📈 **Real-Time Paper Trading Features**
 
+<div align="center">
+<img src="https://img.shields.io/badge/Live%20Data-CoinGecko%20API-F7931E?style=for-the-badge&logo=bitcoin&logoColor=white" alt="Live Data"/>
+<img src="https://img.shields.io/badge/Instant%20Execution-Sub%20Second-28A745?style=for-the-badge&logo=lightning&logoColor=white" alt="Instant Execution"/>
+<img src="https://img.shields.io/badge/Order%20Book-Real%20Time%20Matching-6F42C1?style=for-the-badge&logo=book&logoColor=white" alt="Order Book"/>
+<img src="https://img.shields.io/badge/Zero%20Risk-Paper%20Money-FFC107?style=for-the-badge&logo=shield-alt&logoColor=white" alt="Zero Risk"/>
+</div>
+
 ### **Portfolio Management**
 - **Multiple Portfolios** - Create unlimited virtual trading accounts
 - **Initial Balance Configuration** - Start with any amount from $1,000 to $1,000,000
@@ -103,6 +166,13 @@ cd A.A.I.T.I
 
 ## 💼 **Advanced Portfolio Optimization**
 
+<div align="center">
+<img src="https://img.shields.io/badge/Risk%20Parity-Equal%20Risk%20Contribution-E74C3C?style=for-the-badge&logo=balance-scale&logoColor=white" alt="Risk Parity"/>
+<img src="https://img.shields.io/badge/Sharpe%20Ratio-Maximum%20Optimization-3498DB?style=for-the-badge&logo=trending-up&logoColor=white" alt="Sharpe Ratio"/>
+<img src="https://img.shields.io/badge/Black%20Litterman-Bayesian%20Approach-9B59B6?style=for-the-badge&logo=brain&logoColor=white" alt="Black Litterman"/>
+<img src="https://img.shields.io/badge/Kelly%20Criterion-Optimal%20Sizing-F39C12?style=for-the-badge&logo=calculator&logoColor=white" alt="Kelly Criterion"/>
+</div>
+
 ### **Optimization Methods (8)**
 1. **Equal Weight** - Simple diversification
 2. **Risk Parity** - Equal risk contribution
@@ -114,6 +184,13 @@ cd A.A.I.T.I
 8. **Kelly Criterion** - Optimal position sizing for growth
 
 ## 🔧 **Real Implementation Examples**
+
+<div align="center">
+<img src="https://img.shields.io/badge/API-RESTful%20Endpoints-00D9FF?style=for-the-badge&logo=api&logoColor=white" alt="API"/>
+<img src="https://img.shields.io/badge/JavaScript-ES6%2B%20Ready-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript"/>
+<img src="https://img.shields.io/badge/Real%20Examples-Production%20Code-2ECC71?style=for-the-badge&logo=code&logoColor=white" alt="Real Examples"/>
+<img src="https://img.shields.io/badge/JSON-Clean%20Responses-FF6B35?style=for-the-badge&logo=json&logoColor=white" alt="JSON"/>
+</div>
 
 ### **Create Advanced ML Model**
 
@@ -158,6 +235,13 @@ POST /api/paper-trading/portfolios/{id}/orders
 
 ## 📊 **Management Commands**
 
+<div align="center">
+<img src="https://img.shields.io/badge/Docker%20Compose-Easy%20Management-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Compose"/>
+<img src="https://img.shields.io/badge/Live%20Logs-Real%20Time%20Monitoring-17A2B8?style=for-the-badge&logo=terminal&logoColor=white" alt="Live Logs"/>
+<img src="https://img.shields.io/badge/Health%20Check-System%20Status-28A745?style=for-the-badge&logo=heart&logoColor=white" alt="Health Check"/>
+<img src="https://img.shields.io/badge/Auto%20Restart-Zero%20Downtime-FFC107?style=for-the-badge&logo=refresh&logoColor=white" alt="Auto Restart"/>
+</div>
+
 After installation, use these Docker commands to manage A.A.I.T.I:
 
 ```bash
@@ -178,6 +262,13 @@ git pull && docker compose build && docker compose up -d
 ```
 
 ## 🛠 **Development & Architecture**
+
+<div align="center">
+<img src="https://img.shields.io/badge/Node.js-Express%20Backend-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js"/>
+<img src="https://img.shields.io/badge/React-Modern%20Frontend-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React"/>
+<img src="https://img.shields.io/badge/TensorFlow.js-ML%20Engine-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white" alt="TensorFlow"/>
+<img src="https://img.shields.io/badge/Socket.io-Real%20Time-010101?style=for-the-badge&logo=socket.io&logoColor=white" alt="Socket.io"/>
+</div>
 
 ### **Project Structure**
 ```
@@ -204,6 +295,13 @@ A.A.I.T.I/
 - **Deployment**: Docker with production optimizations
 
 ## 📚 **Complete Documentation**
+
+<div align="center">
+<img src="https://img.shields.io/badge/Guides-Step%20by%20Step-4285F4?style=for-the-badge&logo=book&logoColor=white" alt="Guides"/>
+<img src="https://img.shields.io/badge/API%20Docs-Complete%20Reference-FF5722?style=for-the-badge&logo=swagger&logoColor=white" alt="API Docs"/>
+<img src="https://img.shields.io/badge/Tutorials-Hands%20On%20Learning-9C27B0?style=for-the-badge&logo=graduation-cap&logoColor=white" alt="Tutorials"/>
+<img src="https://img.shields.io/badge/Examples-Real%20Code-607D8B?style=for-the-badge&logo=code&logoColor=white" alt="Examples"/>
+</div>
 
 - **[Installation Guide](docs/installation.md)** - Detailed setup with ML dependencies
 - **[ML Algorithm Guide](docs/ml-algorithms.md)** - Complete guide to all 22 algorithms
@@ -249,6 +347,13 @@ docker compose restart aaiti
 **Contributing**: We welcome contributions! Please read our [Contributing Guide](docs/contributing.md) for guidelines.
 
 ## 🎉 **What's New in v2.1.0**
+
+<div align="center">
+<img src="https://img.shields.io/badge/NEW-Simplified%20Installation-FF6B6B?style=for-the-badge&logo=sparkles&logoColor=white" alt="New Installation"/>
+<img src="https://img.shields.io/badge/ENHANCED-Production%20Ready-28A745?style=for-the-badge&logo=shield-check&logoColor=white" alt="Enhanced Production"/>
+<img src="https://img.shields.io/badge/REMOVED-Complexity-FFC107?style=for-the-badge&logo=trash&logoColor=white" alt="Removed Complexity"/>
+<img src="https://img.shields.io/badge/OPTIMIZED-Performance-9C27B0?style=for-the-badge&logo=zap&logoColor=white" alt="Optimized Performance"/>
+</div>
 
 ### **Simplified Installation**
 - ✅ **One Command Setup** - Single interactive installer
