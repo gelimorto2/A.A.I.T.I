@@ -1,204 +1,163 @@
-<svg width="1200" height="400" viewBox="0 0 1200 400" xmlns="http://www.w3.org/2000/svg">
+<svg width="1200" height="400" viewBox="0 0 1200 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">A.A.I.T.I — Neural Command Deck</title>
+  <desc id="desc">Project banner aligned with dashboard color palette, highlighting customizable dashboard, realtime GraphQL + WebSocket, and GitHub error reporting.</desc>
+
+  <!-- Palette reference
+       bg: #0a0a0a / #1a1a1a
+       text: #ffffff
+       primary: #00ff88
+       secondary: #ff3366
+       info: #00aaff
+       warning: #ffaa00
+  -->
+
   <defs>
-    <!-- Palette (from ThemeContext dark theme)
-         primary  : #00ff88 (green)
-         secondary: #ff3366 (red)
-         info     : #00aaff (blue)
-         warning  : #ffaa00 (orange)
-         bg       : #0a0a0a / #1a1a1a
-         text     : #ffffff
-    -->
-
     <!-- Background gradient -->
-    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%"  style="stop-color:#0a0a0a;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#121212;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#1a1a1a;stop-opacity:1" />
+    <linearGradient id="bgGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a0a0a"/>
+      <stop offset="1" stop-color="#1a1a1a"/>
     </linearGradient>
 
-    <!-- Title gradient: primary -> info -> primary -->
-    <linearGradient id="titleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%"   style="stop-color:#00ff88;stop-opacity:1" />
-      <stop offset="50%"  style="stop-color:#00aaff;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#00ff88;stop-opacity:1" />
+    <!-- Title gradient -->
+    <linearGradient id="titleGradient" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#00ff88"/>
+      <stop offset="0.5" stop-color="#00aaff"/>
+      <stop offset="1" stop-color="#00ff88"/>
     </linearGradient>
 
-    <!-- Accent gradient: secondary -> warning -> secondary -->
-    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%"   style="stop-color:#ff3366;stop-opacity:1" />
-      <stop offset="50%"  style="stop-color:#ffaa00;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#ff3366;stop-opacity:1" />
-    </linearGradient>
+    <!-- Subtle grid pattern -->
+    <pattern id="dotGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <rect width="20" height="20" fill="transparent"/>
+      <circle cx="1" cy="1" r="1" fill="#00ff88" opacity="0.08"/>
+    </pattern>
 
-    <!-- Animation definitions -->
-    <animateTransform id="float" attributeName="transform" type="translate"
-                      values="0,0; 0,-5; 0,0" dur="3s" repeatCount="indefinite"/>
-    <animate id="pulse" attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite"/>
-    <animate id="glow" attributeName="stroke-width" values="1;3;1" dur="2s" repeatCount="indefinite"/>
+    <!-- Feature chip styles -->
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="1200" height="400" fill="url(#bgGradient)"/>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bgGradient)"/>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#dotGrid)"/>
 
-  <!-- Animated background particles (palette-aligned) -->
-  <circle cx="100" cy="80" r="2" fill="#00aaff" opacity="0.6">
-    <animate attributeName="cy" values="80;120;80" dur="4s" repeatCount="indefinite"/>
-  </circle>
-  <circle cx="200" cy="150" r="1.5" fill="#ffaa00" opacity="0.5">
-    <animate attributeName="cy" values="150;110;150" dur="5s" repeatCount="indefinite"/>
-  </circle>
-  <circle cx="300" cy="320" r="2.5" fill="#ff3366" opacity="0.4">
-    <animate attributeName="cy" values="320;280;320" dur="6s" repeatCount="indefinite"/>
-  </circle>
-  <circle cx="1050" cy="100" r="2" fill="#00aaff" opacity="0.6">
-    <animate attributeName="cy" values="100;140;100" dur="4.5s" repeatCount="indefinite"/>
-  </circle>
-  <circle cx="1100" cy="200" r="1.5" fill="#ffaa00" opacity="0.5">
-    <animate attributeName="cy" values="200;160;200" dur="5.5s" repeatCount="indefinite"/>
-  </circle>
-  <circle cx="950" cy="300" r="2.5" fill="#ff3366" opacity="0.4">
-    <animate attributeName="cy" values="300;260;300" dur="3.5s" repeatCount="indefinite"/>
-  </circle>
-
-  <!-- Neural network lines (animated, info/primary tones) -->
-  <g stroke="#00aaff" stroke-width="1" opacity="0.25">
-    <line x1="80" y1="80" x2="180" y2="140">
-      <animate attributeName="opacity" values="0.1;0.6;0.1" dur="3s" repeatCount="indefinite"/>
-    </line>
-    <line x1="180" y1="140" x2="280" y2="200">
-      <animate attributeName="opacity" values="0.1;0.6;0.1" dur="3s" begin="0.5s" repeatCount="indefinite"/>
-    </line>
-    <line x1="280" y1="200" x2="380" y2="160">
-      <animate attributeName="opacity" values="0.1;0.6;0.1" dur="3s" begin="1s" repeatCount="indefinite"/>
-    </line>
-  </g>
-
-  <!-- Robot/AI Icon (palette-aligned) -->
-  <g transform="translate(80, 80)">
-    <animateTransform attributeName="transform" type="translate"
-                      values="80,80; 80,75; 80,80" dur="3s" repeatCount="indefinite"/>
-
-    <!-- Robot head -->
-    <rect x="0" y="0" width="40" height="35" rx="8" fill="#1a1a1a" stroke="#00ff88" stroke-width="2">
-      <animate attributeName="stroke-width" values="2;4;2" dur="2s" repeatCount="indefinite"/>
-    </rect>
-
-    <!-- Robot eyes -->
-    <circle cx="12" cy="12" r="4" fill="#00ff88">
-      <animate attributeName="r" values="4;6;4" dur="1.5s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="28" cy="12" r="4" fill="#00ff88">
-      <animate attributeName="r" values="4;6;4" dur="1.5s" begin="0.2s" repeatCount="indefinite"/>
-    </circle>
-
-    <!-- Robot antenna -->
-    <line x1="20" y1="0" x2="20" y2="-8" stroke="#ffaa00" stroke-width="2"/>
-    <circle cx="20" cy="-8" r="2" fill="#ff3366">
-      <animate attributeName="opacity" values="0.5;1;0.5" dur="1s" repeatCount="indefinite"/>
-    </circle>
-  </g>
-
-  <!-- Main Title -->
-  <text x="600" y="120" text-anchor="middle" font-family="Arial, sans-serif"
-        font-size="72" font-weight="bold" fill="url(#titleGradient)">
-    A.A.I.T.I
-    <animateTransform attributeName="transform" type="scale"
-                      values="1;1.02;1" dur="4s" repeatCount="indefinite"/>
-  </text>
-
-  <!-- Version badge (kept) -->
-  <g transform="translate(750, 90)">
-    <rect x="0" y="0" width="60" height="25" rx="12" fill="#ff3366" opacity="0.9">
-      <animate attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite"/>
-    </rect>
-    <text x="30" y="17" text-anchor="middle" font-family="Arial, sans-serif"
-          font-size="12" font-weight="bold" fill="white">v2.0.0</text>
-  </g>
-
-  <!-- Subtitle -->
-  <text x="600" y="160" text-anchor="middle" font-family="Arial, sans-serif"
-        font-size="26" fill="#ffffff" opacity="0.9">
-    Neural Command Deck • Customizable Dashboard
-  </text>
-
-  <!-- Feature highlights (updated to reflect new functions) -->
-  <g transform="translate(160, 220)">
-    <!-- Feature 1: Customizable Dashboard -->
-    <g>
-      <rect x="0" y="0" width="260" height="60" rx="10" fill="#00ff88" opacity="0.15"
-            stroke="#00ff88" stroke-width="1">
-        <animate attributeName="stroke-width" values="1;2;1" dur="3s" repeatCount="indefinite"/>
-      </rect>
-      <text x="130" y="25" text-anchor="middle" font-family="Arial, sans-serif"
-            font-size="16" font-weight="bold" fill="#00ff88">🧩 Customizable Dashboard</text>
-      <text x="130" y="45" text-anchor="middle" font-family="Arial, sans-serif"
-            font-size="12" fill="#ffffff" opacity="0.85">Widgets & Layouts</text>
-    </g>
-
-    <!-- Feature 2: Realtime GraphQL + WebSocket -->
-    <g transform="translate(280, 0)">
-      <rect x="0" y="0" width="260" height="60" rx="10" fill="#00aaff" opacity="0.15"
-            stroke="#00aaff" stroke-width="1">
-        <animate attributeName="stroke-width" values="1;2;1" dur="3s" begin="1s" repeatCount="indefinite"/>
-      </rect>
-      <text x="130" y="25" text-anchor="middle" font-family="Arial, sans-serif"
-            font-size="16" font-weight="bold" fill="#00aaff">⚡ GraphQL + WebSocket</text>
-      <text x="130" y="45" text-anchor="middle" font-family="Arial, sans-serif"
-            font-size="12" fill="#ffffff" opacity="0.85">Live metrics & control</text>
-    </g>
-
-    <!-- Feature 3: GitHub Error Reporter -->
-    <g transform="translate(560, 0)">
-      <rect x="0" y="0" width="260" height="60" rx="10" fill="#ff3366" opacity="0.15"
-            stroke="#ff3366" stroke-width="1">
-        <animate attributeName="stroke-width" values="1;2;1" dur="3s" begin="2s" repeatCount="indefinite"/>
-      </rect>
-      <text x="130" y="25" text-anchor="middle" font-family="Arial, sans-serif"
-            font-size="16" font-weight="bold" fill="#ff3366">🐙 GitHub Error Reporter</text>
-      <text x="130" y="45" text-anchor="middle" font-family="Arial, sans-serif"
-            font-size="12" fill="#ffffff" opacity="0.85">Auto issue creation</text>
-    </g>
-  </g>
-
-  <!-- Call to action -->
-  <g transform="translate(400, 320)">
-    <rect x="0" y="0" width="400" height="50" rx="25" fill="url(#accentGradient)" opacity="0.9">
-      <animate attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite"/>
-    </rect>
-    <text x="200" y="32" text-anchor="middle" font-family="Arial, sans-serif"
-          font-size="18" font-weight="bold" fill="white">
-      🚀 Get Started: ./install or install.bat
+  <!-- Main title -->
+  <g transform="translate(600, 120)">
+    <text x="0" y="0"
+          font-family="Arial, Helvetica, 'JetBrains Mono', 'Roboto Mono', monospace"
+          font-size="72" font-weight="800"
+          text-anchor="middle"
+          fill="url(#titleGradient)">
+      A.A.I.T.I
     </text>
   </g>
 
-  <!-- Trading chart visualization (right side, palette-aligned) -->
-  <g transform="translate(900, 80)" opacity="0.6">
-    <polyline points="0,100 20,90 40,95 60,75 80,80 100,60 120,65 140,45 160,50 180,30"
-              fill="none" stroke="#00aaff" stroke-width="2">
-      <animate attributeName="stroke-dasharray" values="0,1000;1000,0" dur="5s" repeatCount="indefinite"/>
-    </polyline>
-
-    <!-- Candlestick-like bars (up: primary, down: secondary) -->
-    <rect x="10" y="85" width="4" height="15" fill="#00ff88" opacity="0.8">
-      <animate attributeName="height" values="15;20;15" dur="2s" repeatCount="indefinite"/>
-    </rect>
-    <rect x="30" y="90" width="4" height="10" fill="#ff3366" opacity="0.8">
-      <animate attributeName="height" values="10;15;10" dur="2.5s" repeatCount="indefinite"/>
-    </rect>
-    <rect x="50" y="70" width="4" height="25" fill="#00ff88" opacity="0.8">
-      <animate attributeName="height" values="25;30;25" dur="3s" repeatCount="indefinite"/>
-    </rect>
-    <rect x="70" y="75" width="4" height="20" fill="#00ff88" opacity="0.8">
-      <animate attributeName="height" values="20;25;20" dur="2.2s" repeatCount="indefinite"/>
-    </rect>
-    <rect x="90" y="55" width="4" height="30" fill="#00ff88" opacity="0.8">
-      <animate attributeName="height" values="30;35;30" dur="2.8s" repeatCount="indefinite"/>
-    </rect>
+  <!-- Subtitle -->
+  <g transform="translate(600, 155)">
+    <text x="0" y="0"
+          font-family="Arial, Helvetica, 'JetBrains Mono', 'Roboto Mono', monospace"
+          font-size="24"
+          text-anchor="middle"
+          fill="#ffffff"
+          opacity="0.9">
+      Neural Command Deck — Customizable Dashboard
+    </text>
   </g>
 
-  <!-- Footer text -->
-  <text x="600" y="385" text-anchor="middle" font-family="Arial, sans-serif"
-        font-size="12" fill="#ffffff" opacity="0.6">
-    Enterprise-Grade AI Trading Platform • MIT License • github.com/gelimorto2/A.A.I.T.I
+  <!-- Left visual motif (simple neural lines) -->
+  <g opacity="0.22" stroke="#00aaff" stroke-width="1.5">
+    <line x1="90" y1="70" x2="190" y2="130"/>
+    <line x1="190" y1="130" x2="290" y2="190"/>
+    <line x1="290" y1="190" x2="390" y2="150"/>
+    <line x1="120" y1="110" x2="220" y2="170" stroke="#00ff88"/>
+    <line x1="220" y1="170" x2="320" y2="130" stroke="#ffaa00"/>
+  </g>
+
+  <!-- Right visual motif (mini chart) -->
+  <g transform="translate(880, 80)">
+    <!-- Chart frame -->
+    <rect x="0" y="0" width="280" height="160" rx="10" fill="#121212" stroke="#333333" stroke-width="1"/>
+
+    <!-- Polyline trend -->
+    <polyline fill="none" stroke="#00aaff" stroke-width="2"
+              points="10,130 40,120 70,125 100,100 130,105 160,80 190,85 220,60 250,70 270,50"/>
+    <!-- Up/Down bars -->
+    <rect x="30"  y="115" width="6" height="15" fill="#ff3366" opacity="0.9"/>
+    <rect x="50"  y="95"  width="6" height="35" fill="#00ff88" opacity="0.9"/>
+    <rect x="90"  y="85"  width="6" height="45" fill="#00ff88" opacity="0.9"/>
+    <rect x="120" y="98"  width="6" height="32" fill="#ff3366" opacity="0.9"/>
+    <rect x="150" y="70"  width="6" height="60" fill="#00ff88" opacity="0.9"/>
+    <rect x="180" y="78"  width="6" height="52" fill="#00ff88" opacity="0.9"/>
+    <rect x="210" y="62"  width="6" height="68" fill="#00ff88" opacity="0.9"/>
+    <rect x="240" y="80"  width="6" height="50" fill="#ff3366" opacity="0.9"/>
+
+    <!-- Legend dots -->
+    <circle cx="20" cy="20" r="5" fill="#00aaff"/>
+    <text x="35" y="24" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#cccccc">Realtime</text>
+  </g>
+
+  <!-- Feature chips -->
+  <g transform="translate(160, 225)" fill="none">
+    <!-- Chip 1 -->
+    <g filter="url(#softShadow)">
+      <rect x="0" y="0" width="290" height="64" rx="12" fill="rgba(0,255,136,0.10)" stroke="#00ff88"/>
+      <text x="145" y="28" text-anchor="middle"
+            font-family="Arial, Helvetica, 'JetBrains Mono', 'Roboto Mono', monospace"
+            font-size="16" font-weight="700" fill="#00ff88">
+        Customizable Dashboard
+      </text>
+      <text x="145" y="46" text-anchor="middle"
+            font-family="Arial, Helvetica, 'JetBrains Mono', 'Roboto Mono', monospace"
+            font-size="12" fill="#ffffff" opacity="0.85">
+        Widgets • Layouts • Persistence
+      </text>
+    </g>
+
+    <!-- Chip 2 -->
+    <g transform="translate(310, 0)" filter="url(#softShadow)">
+      <rect x="0" y="0" width="290" height="64" rx="12" fill="rgba(0,170,255,0.10)" stroke="#00aaff"/>
+      <text x="145" y="28" text-anchor="middle"
+            font-family="Arial, Helvetica, 'JetBrains Mono', 'Roboto Mono', monospace"
+            font-size="16" font-weight="700" fill="#00aaff">
+        GraphQL + WebSocket
+      </text>
+      <text x="145" y="46" text-anchor="middle"
+            font-family="Arial, Helvetica, 'JetBrains Mono', 'Roboto Mono', monospace"
+            font-size="12" fill="#ffffff" opacity="0.85">
+        Live metrics • Realtime control
+      </text>
+    </g>
+
+    <!-- Chip 3 -->
+    <g transform="translate(620, 0)" filter="url(#softShadow)">
+      <rect x="0" y="0" width="290" height="64" rx="12" fill="rgba(255,51,102,0.10)" stroke="#ff3366"/>
+      <text x="145" y="28" text-anchor="middle"
+            font-family="Arial, Helvetica, 'JetBrains Mono', 'Roboto Mono', monospace"
+            font-size="16" font-weight="700" fill="#ff3366">
+        GitHub Error Reporting
+      </text>
+      <text x="145" y="46" text-anchor="middle"
+            font-family="Arial, Helvetica, 'JetBrains Mono', 'Roboto Mono', monospace"
+            font-size="12" fill="#ffffff" opacity="0.85">
+        Auto issue creation • Logging
+      </text>
+    </g>
+  </g>
+
+  <!-- Version badge (static, no emoji) -->
+  <g transform="translate(935, 260)">
+    <rect x="0" y="0" width="225" height="32" rx="16" fill="#ffaa00" opacity="0.95"/>
+    <text x="112.5" y="21" text-anchor="middle"
+          font-family="Arial, Helvetica, 'JetBrains Mono', 'Roboto Mono', monospace"
+          font-size="14" font-weight="700" fill="#1a1a1a">
+      Neural Command Deck
+    </text>
+  </g>
+
+  <!-- Footer -->
+  <text x="600" y="382" text-anchor="middle"
+        font-family="Arial, Helvetica, 'JetBrains Mono', 'Roboto Mono', monospace"
+        font-size="12" fill="#ffffff" opacity="0.65">
+    Enterprise AI Trading Platform • github.com/gelimorto2/A.A.I.T.I
   </text>
 </svg>
