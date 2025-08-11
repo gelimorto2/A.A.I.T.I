@@ -6,24 +6,6 @@
 
 🎯 **[📖 Live Presentation Page](presentation.html)** | 🚀 **[Quick Installation](#-quick-start)**
 
-## 📸 Platform Screenshots
-
-### **🎯 Visual Strategy Creator**
-![A.A.I.T.I Visual Strategy Creator](https://github.com/user-attachments/assets/9aa9b91a-7f9f-480e-9d1b-5d1cdfe9eae8)
-
-*Build sophisticated trading strategies without coding using our drag-and-drop interface with technical indicators, logic components, and trading actions.*
-
-### **📊 Neural Command Deck - Live Dashboard**
-![A.A.I.T.I Neural Command Deck](assets/screenshots/aaiti-demo-dashboard.png)
-
-*Real-time AI-powered trading interface showing portfolio performance, active strategies, and live market data with professional-grade analytics.*
-
-### **🚀 Complete Platform Overview**
-![A.A.I.T.I Landing Page](assets/screenshots/aaiti-landing-page.png)
-
-*Professional AI trading platform homepage showcasing comprehensive features, ML algorithms, and Docker-first architecture.*
-
----
 
 ## 🎯 **Core Platform Features**
 
