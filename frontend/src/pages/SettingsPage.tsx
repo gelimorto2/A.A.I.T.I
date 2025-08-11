@@ -25,6 +25,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  FormHelperText,
+  Tooltip,
 } from '@mui/material';
 import {
   Settings,
@@ -40,12 +42,20 @@ import {
   Warning,
   CheckCircle,
   Close,
+  Brightness4,
+  Brightness7,
+  SettingsBrightness,
+  Info,
+  Palette,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
+import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
+import PreferencesManager from '../components/settings/PreferencesManager';
 
 const SettingsPage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
+  const { themeMode, setThemeMode, systemPrefersDark, isDarkMode } = useCustomTheme();
   
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -54,8 +64,17 @@ const SettingsPage: React.FC = () => {
   const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
   
   // Settings state
-  const [generalSettings, setGeneralSettings] = useState({
-    theme: 'dark',
+  const [generalSettings, setGeneralSettings] = useState<{
+    theme: 'light' | 'dark' | 'system';
+    language: string;
+    timezone: string;
+    currency: string;
+    autoRefresh: boolean;
+    refreshInterval: number;
+    soundEnabled: boolean;
+    notificationsEnabled: boolean;
+  }>({
+    theme: themeMode,
     language: 'en',
     timezone: 'UTC',
     currency: 'USD',
@@ -115,6 +134,43 @@ const SettingsPage: React.FC = () => {
     systemHealth: 'Healthy'
   });
 
+  // Sync theme settings with context
+  useEffect(() => {
+    setGeneralSettings(prev => ({
+      ...prev,
+      theme: themeMode
+    }));
+  }, [themeMode]);
+
+  const handleThemeChange = (newTheme: string) => {
+    const themeMode = newTheme as 'light' | 'dark' | 'system';
+    setThemeMode(themeMode);
+    setGeneralSettings(prev => ({
+      ...prev,
+      theme: themeMode
+    }));
+  };
+
+  const getThemeIcon = () => {
+    switch (themeMode) {
+      case 'light':
+        return <Brightness7 />;
+      case 'dark':
+        return <Brightness4 />;
+      case 'system':
+        return <SettingsBrightness />;
+      default:
+        return <SettingsBrightness />;
+    }
+  };
+
+  const getThemeDescription = () => {
+    if (themeMode === 'system') {
+      return `Following system preference (currently ${systemPrefersDark ? 'dark' : 'light'})`;
+    }
+    return `${themeMode.charAt(0).toUpperCase() + themeMode.slice(1)} theme active`;
+  };
+
   const loadSettings = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -127,7 +183,7 @@ const SettingsPage: React.FC = () => {
         const settings = data.settings;
         
         // Update all settings state with actual data from backend
-        setGeneralSettings(settings.general || generalSettings);
+        setGeneralSettings(prev => ({ ...prev, ...settings.general }));
         setTradingSettings(settings.trading || tradingSettings);
         setSecuritySettings(settings.security || securitySettings);
         setSystemSettings(settings.system || systemSettings);
@@ -140,7 +196,7 @@ const SettingsPage: React.FC = () => {
     } catch (error) {
       console.error('Error loading settings:', error);
     }
-  }, [generalSettings, tradingSettings, securitySettings, systemSettings, apiSettings]);
+  }, [tradingSettings, securitySettings, systemSettings, apiSettings]);
 
   const loadSystemInfo = useCallback(async () => {
     try {
@@ -311,6 +367,7 @@ const SettingsPage: React.FC = () => {
         sx={{ mb: 3 }}
       >
         <Tab icon={<Settings />} label="General" />
+        <Tab icon={<Palette />} label="Preferences" />
         <Tab icon={<Api />} label="Trading & APIs" />
         <Tab icon={<Security />} label="Security" />
         <Tab icon={<Storage />} label="System" />
@@ -327,19 +384,68 @@ const SettingsPage: React.FC = () => {
                 </Typography>
                 
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth>
-                      <InputLabel>Theme</InputLabel>
-                      <Select
-                        value={generalSettings.theme}
-                        label="Theme"
-                        onChange={(e) => setGeneralSettings({...generalSettings, theme: e.target.value})}
-                      >
-                        <MenuItem value="dark">Dark</MenuItem>
-                        <MenuItem value="light">Light</MenuItem>
-                        <MenuItem value="auto">Auto</MenuItem>
-                      </Select>
-                    </FormControl>
+                  <Grid item xs={12}>
+                    <Card variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'background.default' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        {getThemeIcon()}
+                        <Typography variant="h6" sx={{ ml: 1, fontWeight: 'bold' }}>
+                          Theme Settings
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        {getThemeDescription()}
+                      </Typography>
+                      
+                      <FormControl fullWidth>
+                        <InputLabel>Theme Mode</InputLabel>
+                        <Select
+                          value={generalSettings.theme}
+                          label="Theme Mode"
+                          onChange={(e) => handleThemeChange(e.target.value)}
+                          startAdornment={getThemeIcon()}
+                        >
+                          <MenuItem value="system">
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <SettingsBrightness sx={{ mr: 1 }} />
+                              <Box>
+                                <Typography>System</Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  Follow system preference
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </MenuItem>
+                          <MenuItem value="dark">
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Brightness4 sx={{ mr: 1 }} />
+                              <Box>
+                                <Typography>Dark</Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  Optimal for trading sessions
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </MenuItem>
+                          <MenuItem value="light">
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Brightness7 sx={{ mr: 1 }} />
+                              <Box>
+                                <Typography>Light</Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  Better for daytime use
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </MenuItem>
+                        </Select>
+                        <FormHelperText>
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Info sx={{ fontSize: 16, mr: 0.5 }} />
+                            System detection will automatically switch themes based on your OS settings
+                          </Box>
+                        </FormHelperText>
+                      </FormControl>
+                    </Card>
                   </Grid>
                   
                   <Grid item xs={12} sm={6}>
@@ -354,6 +460,22 @@ const SettingsPage: React.FC = () => {
                         <MenuItem value="EUR">EUR</MenuItem>
                         <MenuItem value="GBP">GBP</MenuItem>
                         <MenuItem value="BTC">BTC</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth>
+                      <InputLabel>Language</InputLabel>
+                      <Select
+                        value={generalSettings.language}
+                        label="Language"
+                        onChange={(e) => setGeneralSettings({...generalSettings, language: e.target.value})}
+                      >
+                        <MenuItem value="en">English</MenuItem>
+                        <MenuItem value="es">Español</MenuItem>
+                        <MenuItem value="fr">Français</MenuItem>
+                        <MenuItem value="de">Deutsch</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>
@@ -464,8 +586,13 @@ const SettingsPage: React.FC = () => {
         </Grid>
       )}
 
-      {/* Trading & APIs Tab */}
+      {/* Preferences Tab */}
       {activeTab === 1 && (
+        <PreferencesManager />
+      )}
+
+      {/* Trading & APIs Tab */}
+      {activeTab === 2 && (
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
@@ -637,7 +764,7 @@ const SettingsPage: React.FC = () => {
       )}
 
       {/* Security Tab */}
-      {activeTab === 2 && (
+      {activeTab === 3 && (
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
@@ -766,7 +893,7 @@ const SettingsPage: React.FC = () => {
       )}
 
       {/* System Tab */}
-      {activeTab === 3 && (
+      {activeTab === 4 && (
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>

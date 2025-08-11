@@ -12,6 +12,8 @@ import {
   Switch,
   Chip,
   Alert,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   Add,
@@ -59,33 +61,42 @@ const defaultLayouts = {
     { i: 'pnl', x: 3, y: 0, w: 3, h: 3 },
     { i: 'win-rate', x: 6, y: 0, w: 3, h: 3 },
     { i: 'system-health', x: 9, y: 0, w: 3, h: 3 },
-    { i: 'market-heatmap', x: 0, y: 3, w: 12, h: 3 },
+    { i: 'market-heatmap', x: 0, y: 3, w: 12, h: 4 },
   ],
   md: [
     { i: 'bots-status', x: 0, y: 0, w: 6, h: 3 },
     { i: 'pnl', x: 6, y: 0, w: 6, h: 3 },
     { i: 'win-rate', x: 0, y: 3, w: 6, h: 3 },
     { i: 'system-health', x: 6, y: 3, w: 6, h: 3 },
-    { i: 'market-heatmap', x: 0, y: 6, w: 12, h: 3 },
+    { i: 'market-heatmap', x: 0, y: 6, w: 12, h: 4 },
   ],
   sm: [
     { i: 'bots-status', x: 0, y: 0, w: 12, h: 3 },
     { i: 'pnl', x: 0, y: 3, w: 12, h: 3 },
     { i: 'win-rate', x: 0, y: 6, w: 12, h: 3 },
     { i: 'system-health', x: 0, y: 9, w: 12, h: 3 },
-    { i: 'market-heatmap', x: 0, y: 12, w: 12, h: 3 },
+    { i: 'market-heatmap', x: 0, y: 12, w: 12, h: 4 },
   ],
   xs: [
-    { i: 'bots-status', x: 0, y: 0, w: 12, h: 3 },
-    { i: 'pnl', x: 0, y: 3, w: 12, h: 3 },
-    { i: 'win-rate', x: 0, y: 6, w: 12, h: 3 },
-    { i: 'system-health', x: 0, y: 9, w: 12, h: 3 },
-    { i: 'market-heatmap', x: 0, y: 12, w: 12, h: 3 },
+    { i: 'bots-status', x: 0, y: 0, w: 12, h: 4 },
+    { i: 'pnl', x: 0, y: 4, w: 12, h: 4 },
+    { i: 'win-rate', x: 0, y: 8, w: 12, h: 4 },
+    { i: 'system-health', x: 0, y: 12, w: 12, h: 4 },
+    { i: 'market-heatmap', x: 0, y: 16, w: 12, h: 5 },
+  ],
+  xxs: [
+    { i: 'bots-status', x: 0, y: 0, w: 12, h: 5 },
+    { i: 'pnl', x: 0, y: 5, w: 12, h: 5 },
+    { i: 'win-rate', x: 0, y: 10, w: 12, h: 5 },
+    { i: 'system-health', x: 0, y: 15, w: 12, h: 5 },
+    { i: 'market-heatmap', x: 0, y: 20, w: 12, h: 6 },
   ],
 };
 
 const CustomizableDashboard: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { bots } = useSelector((state: RootState) => state.bots);
   const { portfolio } = useSelector((state: RootState) => state.analytics);
   const { user } = useSelector((state: RootState) => state.auth);
@@ -102,10 +113,23 @@ const CustomizableDashboard: React.FC = () => {
   
   const [isEditMode, setIsEditMode] = useState(false);
   const [showCustomizeDialog, setShowCustomizeDialog] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
-    dispatch(fetchBots());
-    dispatch(fetchPortfolio());
+    const loadData = async () => {
+      setDataLoading(true);
+      try {
+        await Promise.all([
+          dispatch(fetchBots()),
+          dispatch(fetchPortfolio())
+        ]);
+      } finally {
+        // Add minimum loading time for smooth UX
+        setTimeout(() => setDataLoading(false), 1000);
+      }
+    };
+    
+    loadData();
   }, [dispatch]);
 
   const saveLayout = useCallback((newLayouts: any) => {
@@ -163,6 +187,7 @@ const CustomizableDashboard: React.FC = () => {
             stoppedBots={stoppedBots.length}
             errorBots={errorBots.length}
             onRemove={isEditMode ? removeWidget : undefined}
+            loading={dataLoading}
           />
         );
       case 'pnl':
@@ -204,15 +229,23 @@ const CustomizableDashboard: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'flex-start', sm: 'center' }, 
+        mb: 3,
+        gap: { xs: 2, sm: 0 }
+      }}>
         <Box>
           <Typography 
-            variant="h4" 
+            variant={{ xs: 'h5', sm: 'h4' }}
             gutterBottom 
             sx={{ 
               fontWeight: 'bold', 
               color: 'primary.main',
               fontFamily: 'monospace',
+              fontSize: { xs: '1.5rem', sm: '2rem' }
             }}
           >
             COMMAND CENTER
@@ -220,25 +253,39 @@ const CustomizableDashboard: React.FC = () => {
           <Typography 
             variant="subtitle1" 
             color="text.secondary" 
-            sx={{ fontFamily: 'monospace' }}
+            sx={{ 
+              fontFamily: 'monospace',
+              fontSize: { xs: '0.875rem', sm: '1rem' }
+            }}
           >
             Welcome back, {user?.username} • Mission Status: ACTIVE
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'row', sm: 'row' },
+          gap: 1,
+          flexWrap: 'wrap'
+        }}>
           <Chip
             icon={<ViewModule />}
             label={isEditMode ? 'Edit Mode' : 'View Mode'}
             color={isEditMode ? 'warning' : 'primary'}
             onClick={() => setIsEditMode(!isEditMode)}
-            sx={{ fontWeight: 'bold' }}
+            sx={{ 
+              fontWeight: 'bold',
+              fontSize: { xs: '0.75rem', sm: '0.875rem' }
+            }}
           />
           <Chip
             icon={<Edit />}
             label="Customize"
             onClick={() => setShowCustomizeDialog(true)}
-            sx={{ fontWeight: 'bold' }}
+            sx={{ 
+              fontWeight: 'bold',
+              fontSize: { xs: '0.75rem', sm: '0.875rem' }
+            }}
           />
         </Box>
       </Box>
@@ -278,18 +325,29 @@ const CustomizableDashboard: React.FC = () => {
         className="layout"
         layouts={layouts}
         onLayoutChange={handleLayoutChange}
-        breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480 }}
-        cols={{ lg: 12, md: 12, sm: 12, xs: 12 }}
-        rowHeight={80}
+        breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 320 }}
+        cols={{ lg: 12, md: 12, sm: 12, xs: 12, xxs: 12 }}
+        rowHeight={70}
         isDraggable={isEditMode}
         isResizable={isEditMode}
-        margin={[16, 16]}
-        containerPadding={[0, 0]}
+        margin={[8, 8]}
+        containerPadding={[8, 8]}
         useCSSTransforms={true}
         compactType="vertical"
+        preventCollision={false}
+        autoSize={true}
       >
         {widgets.filter((w: DashboardWidget) => w.enabled).map((widget: DashboardWidget) => (
-          <Box key={widget.id}>
+          <Box 
+            key={widget.id}
+            sx={{
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              '&:hover': {
+                transform: isEditMode ? 'scale(1.02)' : 'none',
+                zIndex: isEditMode ? 10 : 'auto',
+              },
+            }}
+          >
             {renderWidget(widget)}
           </Box>
         ))}
@@ -301,13 +359,20 @@ const CustomizableDashboard: React.FC = () => {
         onClose={() => setShowCustomizeDialog(false)}
         maxWidth="sm"
         fullWidth
+        fullScreen={isMobile} // Full screen on mobile
+        PaperProps={{
+          sx: {
+            borderRadius: { xs: 0, sm: 2 },
+            margin: { xs: 0, sm: 2 },
+          }
+        }}
       >
         <DialogTitle>
           <Typography variant="h6" fontWeight="bold">
             Customize Dashboard
           </Typography>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ pb: { xs: 8, sm: 2 } }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Toggle widgets on/off and configure your dashboard layout
           </Typography>
@@ -322,15 +387,38 @@ const CustomizableDashboard: React.FC = () => {
                 />
               }
               label={widget.title}
-              sx={{ display: 'block', mb: 1 }}
+              sx={{ 
+                display: 'block', 
+                mb: 1,
+                '& .MuiFormControlLabel-label': {
+                  fontSize: { xs: '0.875rem', sm: '1rem' }
+                }
+              }}
             />
           ))}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={resetLayout} color="warning">
+        <DialogActions sx={{ 
+          p: 2,
+          position: { xs: 'fixed', sm: 'relative' },
+          bottom: { xs: 0, sm: 'auto' },
+          left: { xs: 0, sm: 'auto' },
+          right: { xs: 0, sm: 'auto' },
+          backgroundColor: 'background.paper',
+          borderTop: { xs: '1px solid', sm: 'none' },
+          borderColor: 'divider',
+          justifyContent: { xs: 'space-around', sm: 'flex-end' }
+        }}>
+          <Button 
+            onClick={resetLayout} 
+            color="warning"
+            size={isMobile ? 'large' : 'medium'}
+          >
             Reset to Default
           </Button>
-          <Button onClick={() => setShowCustomizeDialog(false)}>
+          <Button 
+            onClick={() => setShowCustomizeDialog(false)}
+            size={isMobile ? 'large' : 'medium'}
+          >
             Close
           </Button>
         </DialogActions>
@@ -341,7 +429,17 @@ const CustomizableDashboard: React.FC = () => {
         <Fab
           color="primary"
           aria-label="add widget"
-          sx={{ position: 'fixed', bottom: 16, right: 16 }}
+          sx={{ 
+            position: 'fixed', 
+            bottom: { xs: 80, sm: 16 }, 
+            right: 16,
+            zIndex: 1000,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              transform: 'scale(1.1)',
+              boxShadow: (theme) => `0 8px 25px ${theme.palette.primary.main}40`,
+            }
+          }}
           onClick={() => setShowCustomizeDialog(true)}
         >
           <Add />

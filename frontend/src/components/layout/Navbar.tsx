@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -8,6 +8,11 @@ import {
   Badge,
   Chip,
   Tooltip,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
 } from '@mui/material';
 import {
   Notifications,
@@ -15,6 +20,8 @@ import {
   PowerSettingsNew,
   DarkMode,
   LightMode,
+  SettingsBrightness,
+  KeyboardArrowDown,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
@@ -26,10 +33,51 @@ const Navbar: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
   const { isConnected } = useSocket();
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { isDarkMode, themeMode, setThemeMode, systemPrefersDark } = useTheme();
+  
+  const [themeMenuAnchor, setThemeMenuAnchor] = useState<null | HTMLElement>(null);
 
   const handleLogout = () => {
     dispatch(logout());
+  };
+
+  const handleThemeMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setThemeMenuAnchor(event.currentTarget);
+  };
+
+  const handleThemeMenuClose = () => {
+    setThemeMenuAnchor(null);
+  };
+
+  const handleThemeChange = (mode: 'light' | 'dark' | 'system') => {
+    setThemeMode(mode);
+    handleThemeMenuClose();
+  };
+
+  const getThemeIcon = () => {
+    switch (themeMode) {
+      case 'light':
+        return <LightMode />;
+      case 'dark':
+        return <DarkMode />;
+      case 'system':
+        return <SettingsBrightness />;
+      default:
+        return <SettingsBrightness />;
+    }
+  };
+
+  const getThemeLabel = () => {
+    switch (themeMode) {
+      case 'light':
+        return 'Light';
+      case 'dark':
+        return 'Dark';
+      case 'system':
+        return `Auto (${systemPrefersDark ? 'Dark' : 'Light'})`;
+      default:
+        return 'Auto';
+    }
   };
 
   return (
@@ -75,21 +123,81 @@ const Navbar: React.FC = () => {
             }}
           />
 
-          {/* Theme Toggle */}
-          <Tooltip title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
-            <IconButton 
-              color="inherit" 
-              onClick={toggleTheme}
-              sx={{ 
+          {/* Enhanced Theme Selector */}
+          <Tooltip title="Theme Settings">
+            <Chip
+              icon={getThemeIcon()}
+              label={getThemeLabel()}
+              onClick={handleThemeMenuOpen}
+              deleteIcon={<KeyboardArrowDown />}
+              onDelete={handleThemeMenuOpen}
+              size="small"
+              sx={{
+                bgcolor: 'rgba(255, 255, 255, 0.1)',
                 color: 'text.primary',
+                fontWeight: 'bold',
+                cursor: 'pointer',
                 '&:hover': {
-                  bgcolor: 'rgba(255, 255, 255, 0.1)',
+                  bgcolor: 'rgba(255, 255, 255, 0.2)',
+                },
+                '& .MuiChip-deleteIcon': {
+                  color: 'text.primary',
                 }
               }}
-            >
-              {isDarkMode ? <LightMode /> : <DarkMode />}
-            </IconButton>
+            />
           </Tooltip>
+
+          <Menu
+            anchorEl={themeMenuAnchor}
+            open={Boolean(themeMenuAnchor)}
+            onClose={handleThemeMenuClose}
+            PaperProps={{
+              sx: {
+                bgcolor: 'background.paper',
+                border: '1px solid',
+                borderColor: 'divider',
+                minWidth: 200,
+              },
+            }}
+          >
+            <MenuItem 
+              onClick={() => handleThemeChange('system')}
+              selected={themeMode === 'system'}
+            >
+              <ListItemIcon>
+                <SettingsBrightness />
+              </ListItemIcon>
+              <ListItemText 
+                primary="System" 
+                secondary={`Follow OS preference (${systemPrefersDark ? 'Dark' : 'Light'})`}
+              />
+            </MenuItem>
+            <Divider />
+            <MenuItem 
+              onClick={() => handleThemeChange('dark')}
+              selected={themeMode === 'dark'}
+            >
+              <ListItemIcon>
+                <DarkMode />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Dark" 
+                secondary="Optimal for trading"
+              />
+            </MenuItem>
+            <MenuItem 
+              onClick={() => handleThemeChange('light')}
+              selected={themeMode === 'light'}
+            >
+              <ListItemIcon>
+                <LightMode />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Light" 
+                secondary="Better for daytime"
+              />
+            </MenuItem>
+          </Menu>
 
           {/* Notifications */}
           <IconButton color="inherit">
