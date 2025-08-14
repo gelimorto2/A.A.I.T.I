@@ -26,6 +26,8 @@ const dataRetentionRoutes = require('./routes/dataRetention');
 // Advanced Features routes
 const aiInsightsRoutes = require('./routes/aiInsights');
 const integrationsRoutes = require('./routes/integrations');
+// Next-Generation AI & ML routes (TODO 2.1)
+const nextGenAIRoutes = require('./routes/nextGenAI');
 // Paper Trading routes
 const paperTradingRoutes = require('./routes/paperTrading');
 
@@ -254,6 +256,9 @@ const initializeMiddleware = () => {
   // Advanced Features routes
   app.use('/api/ai-insights', aiInsightsRoutes);
   app.use('/api/integrations', integrationsRoutes);
+  
+  // Next-Generation AI & ML routes (TODO 2.1)
+  app.use('/api/next-gen-ai', nextGenAIRoutes);
   
   // Paper Trading routes
   app.use('/api/paper-trading', paperTradingRoutes);
