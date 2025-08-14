@@ -33,6 +33,7 @@ import PnLWidget from './PnLWidget';
 import WinRateWidget from './WinRateWidget';
 import SystemHealthWidget from './SystemHealthWidget';
 import MarketHeatMapWidget from './MarketHeatMapWidget';
+import EnhancedChartWidget from './EnhancedChartWidget';
 
 // CSS for react-grid-layout
 import 'react-grid-layout/css/styles.css';
@@ -52,6 +53,7 @@ const availableWidgets: DashboardWidget[] = [
   { id: 'pnl', type: 'pnl', title: 'Profit & Loss', enabled: true },
   { id: 'win-rate', type: 'win-rate', title: 'Win Rate', enabled: true },
   { id: 'system-health', type: 'system-health', title: 'System Health', enabled: true },
+  { id: 'enhanced-chart', type: 'enhanced-chart', title: 'Enhanced Trading Chart', enabled: true },
   { id: 'market-heatmap', type: 'market-heatmap', title: 'Market Heat Map', enabled: true },
 ];
 
@@ -61,35 +63,40 @@ const defaultLayouts = {
     { i: 'pnl', x: 3, y: 0, w: 3, h: 3 },
     { i: 'win-rate', x: 6, y: 0, w: 3, h: 3 },
     { i: 'system-health', x: 9, y: 0, w: 3, h: 3 },
-    { i: 'market-heatmap', x: 0, y: 3, w: 12, h: 4 },
+    { i: 'enhanced-chart', x: 0, y: 3, w: 8, h: 4 },
+    { i: 'market-heatmap', x: 8, y: 3, w: 4, h: 4 },
   ],
   md: [
     { i: 'bots-status', x: 0, y: 0, w: 6, h: 3 },
     { i: 'pnl', x: 6, y: 0, w: 6, h: 3 },
     { i: 'win-rate', x: 0, y: 3, w: 6, h: 3 },
     { i: 'system-health', x: 6, y: 3, w: 6, h: 3 },
-    { i: 'market-heatmap', x: 0, y: 6, w: 12, h: 4 },
+    { i: 'enhanced-chart', x: 0, y: 6, w: 12, h: 4 },
+    { i: 'market-heatmap', x: 0, y: 10, w: 12, h: 4 },
   ],
   sm: [
     { i: 'bots-status', x: 0, y: 0, w: 12, h: 3 },
     { i: 'pnl', x: 0, y: 3, w: 12, h: 3 },
     { i: 'win-rate', x: 0, y: 6, w: 12, h: 3 },
     { i: 'system-health', x: 0, y: 9, w: 12, h: 3 },
-    { i: 'market-heatmap', x: 0, y: 12, w: 12, h: 4 },
+    { i: 'enhanced-chart', x: 0, y: 12, w: 12, h: 4 },
+    { i: 'market-heatmap', x: 0, y: 16, w: 12, h: 4 },
   ],
   xs: [
     { i: 'bots-status', x: 0, y: 0, w: 12, h: 4 },
     { i: 'pnl', x: 0, y: 4, w: 12, h: 4 },
     { i: 'win-rate', x: 0, y: 8, w: 12, h: 4 },
     { i: 'system-health', x: 0, y: 12, w: 12, h: 4 },
-    { i: 'market-heatmap', x: 0, y: 16, w: 12, h: 5 },
+    { i: 'enhanced-chart', x: 0, y: 16, w: 12, h: 5 },
+    { i: 'market-heatmap', x: 0, y: 21, w: 12, h: 5 },
   ],
   xxs: [
     { i: 'bots-status', x: 0, y: 0, w: 12, h: 5 },
     { i: 'pnl', x: 0, y: 5, w: 12, h: 5 },
     { i: 'win-rate', x: 0, y: 10, w: 12, h: 5 },
     { i: 'system-health', x: 0, y: 15, w: 12, h: 5 },
-    { i: 'market-heatmap', x: 0, y: 20, w: 12, h: 6 },
+    { i: 'enhanced-chart', x: 0, y: 20, w: 12, h: 6 },
+    { i: 'market-heatmap', x: 0, y: 26, w: 12, h: 6 },
   ],
 };
 
@@ -221,6 +228,13 @@ const CustomizableDashboard: React.FC = () => {
             onRemove={isEditMode ? removeWidget : undefined}
           />
         );
+      case 'enhanced-chart':
+        return (
+          <EnhancedChartWidget
+            id={widget.id}
+            onRemove={isEditMode ? removeWidget : undefined}
+          />
+        );
       default:
         return null;
     }
@@ -239,7 +253,7 @@ const CustomizableDashboard: React.FC = () => {
       }}>
         <Box>
           <Typography 
-            variant={{ xs: 'h5', sm: 'h4' }}
+            variant="h4"
             gutterBottom 
             sx={{ 
               fontWeight: 'bold', 

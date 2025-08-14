@@ -6,6 +6,8 @@ import AppRouter from './components/AppRouter';
 import SocketProvider from './contexts/SocketContext';
 import { ThemeContextProvider } from './contexts/ThemeContext';
 import { UserPreferencesProvider } from './contexts/UserPreferencesContext';
+import { RBACProvider } from './contexts/RBACContext';
+import { ActivityProvider } from './contexts/ActivityContext';
 import './App.css';
 
 function App() {
@@ -14,9 +16,13 @@ function App() {
       <ThemeContextProvider>
         <Router>
           <SocketProvider>
-            <UserPreferencesProvider>
-              <AppRouter />
-            </UserPreferencesProvider>
+            <RBACProvider>
+              <ActivityProvider>
+                <UserPreferencesProvider>
+                  <AppRouter />
+                </UserPreferencesProvider>
+              </ActivityProvider>
+            </RBACProvider>
           </SocketProvider>
         </Router>
       </ThemeContextProvider>
