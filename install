@@ -21,9 +21,9 @@ VERSION="2.1.0"
 
 # Print header
 echo -e "${BLUE}"
-cat << "EOF"
+cat << EOF
 ╔══════════════════════════════════════════════════════════════════════════════════════╗
-║                    🚀 A.A.I.T.I v2.1.0 - Interactive Installer                     ║
+║                    🚀 ${PROJECT_NAME} v${VERSION} - Interactive Installer                     ║
 ║                      Auto AI Trading Interface - Docker Edition                     ║
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 EOF
@@ -116,7 +116,7 @@ install_aaiti() {
     # Build and start
     print_step "Building Docker containers (this may take a few minutes)..."
     echo -ne "${YELLOW}Building: "
-    for i in {1..20}; do
+    for _ in {1..20}; do
         echo -ne "▓"
         sleep 0.1
     done
@@ -124,12 +124,13 @@ install_aaiti() {
     
     if ! $COMPOSE_CMD build aaiti; then
         print_error "Failed to build Docker containers"
+        print_error "Please check Docker is running and try again"
         exit 1
     fi
     
     print_step "Starting A.A.I.T.I services..."
     echo -ne "${YELLOW}Starting: "
-    for i in {1..15}; do
+    for _ in {1..15}; do
         echo -ne "▓"
         sleep 0.1
     done
@@ -137,13 +138,14 @@ install_aaiti() {
     
     if ! $COMPOSE_CMD up -d aaiti; then
         print_error "Failed to start services"
+        print_error "Please check the logs with: $COMPOSE_CMD logs aaiti"
         exit 1
     fi
     
     # Wait for services
     print_step "Waiting for services to initialize..."
     echo -ne "${CYAN}Initializing"
-    for i in {1..30}; do
+    for _ in {1..30}; do
         echo -ne "."
         sleep 0.3
     done
@@ -225,9 +227,9 @@ show_logs() {
 
 # Show help
 show_help() {
-    echo "A.A.I.T.I Interactive Docker Installer"
+    echo "${PROJECT_NAME} Interactive Docker Installer"
     echo ""
-    echo "This installer creates a production-ready A.A.I.T.I trading platform using Docker."
+    echo "This installer creates a production-ready ${PROJECT_NAME} trading platform using Docker."
     echo ""
     echo "Requirements:"
     echo "  • Docker 20.0+ with Docker Compose"
@@ -249,12 +251,12 @@ show_help() {
 main_menu() {
     while true; do
         echo ""
-        echo -e "${CYAN}🔧 A.A.I.T.I Interactive Installer${NC}"
+        echo -e "${CYAN}🔧 ${PROJECT_NAME} Interactive Installer${NC}"
         echo -e "${CYAN}===================================${NC}"
         echo ""
-        echo "1) 🚀 Install A.A.I.T.I (Production Ready)"
+        echo "1) 🚀 Install ${PROJECT_NAME} (Production Ready)"
         echo "2) 📊 Check Status"
-        echo "3) ⏹️  Stop A.A.I.T.I"
+        echo "3) ⏹️  Stop ${PROJECT_NAME}"
         echo "4) 📋 View Logs"
         echo "5) ❓ Help"
         echo "6) 🚪 Exit"
