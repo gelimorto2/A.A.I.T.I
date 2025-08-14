@@ -28,6 +28,9 @@ const aiInsightsRoutes = require('./routes/aiInsights');
 const integrationsRoutes = require('./routes/integrations');
 // Paper Trading routes
 const paperTradingRoutes = require('./routes/paperTrading');
+// Enhanced Features routes (TODO roadmap 1.2)
+const rbacRoutes = require('./routes/rbac');
+const chartsRoutes = require('./routes/charts');
 
 const { initializeDatabase } = require('./database/init');
 const { authenticateSocket } = require('./middleware/auth');
@@ -257,6 +260,10 @@ const initializeMiddleware = () => {
   
   // Paper Trading routes
   app.use('/api/paper-trading', paperTradingRoutes);
+  
+  // Enhanced Features routes (TODO roadmap 1.2)
+  app.use('/api/rbac', rbacRoutes);
+  app.use('/api/charts', chartsRoutes);
   
   // Metrics routes (for monitoring)
   app.use('/api', metricsRoutes);
