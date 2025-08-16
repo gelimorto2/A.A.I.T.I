@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const logger = require('../utils/logger');
 const { getCredentials } = require('../utils/credentials');
+const { initializeAdvancedAnalytics } = require('./advancedAnalyticsSchema');
 
 // Get database path from configuration
 const getDbPath = () => {
@@ -465,13 +466,24 @@ const initializeDatabase = async () => {
           FOREIGN KEY (portfolio_id) REFERENCES paper_portfolios (id),
           UNIQUE(portfolio_id, symbol)
         )
-      `, (err) => {
+      `, async (err) => {
         if (err) {
           logger.error('Error creating tables:', err);
           reject(err);
         } else {
           logger.info('Database tables initialized successfully (including Paper Trading)');
-          resolve();
+          
+          // Initialize advanced analytics tables (TODO 2.2)
+          try {
+            await initializeAdvancedAnalytics(database);
+            logger.info('Advanced Analytics & Reporting tables initialized successfully');
+            resolve();
+          } catch (analyticsError) {
+            logger.error('Error initializing Advanced Analytics tables:', analyticsError);
+            // Continue without advanced analytics tables
+            logger.warn('Continuing without Advanced Analytics tables - some features may not work');
+            resolve();
+          }
         }
       });
     });
