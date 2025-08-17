@@ -34,6 +34,8 @@ const nextGenAIRoutes = require('./routes/nextGenAI');
 const advancedAnalyticsRoutes = require('./routes/advancedAnalytics');
 // Paper Trading routes
 const paperTradingRoutes = require('./routes/paperTrading');
+// High-Frequency Trading routes (TODO 3.2)
+const highFrequencyTradingRoutes = require('./routes/highFrequencyTrading');
 
 const { initializeDatabase } = require('./database/init');
 const { authenticateSocket } = require('./middleware/auth');
@@ -272,6 +274,9 @@ const initializeMiddleware = () => {
   
   // Paper Trading routes
   app.use('/api/paper-trading', paperTradingRoutes);
+  
+  // High-Frequency Trading routes (TODO 3.2)
+  app.use('/api/hft', highFrequencyTradingRoutes);
   
   // Metrics routes (for monitoring)
   app.use('/api', metricsRoutes);
