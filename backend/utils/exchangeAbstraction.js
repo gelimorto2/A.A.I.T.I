@@ -25,7 +25,8 @@ class ExchangeAbstraction {
       TAKE_PROFIT: 'take_profit',
       OCO: 'oco', // One-Cancels-Other
       ICEBERG: 'iceberg',
-      TWAP: 'twap' // Time-Weighted Average Price
+      TWAP: 'twap', // Time-Weighted Average Price
+      TRAILING_STOP: 'trailing_stop' // Trailing stop with dynamic adjustments
     };
     
     this.orderSides = {

@@ -21,7 +21,8 @@ class AdvancedOrderManager {
       ICEBERG: 'iceberg',
       TWAP: 'twap', // Time-Weighted Average Price
       VWAP: 'vwap', // Volume-Weighted Average Price
-      BRACKET: 'bracket' // Bracket order (entry + stop loss + take profit)
+      BRACKET: 'bracket', // Bracket order (entry + stop loss + take profit)
+      TRAILING_STOP: 'trailing_stop' // Trailing stop with dynamic adjustments
     };
 
     this.executionStatus = {
@@ -99,6 +100,8 @@ class AdvancedOrderManager {
           return await this.executeVWAPOrder(order);
         case this.orderTypes.BRACKET:
           return await this.executeBracketOrder(order);
+        case this.orderTypes.TRAILING_STOP:
+          return await this.executeTrailingStopOrder(order);
         default:
           return await this.executeStandardOrder(order);
       }
@@ -312,6 +315,72 @@ class AdvancedOrderManager {
       return {
         orderId: order.id,
         entryOrderId: entryOrder.orderId,
+        status: order.status
+      };
+
+    } catch (error) {
+      order.status = this.executionStatus.FAILED;
+      order.error = error.message;
+      this.updateOrder(order);
+      throw error;
+    }
+  }
+
+  /**
+   * Execute Trailing Stop Order
+   * Dynamically adjusts stop price as market moves favorably
+   */
+  async executeTrailingStopOrder(order) {
+    logger.info(`Executing Trailing Stop order: ${order.id}`);
+    
+    const { symbol, side, quantity, trailingAmount, trailingPercent, exchangeId } = order;
+    
+    if (!trailingAmount && !trailingPercent) {
+      throw new Error('Trailing Stop orders require either trailingAmount or trailingPercent');
+    }
+
+    order.status = this.executionStatus.EXECUTING;
+    
+    // Get initial market price
+    const quote = await this.exchangeAbstraction.getQuote(exchangeId, symbol);
+    const currentPrice = quote.price || (side === 'buy' ? quote.ask : quote.bid);
+    
+    // Calculate initial stop price
+    let stopPrice;
+    if (trailingPercent) {
+      const percentage = trailingPercent / 100;
+      stopPrice = side === 'buy' 
+        ? currentPrice * (1 + percentage)  // Buy trailing stop above current price
+        : currentPrice * (1 - percentage); // Sell trailing stop below current price
+    } else {
+      stopPrice = side === 'buy' 
+        ? currentPrice + trailingAmount  // Buy trailing stop above current price
+        : currentPrice - trailingAmount; // Sell trailing stop below current price
+    }
+    
+    order.metadata = {
+      ...order.metadata,
+      initialPrice: currentPrice,
+      currentStopPrice: stopPrice,
+      bestPrice: currentPrice,
+      trailingAmount: trailingAmount,
+      trailingPercent: trailingPercent,
+      adjustmentCount: 0,
+      priceHistory: []
+    };
+    
+    this.updateOrder(order);
+
+    try {
+      // Start monitoring price and dynamically adjust stop
+      this.startTrailingStopMonitoring(order);
+
+      logger.info(`Trailing Stop order started: initial stop at ${stopPrice}`);
+      
+      return {
+        orderId: order.id,
+        initialStopPrice: stopPrice,
+        currentPrice: currentPrice,
         status: order.status
       };
 
@@ -835,6 +904,147 @@ class AdvancedOrderManager {
   }
 
   /**
+   * Start trailing stop monitoring
+   * Continuously monitors price and adjusts stop level
+   */
+  startTrailingStopMonitoring(order) {
+    const checkInterval = 2000; // Check every 2 seconds for responsiveness
+    
+    const monitor = setInterval(async () => {
+      try {
+        // Get current market price
+        const quote = await this.exchangeAbstraction.getQuote(order.exchangeId, order.symbol);
+        const currentPrice = quote.price || (order.side === 'buy' ? quote.ask : quote.bid);
+        
+        // Add to price history for analysis
+        order.metadata.priceHistory.push({
+          timestamp: Date.now(),
+          price: currentPrice
+        });
+        
+        // Keep only last 100 price points
+        if (order.metadata.priceHistory.length > 100) {
+          order.metadata.priceHistory.shift();
+        }
+        
+        let shouldExecute = false;
+        let newStopPrice = order.metadata.currentStopPrice;
+        
+        if (order.side === 'sell') {
+          // For sell orders, track price going up and stop when it goes down
+          if (currentPrice > order.metadata.bestPrice) {
+            // Price improved, update best price and trail the stop
+            order.metadata.bestPrice = currentPrice;
+            
+            if (order.metadata.trailingPercent) {
+              newStopPrice = currentPrice * (1 - order.metadata.trailingPercent / 100);
+            } else {
+              newStopPrice = currentPrice - order.metadata.trailingAmount;
+            }
+            
+            if (newStopPrice > order.metadata.currentStopPrice) {
+              order.metadata.currentStopPrice = newStopPrice;
+              order.metadata.adjustmentCount++;
+              logger.info(`Trailing stop adjusted up to ${newStopPrice} for order ${order.id}`);
+            }
+          }
+          
+          // Check if current price hit the stop
+          if (currentPrice <= order.metadata.currentStopPrice) {
+            shouldExecute = true;
+          }
+          
+        } else {
+          // For buy orders, track price going down and stop when it goes up
+          if (currentPrice < order.metadata.bestPrice) {
+            // Price improved, update best price and trail the stop
+            order.metadata.bestPrice = currentPrice;
+            
+            if (order.metadata.trailingPercent) {
+              newStopPrice = currentPrice * (1 + order.metadata.trailingPercent / 100);
+            } else {
+              newStopPrice = currentPrice + order.metadata.trailingAmount;
+            }
+            
+            if (newStopPrice < order.metadata.currentStopPrice) {
+              order.metadata.currentStopPrice = newStopPrice;
+              order.metadata.adjustmentCount++;
+              logger.info(`Trailing stop adjusted down to ${newStopPrice} for order ${order.id}`);
+            }
+          }
+          
+          // Check if current price hit the stop
+          if (currentPrice >= order.metadata.currentStopPrice) {
+            shouldExecute = true;
+          }
+        }
+        
+        this.updateOrder(order);
+        
+        // Execute the order if stop is triggered
+        if (shouldExecute) {
+          logger.info(`Trailing stop triggered at ${currentPrice} for order ${order.id}`);
+          
+          try {
+            const executionResult = await this.exchangeAbstraction.placeOrder(order.exchangeId, {
+              symbol: order.symbol,
+              side: order.side,
+              type: 'market',
+              quantity: order.quantity,
+              clientOrderId: `${order.id}_trail_exec`
+            });
+            
+            order.executions.push({
+              orderId: executionResult.orderId,
+              exchangeId: order.exchangeId,
+              quantity: order.quantity,
+              price: currentPrice,
+              timestamp: new Date().toISOString(),
+              triggerType: 'trailing_stop'
+            });
+            
+            order.totalExecuted = order.quantity;
+            order.averagePrice = currentPrice;
+            order.status = this.executionStatus.COMPLETED;
+            order.metadata.executionPrice = currentPrice;
+            order.metadata.totalTrailingGain = Math.abs(currentPrice - order.metadata.initialPrice);
+            
+            this.updateOrder(order);
+            clearInterval(monitor);
+            
+            logger.info(`Trailing stop executed: ${executionResult.orderId} at ${currentPrice}`);
+            
+          } catch (executionError) {
+            logger.error(`Failed to execute trailing stop for order ${order.id}:`, executionError);
+            order.status = this.executionStatus.FAILED;
+            order.error = executionError.message;
+            this.updateOrder(order);
+            clearInterval(monitor);
+          }
+        }
+        
+      } catch (error) {
+        logger.error(`Error monitoring trailing stop order ${order.id}:`, error);
+      }
+    }, checkInterval);
+
+    // Store monitor reference for cleanup
+    order.metadata.monitorRef = monitor;
+
+    // Set timeout to stop monitoring after 24 hours
+    setTimeout(() => {
+      if (order.metadata.monitorRef) {
+        clearInterval(order.metadata.monitorRef);
+        if (order.status === this.executionStatus.EXECUTING) {
+          order.status = this.executionStatus.CANCELLED;
+          order.metadata.cancelReason = 'timeout';
+          this.updateOrder(order);
+        }
+      }
+    }, 24 * 60 * 60 * 1000);
+  }
+
+  /**
    * Get volume profile for VWAP calculation
    */
   async getVolumeProfile(symbol, exchangeId) {
@@ -914,6 +1124,12 @@ class AdvancedOrderManager {
           } catch (error) {
             logger.warn(`Failed to cancel child order ${childOrderId}:`, error.message);
           }
+        }
+      } else if (order.type === this.orderTypes.TRAILING_STOP) {
+        // Stop the monitoring interval
+        if (order.metadata.monitorRef) {
+          clearInterval(order.metadata.monitorRef);
+          order.metadata.monitorRef = null;
         }
       }
 
@@ -1056,7 +1272,8 @@ class AdvancedOrderManager {
       iceberg: 'Break large order into smaller visible portions',
       twap: 'Execute order in equal slices over specified time period',
       vwap: 'Execute order following historical volume patterns',
-      bracket: 'Entry order with automatic stop loss and take profit'
+      bracket: 'Entry order with automatic stop loss and take profit',
+      trailing_stop: 'Stop order that dynamically adjusts with favorable price movement'
     };
     
     return descriptions[type] || 'Unknown order type';
