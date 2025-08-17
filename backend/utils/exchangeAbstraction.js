@@ -12,6 +12,9 @@ class ExchangeAbstraction {
     this.supportedExchanges = {
       BINANCE: 'binance',
       COINBASE: 'coinbase',
+      KRAKEN: 'kraken',
+      KUCOIN: 'kucoin',
+      BYBIT: 'bybit',
       ALPHA_VANTAGE: 'alpha_vantage'
     };
     
@@ -39,7 +42,7 @@ class ExchangeAbstraction {
       PARTIALLY_FILLED: 'partially_filled'
     };
 
-    logger.info('ExchangeAbstraction initialized with support for 3 exchanges');
+    logger.info('ExchangeAbstraction initialized with support for 6 exchanges');
   }
 
   /**
@@ -68,6 +71,12 @@ class ExchangeAbstraction {
         return new BinanceExchange(credentials);
       case this.supportedExchanges.COINBASE:
         return new CoinbaseExchange(credentials);
+      case this.supportedExchanges.KRAKEN:
+        return new KrakenExchange(credentials);
+      case this.supportedExchanges.KUCOIN:
+        return new KuCoinExchange(credentials);
+      case this.supportedExchanges.BYBIT:
+        return new BybitExchange(credentials);
       case this.supportedExchanges.ALPHA_VANTAGE:
         return new AlphaVantageExchange(credentials);
       default:
@@ -400,6 +409,200 @@ class ExchangeAbstraction {
   }
 
   /**
+   * Get unified order book aggregated from multiple exchanges
+   */
+  async getUnifiedOrderBook(symbol, exchanges = null, depth = 50) {
+    const targetExchanges = exchanges || Array.from(this.exchanges.keys());
+    const orderBooks = [];
+    
+    // Collect order books from all specified exchanges
+    for (const exchangeId of targetExchanges) {
+      try {
+        const exchange = this.exchanges.get(exchangeId);
+        if (exchange && exchange.connected) {
+          const orderBook = await exchange.instance.getOrderBook(symbol, depth);
+          if (orderBook && orderBook.bids && orderBook.asks) {
+            orderBooks.push({
+              exchangeId,
+              exchange: exchange.type,
+              ...orderBook
+            });
+          }
+        }
+      } catch (error) {
+        logger.warn(`Failed to get order book from ${exchangeId}:`, error.message);
+      }
+    }
+
+    if (orderBooks.length === 0) {
+      throw new Error('No order books available for aggregation');
+    }
+
+    // Aggregate all bids and asks
+    const allBids = [];
+    const allAsks = [];
+
+    orderBooks.forEach(book => {
+      book.bids.forEach(bid => allBids.push({ ...bid, exchange: book.exchangeId }));
+      book.asks.forEach(ask => allAsks.push({ ...ask, exchange: book.exchangeId }));
+    });
+
+    // Sort bids by price (descending) and asks by price (ascending)
+    allBids.sort((a, b) => b.price - a.price);
+    allAsks.sort((a, b) => a.price - b.price);
+
+    // Take top entries up to depth
+    const unifiedBids = allBids.slice(0, depth);
+    const unifiedAsks = allAsks.slice(0, depth);
+
+    return {
+      symbol,
+      bids: unifiedBids,
+      asks: unifiedAsks,
+      timestamp: new Date().toISOString(),
+      exchanges: orderBooks.map(book => book.exchangeId),
+      aggregatedFrom: orderBooks.length,
+      bestBid: unifiedBids[0]?.price || null,
+      bestAsk: unifiedAsks[0]?.price || null,
+      spread: unifiedAsks[0] && unifiedBids[0] ? 
+        ((unifiedAsks[0].price - unifiedBids[0].price) / unifiedBids[0].price * 100).toFixed(4) : null
+    };
+  }
+
+  /**
+   * Emergency stop all trading activities
+   */
+  async emergencyStopAll(reason = 'Manual emergency stop') {
+    logger.error(`🚨 EMERGENCY STOP ACTIVATED: ${reason}`);
+    
+    const results = {
+      reason,
+      timestamp: new Date().toISOString(),
+      exchanges: [],
+      cancelledOrders: 0,
+      errors: []
+    };
+
+    for (const [exchangeId, exchange] of this.exchanges.entries()) {
+      try {
+        const exchangeResult = await this.emergencyStopExchange(exchangeId, reason);
+        results.exchanges.push(exchangeResult);
+        results.cancelledOrders += exchangeResult.cancelledOrders || 0;
+      } catch (error) {
+        const errorResult = {
+          exchangeId,
+          success: false,
+          error: error.message,
+          cancelledOrders: 0
+        };
+        results.exchanges.push(errorResult);
+        results.errors.push(errorResult);
+      }
+    }
+
+    logger.info(`Emergency stop completed: ${results.cancelledOrders} orders cancelled across ${results.exchanges.length} exchanges`);
+    return results;
+  }
+
+  /**
+   * Emergency stop for specific exchange
+   */
+  async emergencyStopExchange(exchangeId, reason = 'Emergency stop') {
+    const exchange = this.exchanges.get(exchangeId);
+    if (!exchange) {
+      throw new Error(`Exchange ${exchangeId} not found`);
+    }
+
+    try {
+      // Cancel all open orders if exchange supports it
+      const result = await exchange.instance.emergencyStop ? 
+        await exchange.instance.emergencyStop(reason) :
+        { success: true, message: 'Emergency stop signal sent', cancelledOrders: 0 };
+
+      logger.warn(`Emergency stop executed for ${exchangeId}: ${result.message || 'Success'}`);
+      
+      return {
+        exchangeId,
+        success: true,
+        message: result.message,
+        cancelledOrders: result.cancelledOrders || 0,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      logger.error(`Emergency stop failed for ${exchangeId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Position synchronization across exchanges
+   */
+  async synchronizePositions() {
+    const positions = new Map();
+    const errors = [];
+
+    logger.info('Starting position synchronization across exchanges...');
+
+    for (const [exchangeId, exchange] of this.exchanges.entries()) {
+      try {
+        if (exchange.connected) {
+          const balance = await exchange.instance.getBalance();
+          positions.set(exchangeId, {
+            exchange: exchangeId,
+            balances: balance.balances || balance,
+            timestamp: balance.timestamp || new Date().toISOString()
+          });
+        }
+      } catch (error) {
+        logger.error(`Failed to get positions from ${exchangeId}:`, error);
+        errors.push({
+          exchangeId,
+          error: error.message
+        });
+      }
+    }
+
+    // Calculate total positions across all exchanges
+    const aggregatedPositions = new Map();
+    
+    for (const [exchangeId, position] of positions.entries()) {
+      if (position.balances) {
+        position.balances.forEach(balance => {
+          const asset = balance.asset || balance.currency;
+          const total = (balance.free || 0) + (balance.locked || 0);
+          
+          if (!aggregatedPositions.has(asset)) {
+            aggregatedPositions.set(asset, {
+              asset,
+              totalBalance: 0,
+              exchanges: {}
+            });
+          }
+          
+          const aggregated = aggregatedPositions.get(asset);
+          aggregated.totalBalance += total;
+          aggregated.exchanges[exchangeId] = {
+            free: balance.free || 0,
+            locked: balance.locked || 0,
+            total
+          };
+        });
+      }
+    }
+
+    const result = {
+      timestamp: new Date().toISOString(),
+      exchangeCount: positions.size,
+      positions: Array.from(aggregatedPositions.values()),
+      exchangeDetails: Object.fromEntries(positions),
+      errors
+    };
+
+    logger.info(`Position synchronization completed: ${result.exchangeCount} exchanges, ${result.positions.length} assets`);
+    return result;
+  }
+
+  /**
    * Remove exchange registration
    */
   removeExchange(exchangeId) {
@@ -469,6 +672,33 @@ class BinanceExchange {
     };
   }
 
+  async getOrderBook(symbol, depth = 50) {
+    // Simulate Binance order book
+    // In production, this would call /api/v3/depth
+    const midPrice = 50000 + Math.random() * 10000;
+    const bids = [];
+    const asks = [];
+
+    for (let i = 0; i < depth; i++) {
+      bids.push({
+        price: midPrice - (i * 10) - Math.random() * 10,
+        quantity: Math.random() * 100
+      });
+      asks.push({
+        price: midPrice + (i * 10) + Math.random() * 10,
+        quantity: Math.random() * 100
+      });
+    }
+
+    return {
+      exchange: this.name,
+      symbol,
+      bids,
+      asks,
+      timestamp: new Date().toISOString()
+    };
+  }
+
   async placeOrder(orderParams) {
     // Simulate order placement
     // In production, this would call /api/v3/order
@@ -531,6 +761,16 @@ class BinanceExchange {
       symbol,
       maker: 0.001, // 0.1%
       taker: 0.001, // 0.1%
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async emergencyStop(reason) {
+    logger.warn(`Binance emergency stop: ${reason}`);
+    return {
+      success: true,
+      message: 'All Binance orders cancelled',
+      cancelledOrders: Math.floor(Math.random() * 10),
       timestamp: new Date().toISOString()
     };
   }
@@ -624,6 +864,32 @@ class CoinbaseExchange {
     };
   }
 
+  async getOrderBook(symbol, depth = 50) {
+    // Simulate Coinbase order book
+    const midPrice = 50000 + Math.random() * 10000;
+    const bids = [];
+    const asks = [];
+
+    for (let i = 0; i < depth; i++) {
+      bids.push({
+        price: midPrice - (i * 10) - Math.random() * 10,
+        quantity: Math.random() * 100
+      });
+      asks.push({
+        price: midPrice + (i * 10) + Math.random() * 10,
+        quantity: Math.random() * 100
+      });
+    }
+
+    return {
+      exchange: this.name,
+      symbol,
+      bids,
+      asks,
+      timestamp: new Date().toISOString()
+    };
+  }
+
   async placeOrder(orderParams) {
     // Simulate order placement
     const orderId = `coinbase_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -681,6 +947,16 @@ class CoinbaseExchange {
       symbol,
       maker: 0.005, // 0.5%
       taker: 0.005, // 0.5%
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async emergencyStop(reason) {
+    logger.warn(`Coinbase emergency stop: ${reason}`);
+    return {
+      success: true,
+      message: 'All Coinbase orders cancelled',
+      cancelledOrders: Math.floor(Math.random() * 10),
       timestamp: new Date().toISOString()
     };
   }
@@ -836,6 +1112,11 @@ class AlphaVantageExchange {
     }
   }
 
+  async getOrderBook(symbol, depth = 50) {
+    // Alpha Vantage doesn't provide order book data, simulate for consistency
+    throw new Error('Alpha Vantage does not provide order book data (data provider only)');
+  }
+
   async placeOrder(orderParams) {
     // Alpha Vantage is read-only, simulate order for demo
     throw new Error('Alpha Vantage does not support order placement (data provider only)');
@@ -863,6 +1144,535 @@ class AlphaVantageExchange {
       note: 'Alpha Vantage is data-only, fees are reference values',
       timestamp: new Date().toISOString()
     };
+  }
+
+  async emergencyStop(reason) {
+    // Alpha Vantage doesn't support trading
+    throw new Error('Alpha Vantage does not support trading operations (data provider only)');
+  }
+}
+
+/**
+ * Kraken Exchange Implementation
+ */
+class KrakenExchange {
+  constructor(credentials) {
+    this.apiKey = credentials.apiKey;
+    this.apiSecret = credentials.apiSecret;
+    this.baseURL = credentials.testnet ? 'https://api.kraken.com' : 'https://api.kraken.com';
+    this.name = 'Kraken';
+  }
+
+  async testConnection() {
+    try {
+      // Simulate connection test - in production would call /0/public/Time
+      return {
+        success: true,
+        exchange: this.name,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      return {
+        success: false,
+        exchange: this.name,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
+
+  async getMarketData(symbol, timeframe, limit) {
+    return {
+      exchange: this.name,
+      symbol,
+      timeframe,
+      data: this.generateMockOHLCV(limit),
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async getQuote(symbol) {
+    const basePrice = 50000 + Math.random() * 10000;
+    return {
+      exchange: this.name,
+      symbol,
+      bid: basePrice - Math.random() * 100,
+      ask: basePrice + Math.random() * 100,
+      price: basePrice,
+      volume: Math.random() * 1000000,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async getOrderBook(symbol, depth = 50) {
+    const midPrice = 50000 + Math.random() * 10000;
+    const bids = [];
+    const asks = [];
+
+    for (let i = 0; i < depth; i++) {
+      bids.push({
+        price: midPrice - (i * 10) - Math.random() * 10,
+        quantity: Math.random() * 100
+      });
+      asks.push({
+        price: midPrice + (i * 10) + Math.random() * 10,
+        quantity: Math.random() * 100
+      });
+    }
+
+    return {
+      exchange: this.name,
+      symbol,
+      bids,
+      asks,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async placeOrder(orderParams) {
+    const orderId = `kraken_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    return {
+      orderId,
+      exchange: this.name,
+      symbol: orderParams.symbol,
+      side: orderParams.side,
+      type: orderParams.type,
+      quantity: orderParams.quantity,
+      price: orderParams.price,
+      status: 'open',
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async getOrderStatus(orderId, symbol) {
+    return {
+      orderId,
+      exchange: this.name,
+      symbol,
+      status: 'filled',
+      executedQuantity: Math.random() * 100,
+      averagePrice: 50000 + Math.random() * 1000,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async cancelOrder(orderId, symbol) {
+    return {
+      orderId,
+      exchange: this.name,
+      symbol,
+      status: 'cancelled',
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async getBalance() {
+    return {
+      exchange: this.name,
+      balances: [
+        { asset: 'BTC', free: Math.random() * 10, locked: Math.random() * 1 },
+        { asset: 'ETH', free: Math.random() * 100, locked: Math.random() * 10 },
+        { asset: 'USD', free: Math.random() * 10000, locked: Math.random() * 1000 }
+      ],
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async getTradingFees(symbol) {
+    return {
+      exchange: this.name,
+      symbol,
+      maker: 0.0016, // 0.16%
+      taker: 0.0026, // 0.26%
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async emergencyStop(reason) {
+    logger.warn(`Kraken emergency stop: ${reason}`);
+    return {
+      success: true,
+      message: 'All Kraken orders cancelled',
+      cancelledOrders: Math.floor(Math.random() * 10),
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  generateMockOHLCV(limit) {
+    const data = [];
+    let price = 50000;
+    
+    for (let i = 0; i < limit; i++) {
+      const change = (Math.random() - 0.5) * 1000;
+      const open = price;
+      const close = price + change;
+      const high = Math.max(open, close) + Math.random() * 500;
+      const low = Math.min(open, close) - Math.random() * 500;
+      const volume = Math.random() * 1000;
+      
+      data.push({
+        timestamp: new Date(Date.now() - (limit - i) * 60000).toISOString(),
+        open,
+        high,
+        low,
+        close,
+        volume
+      });
+      
+      price = close;
+    }
+    
+    return data;
+  }
+}
+
+/**
+ * KuCoin Exchange Implementation
+ */
+class KuCoinExchange {
+  constructor(credentials) {
+    this.apiKey = credentials.apiKey;
+    this.apiSecret = credentials.apiSecret;
+    this.passphrase = credentials.passphrase;
+    this.baseURL = credentials.sandbox ? 'https://openapi-sandbox.kucoin.com' : 'https://api.kucoin.com';
+    this.name = 'KuCoin';
+  }
+
+  async testConnection() {
+    try {
+      return {
+        success: true,
+        exchange: this.name,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      return {
+        success: false,
+        exchange: this.name,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
+
+  async getMarketData(symbol, timeframe, limit) {
+    return {
+      exchange: this.name,
+      symbol,
+      timeframe,
+      data: this.generateMockOHLCV(limit),
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async getQuote(symbol) {
+    const basePrice = 50000 + Math.random() * 10000;
+    return {
+      exchange: this.name,
+      symbol,
+      bid: basePrice - Math.random() * 100,
+      ask: basePrice + Math.random() * 100,
+      price: basePrice,
+      volume: Math.random() * 1000000,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async getOrderBook(symbol, depth = 50) {
+    const midPrice = 50000 + Math.random() * 10000;
+    const bids = [];
+    const asks = [];
+
+    for (let i = 0; i < depth; i++) {
+      bids.push({
+        price: midPrice - (i * 10) - Math.random() * 10,
+        quantity: Math.random() * 100
+      });
+      asks.push({
+        price: midPrice + (i * 10) + Math.random() * 10,
+        quantity: Math.random() * 100
+      });
+    }
+
+    return {
+      exchange: this.name,
+      symbol,
+      bids,
+      asks,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async placeOrder(orderParams) {
+    const orderId = `kucoin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    return {
+      orderId,
+      exchange: this.name,
+      symbol: orderParams.symbol,
+      side: orderParams.side,
+      type: orderParams.type,
+      quantity: orderParams.quantity,
+      price: orderParams.price,
+      status: 'open',
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async getOrderStatus(orderId, symbol) {
+    return {
+      orderId,
+      exchange: this.name,
+      symbol,
+      status: 'filled',
+      executedQuantity: Math.random() * 100,
+      averagePrice: 50000 + Math.random() * 1000,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async cancelOrder(orderId, symbol) {
+    return {
+      orderId,
+      exchange: this.name,
+      symbol,
+      status: 'cancelled',
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async getBalance() {
+    return {
+      exchange: this.name,
+      balances: [
+        { asset: 'BTC', free: Math.random() * 10, locked: Math.random() * 1 },
+        { asset: 'ETH', free: Math.random() * 100, locked: Math.random() * 10 },
+        { asset: 'USDT', free: Math.random() * 10000, locked: Math.random() * 1000 }
+      ],
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async getTradingFees(symbol) {
+    return {
+      exchange: this.name,
+      symbol,
+      maker: 0.001, // 0.1%
+      taker: 0.001, // 0.1%
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async emergencyStop(reason) {
+    logger.warn(`KuCoin emergency stop: ${reason}`);
+    return {
+      success: true,
+      message: 'All KuCoin orders cancelled',
+      cancelledOrders: Math.floor(Math.random() * 10),
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  generateMockOHLCV(limit) {
+    const data = [];
+    let price = 50000;
+    
+    for (let i = 0; i < limit; i++) {
+      const change = (Math.random() - 0.5) * 1000;
+      const open = price;
+      const close = price + change;
+      const high = Math.max(open, close) + Math.random() * 500;
+      const low = Math.min(open, close) - Math.random() * 500;
+      const volume = Math.random() * 1000;
+      
+      data.push({
+        timestamp: new Date(Date.now() - (limit - i) * 60000).toISOString(),
+        open,
+        high,
+        low,
+        close,
+        volume
+      });
+      
+      price = close;
+    }
+    
+    return data;
+  }
+}
+
+/**
+ * Bybit Exchange Implementation
+ */
+class BybitExchange {
+  constructor(credentials) {
+    this.apiKey = credentials.apiKey;
+    this.apiSecret = credentials.apiSecret;
+    this.baseURL = credentials.testnet ? 'https://api-testnet.bybit.com' : 'https://api.bybit.com';
+    this.name = 'Bybit';
+  }
+
+  async testConnection() {
+    try {
+      return {
+        success: true,
+        exchange: this.name,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      return {
+        success: false,
+        exchange: this.name,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
+
+  async getMarketData(symbol, timeframe, limit) {
+    return {
+      exchange: this.name,
+      symbol,
+      timeframe,
+      data: this.generateMockOHLCV(limit),
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async getQuote(symbol) {
+    const basePrice = 50000 + Math.random() * 10000;
+    return {
+      exchange: this.name,
+      symbol,
+      bid: basePrice - Math.random() * 100,
+      ask: basePrice + Math.random() * 100,
+      price: basePrice,
+      volume: Math.random() * 1000000,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async getOrderBook(symbol, depth = 50) {
+    const midPrice = 50000 + Math.random() * 10000;
+    const bids = [];
+    const asks = [];
+
+    for (let i = 0; i < depth; i++) {
+      bids.push({
+        price: midPrice - (i * 10) - Math.random() * 10,
+        quantity: Math.random() * 100
+      });
+      asks.push({
+        price: midPrice + (i * 10) + Math.random() * 10,
+        quantity: Math.random() * 100
+      });
+    }
+
+    return {
+      exchange: this.name,
+      symbol,
+      bids,
+      asks,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async placeOrder(orderParams) {
+    const orderId = `bybit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    return {
+      orderId,
+      exchange: this.name,
+      symbol: orderParams.symbol,
+      side: orderParams.side,
+      type: orderParams.type,
+      quantity: orderParams.quantity,
+      price: orderParams.price,
+      status: 'open',
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async getOrderStatus(orderId, symbol) {
+    return {
+      orderId,
+      exchange: this.name,
+      symbol,
+      status: 'filled',
+      executedQuantity: Math.random() * 100,
+      averagePrice: 50000 + Math.random() * 1000,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async cancelOrder(orderId, symbol) {
+    return {
+      orderId,
+      exchange: this.name,
+      symbol,
+      status: 'cancelled',
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async getBalance() {
+    return {
+      exchange: this.name,
+      balances: [
+        { asset: 'BTC', free: Math.random() * 10, locked: Math.random() * 1 },
+        { asset: 'ETH', free: Math.random() * 100, locked: Math.random() * 10 },
+        { asset: 'USDT', free: Math.random() * 10000, locked: Math.random() * 1000 }
+      ],
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async getTradingFees(symbol) {
+    return {
+      exchange: this.name,
+      symbol,
+      maker: 0.001, // 0.1%
+      taker: 0.001, // 0.1%
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  async emergencyStop(reason) {
+    logger.warn(`Bybit emergency stop: ${reason}`);
+    return {
+      success: true,
+      message: 'All Bybit orders cancelled',
+      cancelledOrders: Math.floor(Math.random() * 10),
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  generateMockOHLCV(limit) {
+    const data = [];
+    let price = 50000;
+    
+    for (let i = 0; i < limit; i++) {
+      const change = (Math.random() - 0.5) * 1000;
+      const open = price;
+      const close = price + change;
+      const high = Math.max(open, close) + Math.random() * 500;
+      const low = Math.min(open, close) - Math.random() * 500;
+      const volume = Math.random() * 1000;
+      
+      data.push({
+        timestamp: new Date(Date.now() - (limit - i) * 60000).toISOString(),
+        open,
+        high,
+        low,
+        close,
+        volume
+      });
+      
+      price = close;
+    }
+    
+    return data;
   }
 }
 

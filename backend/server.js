@@ -26,6 +26,8 @@ const dataRetentionRoutes = require('./routes/dataRetention');
 // Advanced Features routes
 const aiInsightsRoutes = require('./routes/aiInsights');
 const integrationsRoutes = require('./routes/integrations');
+// Exchange Integration Hub routes (TODO 3.1)
+const exchangeIntegrationRoutes = require('./routes/exchangeIntegration');
 // Next-Generation AI & ML routes (TODO 2.1)
 const nextGenAIRoutes = require('./routes/nextGenAI');
 // Advanced Analytics & Reporting routes (TODO 2.2)
@@ -258,6 +260,9 @@ const initializeMiddleware = () => {
   // Advanced Features routes
   app.use('/api/ai-insights', aiInsightsRoutes);
   app.use('/api/integrations', integrationsRoutes);
+  
+  // Exchange Integration Hub routes (TODO 3.1)
+  app.use('/api/exchange-integration', exchangeIntegrationRoutes);
   
   // Next-Generation AI & ML routes (TODO 2.1)
   app.use('/api/next-gen-ai', nextGenAIRoutes);
