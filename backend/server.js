@@ -38,6 +38,8 @@ const paperTradingRoutes = require('./routes/paperTrading');
 const highFrequencyTradingRoutes = require('./routes/highFrequencyTrading');
 // Intelligent Trading Assistants routes (TODO 5.1)
 const intelligentTradingAssistantsRoutes = require('./routes/intelligentTradingAssistants');
+// User Activity Tracking routes (TODO 1.2)
+const { router: userActivityRoutes } = require('./routes/userActivity');
 
 const { initializeDatabase } = require('./database/init');
 const { authenticateSocket } = require('./middleware/auth');
@@ -282,6 +284,9 @@ const initializeMiddleware = () => {
   
   // Intelligent Trading Assistants routes (TODO 5.1)
   app.use('/api/intelligent-trading-assistants', intelligentTradingAssistantsRoutes);
+
+  // User Activity Tracking routes (TODO 1.2)
+  app.use('/api/user-activity', userActivityRoutes);
   
   // Metrics routes (for monitoring)
   app.use('/api', metricsRoutes);

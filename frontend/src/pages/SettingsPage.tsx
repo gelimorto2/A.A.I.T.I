@@ -46,11 +46,13 @@ import {
   SettingsBrightness,
   Info,
   Palette,
+  Assessment,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
 import PreferencesManager from '../components/settings/PreferencesManager';
+import UserActivityAnalytics from '../components/analytics/UserActivityAnalytics';
 
 const SettingsPage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -370,6 +372,8 @@ const SettingsPage: React.FC = () => {
         <Tab icon={<Api />} label="Trading & APIs" />
         <Tab icon={<Security />} label="Security" />
         <Tab icon={<Storage />} label="System" />
+        <Tab icon={<Assessment />} label="Activity Analytics" />
+        <Tab icon={<Assessment />} label="Activity Analytics" />
       </Tabs>
 
       {/* General Settings Tab */}
@@ -1099,6 +1103,11 @@ const SettingsPage: React.FC = () => {
             </Card>
           </Grid>
         </Grid>
+      )}
+
+      {/* Activity Analytics Tab */}
+      {activeTab === 5 && (
+        <UserActivityAnalytics />
       )}
 
       {/* API Key Management Dialog */}
