@@ -208,12 +208,6 @@ Transform A.A.I.T.I into the world's most comprehensive, intelligent, and user-f
 ### 🟫 **Phase 5: AI-Powered Automation** *(Q1-Q2 2027)*
 
 #### 🤖 **5.1 Intelligent Trading Assistants**
-- [ ] **Natural Language Trading Interface**
-  - [ ] Voice commands for trade execution
-  - [ ] Conversational AI for strategy queries
-  - [ ] Natural language strategy creation
-  - [ ] AI-powered trade explanations
-  - **Effort**: 12-14 weeks | **Priority**: Low
 
 - [ ] **Autonomous Trading Agents**
   - [ ] Self-learning trading bots
