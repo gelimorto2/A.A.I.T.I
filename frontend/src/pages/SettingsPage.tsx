@@ -26,7 +26,6 @@ import {
   DialogContent,
   DialogActions,
   FormHelperText,
-  Tooltip,
 } from '@mui/material';
 import {
   Settings,
@@ -55,7 +54,7 @@ import PreferencesManager from '../components/settings/PreferencesManager';
 
 const SettingsPage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
-  const { themeMode, setThemeMode, systemPrefersDark, isDarkMode } = useCustomTheme();
+  const { themeMode, setThemeMode, systemPrefersDark } = useCustomTheme();
   
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);

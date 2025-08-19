@@ -72,6 +72,15 @@ export const RBACProvider: React.FC<RBACProviderProps> = ({ children }) => {
     }));
   };
 
+  const getUserPermissions = useCallback((): string[] => {
+    if (!user) return [];
+    
+    const roleDefinition = ROLE_DEFINITIONS[user.role];
+    if (!roleDefinition) return [];
+    
+    return roleDefinition.permissions;
+  }, [user]);
+
   const hasPermission = useCallback((permission: PermissionType): boolean => {
     if (!user) return false;
 
@@ -81,7 +90,7 @@ export const RBACProvider: React.FC<RBACProviderProps> = ({ children }) => {
     // Check for explicit permission
     const userPermissions = getUserPermissions();
     return userPermissions.includes(permission) || userPermissions.includes(PERMISSIONS.ALL);
-  }, [user]);
+  }, [user, getUserPermissions]);
 
   const hasRole = useCallback((role: UserRole): boolean => {
     return user?.role === role;
@@ -105,13 +114,6 @@ export const RBACProvider: React.FC<RBACProviderProps> = ({ children }) => {
     const permissionString = `${resource}.${action}`;
     return hasPermission(permissionString as PermissionType);
   }, [user, hasPermission]);
-
-  const getUserPermissions = useCallback((): string[] => {
-    if (!user) return [];
-
-    const roleDefinition = ROLE_DEFINITIONS[user.role];
-    return roleDefinition?.permissions || [];
-  }, [user]);
 
   const isAdmin = useCallback((): boolean => {
     return hasRole('admin');

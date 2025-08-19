@@ -33,7 +33,7 @@ const Navbar: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
   const { isConnected } = useSocket();
-  const { isDarkMode, themeMode, setThemeMode, systemPrefersDark } = useTheme();
+  const { themeMode, setThemeMode, systemPrefersDark } = useTheme();
   
   const [themeMenuAnchor, setThemeMenuAnchor] = useState<null | HTMLElement>(null);
 

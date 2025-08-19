@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -33,16 +33,12 @@ const EnhancedChartWidget: React.FC<EnhancedChartWidgetProps> = ({
 }) => {
   const theme = useTheme();
   const [viewMode, setViewMode] = useState<ViewMode>('chart');
-  const [selectedSymbol, setSelectedSymbol] = useState('BTC');
+  const [selectedSymbol] = useState('BTC');
   const [chartData, setChartData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // Generate sample chart data
-  useEffect(() => {
-    generateSampleData();
-  }, [selectedSymbol]);
-
-  const generateSampleData = () => {
+  const generateSampleData = useCallback(() => {
     setIsLoading(true);
     
     // Simulate API call to generate realistic candlestick data
@@ -82,7 +78,11 @@ const EnhancedChartWidget: React.FC<EnhancedChartWidgetProps> = ({
       setChartData(data);
       setIsLoading(false);
     }, 1000);
-  };
+  }, [selectedSymbol]);
+
+  useEffect(() => {
+    generateSampleData();
+  }, [generateSampleData]);
 
   const handleViewModeChange = (
     event: React.MouseEvent<HTMLElement>,
