@@ -1,4 +1,5 @@
 const { expect } = require('chai');
+const { describe, it, before, beforeEach, after } = require('mocha');
 const { getGitHubIssueReporter } = require('../utils/githubIssueReporter');
 const { getPerformanceMonitor } = require('../utils/performanceMonitor');
 
@@ -7,7 +8,9 @@ describe('Performance and GitHub Integration', () => {
   let performanceMonitor;
 
   before(() => {
-    githubReporter = getGitHubIssueReporter({
+    // Create a fresh instance for each test run
+    const { GitHubIssueReporter } = require('../utils/githubIssueReporter');
+    githubReporter = new GitHubIssueReporter({
       enabled: false, // Disable for tests
       githubToken: 'test_token',
       owner: 'test_owner',
@@ -18,6 +21,15 @@ describe('Performance and GitHub Integration', () => {
       reportToGitHub: false,
       alertOnThresholds: false
     });
+  });
+
+  beforeEach(() => {
+    // Reset state before each test
+    if (githubReporter) {
+      githubReporter.recentIssues.clear();
+      githubReporter.issueCount = 0;
+      githubReporter.lastHourReset = Date.now();
+    }
   });
 
   describe('GitHub Issue Reporter', () => {
@@ -72,19 +84,32 @@ describe('Performance and GitHub Integration', () => {
       expect(shouldCreate1).to.be.true;
       
       // Simulate multiple calls to test rate limiting
-      for (let i = 0; i < 10; i++) {
-        githubReporter.recordIssueCreation(testError, { number: i });
+      for (let i = 0; i < 3; i++) {
+        githubReporter.recordIssueCreation(testError, { number: i }, {});
       }
       
-      // Should still work as we're under the hourly limit
+      // Should still work as we're under the hourly limit (default is 5)
       const shouldCreate2 = githubReporter.checkRateLimit();
       expect(shouldCreate2).to.be.true;
+      
+      // Simulate hitting the rate limit
+      githubReporter.issueCount = githubReporter.config.maxIssuesPerHour;
+      const shouldCreate3 = githubReporter.checkRateLimit();
+      expect(shouldCreate3).to.be.false;
     });
 
     it('should check for duplicate issues', () => {
-      const testError1 = new Error('Duplicate test');
-      const testError2 = new Error('Duplicate test');
-      const testError3 = new Error('Different error');
+      // Create errors with identical properties but different creation locations
+      const createError = (message) => {
+        const error = new Error(message);
+        // Override stack trace to make it consistent for testing
+        error.stack = `Error: ${message}\n    at testFunction (/test/path:1:1)`;
+        return error;
+      };
+      
+      const testError1 = createError('Duplicate test');
+      const testError2 = createError('Duplicate test');
+      const testError3 = createError('Different error');
       
       const context = { script: 'test' };
       
@@ -93,7 +118,7 @@ describe('Performance and GitHub Integration', () => {
       expect(isDupe1).to.be.false;
       
       // Record the issue
-      githubReporter.recordIssueCreation(testError1, { number: 1 });
+      githubReporter.recordIssueCreation(testError1, { number: 1 }, context);
       
       // Same error should be duplicate
       const isDupe2 = githubReporter.isDuplicate(testError2, context);
