@@ -36,6 +36,8 @@ const advancedAnalyticsRoutes = require('./routes/advancedAnalytics');
 const paperTradingRoutes = require('./routes/paperTrading');
 // High-Frequency Trading routes (TODO 3.2)
 const highFrequencyTradingRoutes = require('./routes/highFrequencyTrading');
+// Intelligent Trading Assistants routes (TODO 5.1)
+const intelligentTradingAssistantsRoutes = require('./routes/intelligentTradingAssistants');
 
 const { initializeDatabase } = require('./database/init');
 const { authenticateSocket } = require('./middleware/auth');
@@ -277,6 +279,9 @@ const initializeMiddleware = () => {
   
   // High-Frequency Trading routes (TODO 3.2)
   app.use('/api/hft', highFrequencyTradingRoutes);
+  
+  // Intelligent Trading Assistants routes (TODO 5.1)
+  app.use('/api/intelligent-trading-assistants', intelligentTradingAssistantsRoutes);
   
   // Metrics routes (for monitoring)
   app.use('/api', metricsRoutes);

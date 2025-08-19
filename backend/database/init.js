@@ -4,6 +4,7 @@ const fs = require('fs');
 const logger = require('../utils/logger');
 const { getCredentials } = require('../utils/credentials');
 const { initializeAdvancedAnalytics } = require('./advancedAnalyticsSchema');
+const { initializeIntelligentTradingAssistants } = require('./intelligentTradingAssistantsSchema');
 
 // Get database path from configuration
 const getDbPath = () => {
@@ -477,11 +478,16 @@ const initializeDatabase = async () => {
           try {
             await initializeAdvancedAnalytics(database);
             logger.info('Advanced Analytics & Reporting tables initialized successfully');
+            
+            // Initialize intelligent trading assistants tables (TODO 5.1)
+            await initializeIntelligentTradingAssistants(database);
+            logger.info('Intelligent Trading Assistants tables initialized successfully');
+            
             resolve();
           } catch (analyticsError) {
-            logger.error('Error initializing Advanced Analytics tables:', analyticsError);
-            // Continue without advanced analytics tables
-            logger.warn('Continuing without Advanced Analytics tables - some features may not work');
+            logger.error('Error initializing Advanced Analytics or Intelligent Trading Assistants tables:', analyticsError);
+            // Continue without advanced features tables
+            logger.warn('Continuing without some advanced tables - some features may not work');
             resolve();
           }
         }

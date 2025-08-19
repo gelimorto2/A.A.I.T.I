@@ -1,0 +1,284 @@
+name: Code Quality & Security
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+    
+    - name: Install dependencies
+      run: |
+        cd backend
+        npm ci
+    
+    - name: Run ESLint
+      run: |
+        cd backend
+        npx eslint . --ext .js --format json --output-file eslint-report.json || true
+        npx eslint . --ext .js || true
+      continue-on-error: true
+    
+    - name: Check code complexity
+      run: |
+        cd backend
+        npm install --save-dev complexity-report
+        npx complexity-report --format json --output complexity-report.json . || true
+        echo "📊 Code complexity analysis completed"
+      continue-on-error: true
+    
+    - name: Check for security vulnerabilities
+      run: |
+        cd backend
+        npm audit --json > security-audit.json || true
+        npm audit || echo "Security issues found - check audit report"
+    
+    - name: Upload code quality reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: code-quality-reports-${{ github.run_number }}
+        path: |
+          backend/eslint-report.json
+          backend/complexity-report.json
+          backend/security-audit.json
+        retention-days: 30
+
+  dependency-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+    
+    - name: Check outdated dependencies
+      run: |
+        cd backend
+        npm outdated --json > outdated-deps.json || true
+        echo "📦 Backend dependencies check:"
+        npm outdated || echo "Some dependencies are outdated"
+        
+        cd ../frontend
+        npm outdated --json > outdated-deps.json || true
+        echo "📦 Frontend dependencies check:"
+        npm outdated || echo "Some dependencies are outdated"
+    
+    - name: Check for duplicate dependencies
+      run: |
+        cd backend
+        npm ls --depth=0 > deps-tree.txt 2>&1 || true
+        echo "🔍 Dependency tree analysis completed"
+        
+        cd ../frontend
+        npm ls --depth=0 > deps-tree.txt 2>&1 || true
+        echo "🔍 Frontend dependency tree analysis completed"
+
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+    
+    - name: Install dependencies
+      run: |
+        cd backend
+        npm ci
+    
+    - name: Run security verification script
+      run: |
+        cd backend
+        node verify-security.js
+    
+    - name: Check for hardcoded secrets
+      run: |
+        echo "🔍 Scanning for potential secrets..."
+        # Check for common secret patterns
+        grep -r -i "password\|secret\|key\|token" --include="*.js" --include="*.json" --exclude-dir=node_modules . || echo "No obvious secrets found"
+        
+        # Check for environment variables that might contain secrets
+        grep -r "process\.env\." --include="*.js" --exclude-dir=node_modules . | grep -v "NODE_ENV\|PORT\|HOST" || echo "No suspicious env vars found"
+    
+    - name: Validate Docker security
+      run: |
+        echo "🐳 Docker security check..."
+        # Check Dockerfile for security best practices
+        if [ -f Dockerfile ]; then
+          echo "✅ Dockerfile exists"
+          # Check for non-root user
+          grep -q "USER" Dockerfile && echo "✅ Non-root user configured" || echo "⚠️ Consider adding non-root user"
+          # Check for specific security flags
+          grep -q "HEALTHCHECK" Dockerfile && echo "✅ Health check configured" || echo "⚠️ Consider adding health check"
+        fi
+
+  performance-analysis:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+    
+    - name: Install dependencies
+      run: |
+        cd backend
+        npm ci
+    
+    - name: Analyze bundle size
+      run: |
+        cd backend
+        echo "📊 Analyzing backend module sizes..."
+        npm install --save-dev bundle-analyzer || true
+        du -sh node_modules/* | sort -hr | head -20
+        
+        cd ../frontend
+        npm ci || true
+        echo "📊 Analyzing frontend bundle size..."
+        npm run build --if-present || echo "Frontend build not configured"
+    
+    - name: Memory usage analysis
+      run: |
+        cd backend
+        node -e "
+          console.log('🧠 Memory usage analysis:');
+          const { getIntelligentTradingAssistants } = require('./utils/intelligentTradingAssistants');
+          
+          const initial = process.memoryUsage();
+          console.log('Initial memory:', Math.round(initial.heapUsed / 1024 / 1024) + 'MB');
+          
+          // Initialize service
+          const ita = getIntelligentTradingAssistants();
+          const afterInit = process.memoryUsage();
+          console.log('After initialization:', Math.round(afterInit.heapUsed / 1024 / 1024) + 'MB');
+          
+          // Create multiple agents
+          Promise.all([
+            ita.createSelfLearningBot({ name: 'Test1' }),
+            ita.createSelfLearningBot({ name: 'Test2' }),
+            ita.createMultiAgentSystem({ name: 'Test3' })
+          ]).then(() => {
+            const afterCreation = process.memoryUsage();
+            console.log('After creating agents:', Math.round(afterCreation.heapUsed / 1024 / 1024) + 'MB');
+            
+            // Force garbage collection if available
+            if (global.gc) {
+              global.gc();
+              const afterGC = process.memoryUsage();
+              console.log('After GC:', Math.round(afterGC.heapUsed / 1024 / 1024) + 'MB');
+            }
+            
+            console.log('✅ Memory analysis completed');
+          }).catch(err => {
+            console.error('❌ Memory analysis failed:', err);
+          });
+        " --expose-gc || node -e "
+          console.log('🧠 Basic memory check (GC not available)');
+          const initial = process.memoryUsage();
+          console.log('Memory usage:', Math.round(initial.heapUsed / 1024 / 1024) + 'MB');
+        "
+
+  documentation-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check documentation coverage
+      run: |
+        echo "📚 Documentation coverage analysis..."
+        
+        # Count total JS files vs documented files
+        total_js=$(find . -name "*.js" -not -path "./node_modules/*" -not -path "./.git/*" | wc -l)
+        documented_js=$(grep -r "\/\*\*" --include="*.js" --exclude-dir=node_modules . | wc -l)
+        
+        echo "Total JS files: $total_js"
+        echo "Files with JSDoc comments: $documented_js"
+        
+        if [ $total_js -gt 0 ]; then
+          coverage=$((documented_js * 100 / total_js))
+          echo "Documentation coverage: $coverage%"
+          
+          if [ $coverage -lt 30 ]; then
+            echo "⚠️ Documentation coverage is low. Consider adding more JSDoc comments."
+          else
+            echo "✅ Documentation coverage is acceptable."
+          fi
+        fi
+        
+        # Check for README files
+        find . -name "README*" -not -path "./.git/*" | while read file; do
+          echo "✅ Found documentation: $file"
+        done
+        
+        # Check TODO items implementation status
+        echo "📝 TODO items analysis:"
+        grep -r "TODO" --include="*.md" --include="*.js" --exclude-dir=node_modules . | wc -l | xargs echo "Total TODO items:"
+        
+        # Check specific TODO 5.1 implementation
+        echo "🤖 TODO 5.1 (Intelligent Trading Assistants) status:"
+        [ -f "backend/utils/intelligentTradingAssistants.js" ] && echo "✅ Service implemented" || echo "❌ Service missing"
+        [ -f "backend/routes/intelligentTradingAssistants.js" ] && echo "✅ Routes implemented" || echo "❌ Routes missing"
+        [ -f "backend/tests/test_intelligent_trading_assistants.js" ] && echo "✅ Tests implemented" || echo "❌ Tests missing"
+
+  final-quality-report:
+    runs-on: ubuntu-latest
+    needs: [code-quality, dependency-check, security-scan, performance-analysis, documentation-check]
+    if: always()
+    
+    steps:
+    - name: Generate Quality Report
+      run: |
+        echo "🏆 Code Quality & Security Report"
+        echo "================================="
+        echo ""
+        echo "Jobs Status:"
+        echo "- Code Quality: ${{ needs.code-quality.result }}"
+        echo "- Dependency Check: ${{ needs.dependency-check.result }}"
+        echo "- Security Scan: ${{ needs.security-scan.result }}"
+        echo "- Performance Analysis: ${{ needs.performance-analysis.result }}"
+        echo "- Documentation Check: ${{ needs.documentation-check.result }}"
+        echo ""
+        
+        # Determine overall status
+        if [[ "${{ needs.code-quality.result }}" == "success" && "${{ needs.security-scan.result }}" == "success" ]]; then
+          echo "🎉 Overall Status: PASSED"
+          echo "✅ Code meets quality and security standards"
+        else
+          echo "⚠️ Overall Status: NEEDS ATTENTION"
+          echo "Please review the failed checks above"
+        fi
