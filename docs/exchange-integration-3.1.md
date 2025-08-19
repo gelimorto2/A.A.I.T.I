@@ -283,12 +283,6 @@ GET /api/exchange-integration/status
 
 ## 🧪 Testing and Validation
 
-### Validation Script
-```bash
-# Run exchange integration validation
-node validate-todo-3.1.js
-```
-
 ### Test Coverage
 - **Exchange Abstraction**: Enhanced implementation validation
 - **New Exchange Classes**: Kraken, KuCoin, Bybit implementation tests
