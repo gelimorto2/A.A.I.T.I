@@ -80,7 +80,7 @@ class GitHubIssueReporter {
       const result = await this.createGitHubIssue(issue);
       
       if (result) {
-        this.recordIssueCreation(error, result);
+        this.recordIssueCreation(error, result, context);
         logger.info('GitHub issue created for error', {
           issueNumber: result.number,
           issueUrl: result.html_url,
@@ -350,8 +350,8 @@ class GitHubIssueReporter {
   /**
    * Record issue creation
    */
-  recordIssueCreation(error, issue) {
-    const key = this.generateIssueKey(error);
+  recordIssueCreation(error, issue, context = {}) {
+    const key = this.generateIssueKey(error, context);
     this.recentIssues.set(key, Date.now());
     this.issueCount++;
 
