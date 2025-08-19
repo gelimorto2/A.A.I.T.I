@@ -67,13 +67,20 @@ describe('Performance and GitHub Integration', () => {
     it('should check rate limits correctly', () => {
       const testError = new Error('Rate limit test');
       
+      // Reset the rate limiter to ensure clean state
+      githubReporter.issueCount = 0;
+      githubReporter.lastHourReset = Date.now();
+      
       // First call should pass
       const shouldCreate1 = githubReporter.checkRateLimit();
       expect(shouldCreate1).to.be.true;
       
-      // Simulate multiple calls to test rate limiting
-      for (let i = 0; i < 10; i++) {
-        githubReporter.recordIssueCreation(testError, { number: i });
+      // Simulate multiple calls but stay under the limit
+      const maxIssues = githubReporter.config.maxIssuesPerHour || 50;
+      const testCount = Math.min(5, maxIssues - 1); // Stay well under the limit
+      
+      for (let i = 0; i < testCount; i++) {
+        githubReporter.recordIssueCreation(testError, { number: i }, {});
       }
       
       // Should still work as we're under the hourly limit
@@ -82,18 +89,23 @@ describe('Performance and GitHub Integration', () => {
     });
 
     it('should check for duplicate issues', () => {
-      const testError1 = new Error('Duplicate test');
-      const testError2 = new Error('Duplicate test');
+      // Create errors in a way that they have the same stack trace
+      const createTestError = () => new Error('Duplicate test');
+      const testError1 = createTestError();
+      const testError2 = createTestError();
       const testError3 = new Error('Different error');
       
       const context = { script: 'test' };
+      
+      // Clear any existing duplicates first
+      githubReporter.recentIssues.clear();
       
       // First occurrence should not be duplicate
       const isDupe1 = githubReporter.isDuplicate(testError1, context);
       expect(isDupe1).to.be.false;
       
       // Record the issue
-      githubReporter.recordIssueCreation(testError1, { number: 1 });
+      githubReporter.recordIssueCreation(testError1, { number: 1 }, context);
       
       // Same error should be duplicate
       const isDupe2 = githubReporter.isDuplicate(testError2, context);
