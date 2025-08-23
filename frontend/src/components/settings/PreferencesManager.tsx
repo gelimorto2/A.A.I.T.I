@@ -19,25 +19,17 @@ import {
   FormControl,
   InputLabel,
   Grid,
-  Chip,
-  Divider,
   TextField,
-  IconButton,
   Tooltip,
 } from '@mui/material';
 import {
   Download,
   Upload,
   Refresh,
-  Security,
   Speed,
   Notifications,
   Palette,
-  Language,
   TrendingUp,
-  Info,
-  Warning,
-  CheckCircle,
 } from '@mui/icons-material';
 import { useUserPreferences } from '../../contexts/UserPreferencesContext';
 import { useTheme } from '../../contexts/ThemeContext';

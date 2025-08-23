@@ -80,7 +80,6 @@ const TradingChart: React.FC<TradingChartProps> = ({
   const theme = useTheme();
   const [chartType, setChartType] = useState<ChartType>('candlestick');
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('1h');
-  const [indicators, setIndicators] = useState<string[]>(['sma20', 'ema12']);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Simulated real-time data updates

@@ -4,7 +4,6 @@ import {
   Card,
   CardContent,
   Typography,
-  Grid,
   Tooltip,
   IconButton,
   ToggleButton,
@@ -47,66 +46,64 @@ const PortfolioHeatMap: React.FC<PortfolioHeatMapProps> = ({
   const [data, setData] = useState<HeatMapData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Sample data - in real implementation, this would come from API
-  const sampleData: HeatMapData[] = [
-    {
-      symbol: 'BTC',
-      price: 65432.10,
-      change24h: 1234.56,
-      changePercent24h: 1.92,
-      volume24h: 28000000000,
-      marketCap: 1280000000000,
-      allocation: 35.2,
-    },
-    {
-      symbol: 'ETH',
-      price: 3421.75,
-      change24h: -89.33,
-      changePercent24h: -2.55,
-      volume24h: 12000000000,
-      marketCap: 411000000000,
-      allocation: 28.7,
-    },
-    {
-      symbol: 'ADA',
-      price: 0.8234,
-      change24h: 0.0523,
-      changePercent24h: 6.78,
-      volume24h: 890000000,
-      marketCap: 28000000000,
-      allocation: 15.1,
-    },
-    {
-      symbol: 'DOT',
-      price: 12.45,
-      change24h: 0.89,
-      changePercent24h: 7.69,
-      volume24h: 456000000,
-      marketCap: 14500000000,
-      allocation: 10.3,
-    },
-    {
-      symbol: 'LINK',
-      price: 28.76,
-      change24h: -1.23,
-      changePercent24h: -4.11,
-      volume24h: 678000000,
-      marketCap: 16200000000,
-      allocation: 6.9,
-    },
-    {
-      symbol: 'UNI',
-      price: 8.92,
-      change24h: 0.34,
-      changePercent24h: 3.97,
-      volume24h: 234000000,
-      marketCap: 5400000000,
-      allocation: 3.8,
-    },
-  ];
-
   useEffect(() => {
-    // Initialize data
+    // Initialize data - sample data that would come from API
+    const sampleData: HeatMapData[] = [
+      {
+        symbol: 'BTC',
+        price: 65432.10,
+        change24h: 1234.56,
+        changePercent24h: 1.92,
+        volume24h: 28000000000,
+        marketCap: 1280000000000,
+        allocation: 35.2,
+      },
+      {
+        symbol: 'ETH',
+        price: 3421.75,
+        change24h: -89.33,
+        changePercent24h: -2.55,
+        volume24h: 12000000000,
+        marketCap: 411000000000,
+        allocation: 28.7,
+      },
+      {
+        symbol: 'ADA',
+        price: 0.8234,
+        change24h: 0.0523,
+        changePercent24h: 6.78,
+        volume24h: 890000000,
+        marketCap: 28000000000,
+        allocation: 15.1,
+      },
+      {
+        symbol: 'DOT',
+        price: 12.45,
+        change24h: 0.89,
+        changePercent24h: 7.69,
+        volume24h: 456000000,
+        marketCap: 14500000000,
+        allocation: 10.3,
+      },
+      {
+        symbol: 'LINK',
+        price: 28.76,
+        change24h: -1.23,
+        changePercent24h: -4.11,
+        volume24h: 678000000,
+        marketCap: 16200000000,
+        allocation: 6.9,
+      },
+      {
+        symbol: 'UNI',
+        price: 8.92,
+        change24h: 0.34,
+        changePercent24h: 3.97,
+        volume24h: 234000000,
+        marketCap: 5400000000,
+        allocation: 3.8,
+      },
+    ];
     setData(sampleData);
   }, []);
 

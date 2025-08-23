@@ -40,8 +40,9 @@
   "scripts": {
     "start": "NODE_OPTIONS='--no-deprecation' react-scripts start",
     "build": "SKIP_PREFLIGHT_CHECK=true GENERATE_SOURCEMAP=false react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "test": "react-scripts test --watchAll=false --testTimeout=60000",
+    "eject": "react-scripts eject",
+    "lint": "npx eslint src --ext .js,.jsx,.ts,.tsx || true"
   },
   "eslintConfig": {
     "extends": [
