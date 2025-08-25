@@ -50,6 +50,137 @@ print_step() {
     echo -e "${PURPLE}🔧 $1${NC}"
 }
 
+# Check if Node.js and npm are installed
+check_nodejs() {
+    print_step "Checking Node.js installation..."
+    
+    if ! command -v node &> /dev/null; then
+        print_warning "Node.js is not installed. Installing Node.js..."
+        
+        # Install Node.js based on platform
+        if command -v apt &> /dev/null; then
+            # Ubuntu/Debian
+            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+        elif command -v yum &> /dev/null; then
+            # RHEL/CentOS
+            curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+            sudo yum install -y nodejs npm
+        elif command -v brew &> /dev/null; then
+            # macOS with Homebrew
+            brew install node
+        else
+            print_error "Cannot automatically install Node.js. Please install manually:"
+            echo "Visit: https://nodejs.org/"
+            return 1
+        fi
+    fi
+    
+    # Check Node.js version
+    NODE_VERSION=$(node --version 2>/dev/null | sed 's/v//')
+    if [[ $(echo "$NODE_VERSION 18.0.0" | tr " " "\n" | sort -V | head -n1) == "18.0.0" ]]; then
+        print_success "Node.js $NODE_VERSION is installed"
+    else
+        print_warning "Node.js version $NODE_VERSION detected. Version 18+ recommended."
+    fi
+    
+    # Check npm
+    if ! command -v npm &> /dev/null; then
+        print_error "npm is not installed"
+        return 1
+    fi
+    
+    NPM_VERSION=$(npm --version 2>/dev/null)
+    print_success "npm $NPM_VERSION is available"
+    return 0
+}
+
+# Install npm dependencies for all components
+install_npm_dependencies() {
+    print_step "Installing npm dependencies..."
+    
+    # Root dependencies
+    if [ -f "package.json" ]; then
+        print_info "📦 Installing root dependencies..."
+        if ! npm install --production; then
+            print_error "Failed to install root dependencies"
+            return 1
+        fi
+        print_success "Root dependencies installed"
+    fi
+    
+    # Frontend dependencies
+    if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
+        print_info "📦 Installing frontend dependencies..."
+        cd frontend
+        if ! npm install; then
+            print_error "Failed to install frontend dependencies"
+            cd ..
+            return 1
+        fi
+        cd ..
+        print_success "Frontend dependencies installed"
+    fi
+    
+    # Backend dependencies
+    if [ -d "backend" ] && [ -f "backend/package.json" ]; then
+        print_info "📦 Installing backend dependencies..."
+        cd backend
+        if ! npm install --production; then
+            print_error "Failed to install backend dependencies"
+            cd ..
+            return 1
+        fi
+        cd ..
+        print_success "Backend dependencies installed"
+    fi
+    
+    # Microservices dependencies
+    if [ -d "microservices" ]; then
+        # API Gateway
+        if [ -f "microservices/api-gateway/package.json" ]; then
+            print_info "📦 Installing API Gateway dependencies..."
+            cd microservices/api-gateway
+            if ! npm install --production; then
+                print_error "Failed to install API Gateway dependencies"
+                cd ../..
+                return 1
+            fi
+            cd ../..
+            print_success "API Gateway dependencies installed"
+        fi
+        
+        # Auth Service
+        if [ -f "microservices/auth-service/package.json" ]; then
+            print_info "📦 Installing Auth Service dependencies..."
+            cd microservices/auth-service
+            if ! npm install --production; then
+                print_error "Failed to install Auth Service dependencies"
+                cd ../..
+                return 1
+            fi
+            cd ../..
+            print_success "Auth Service dependencies installed"
+        fi
+        
+        # Shared utilities
+        if [ -f "microservices/shared/package.json" ]; then
+            print_info "📦 Installing Shared utilities dependencies..."
+            cd microservices/shared
+            if ! npm install --production; then
+                print_error "Failed to install Shared utilities dependencies"
+                cd ../..
+                return 1
+            fi
+            cd ../..
+            print_success "Shared utilities dependencies installed"
+        fi
+    fi
+    
+    print_success "All npm dependencies installed successfully"
+    return 0
+}
+
 # Check if Docker is installed and running
 check_docker() {
     print_step "Checking Docker installation..."
@@ -105,6 +236,7 @@ install_aaiti() {
     echo ""
     
     # Ask for confirmation
+    echo ""
     echo -ne "${CYAN}Continue with installation? (y/N): ${NC}"
     read -r confirm
     
@@ -113,7 +245,18 @@ install_aaiti() {
         exit 0
     fi
     
-    # Build and start
+    # Automatically install npm dependencies (non-blocking)
+    echo ""
+    print_step "Preparing development dependencies (optional)..."
+    if check_nodejs; then
+        if ! install_npm_dependencies; then
+            print_warning "npm dependency installation failed. Continuing with Docker installation..."
+        fi
+    else
+        print_info "Skipping npm dependency installation (Node.js not available)."
+    fi
+    
+    # Build image(s)
     print_step "Building Docker containers (this may take a few minutes)..."
     echo -ne "${YELLOW}Building: "
     for _ in {1..20}; do
@@ -127,29 +270,37 @@ install_aaiti() {
         print_error "Please check Docker is running and try again"
         exit 1
     fi
-    
-    print_step "Starting A.A.I.T.I services..."
-    echo -ne "${YELLOW}Starting: "
-    for _ in {1..15}; do
-        echo -ne "▓"
-        sleep 0.1
-    done
-    echo -e " ${GREEN}✓${NC}"
-    
-    if ! $COMPOSE_CMD up -d aaiti; then
-        print_error "Failed to start services"
-        print_error "Please check the logs with: $COMPOSE_CMD logs aaiti"
-        exit 1
+
+    # Offer to start now
+    echo ""
+    echo -ne "${CYAN}Start A.A.I.T.I services now? (Y/n): ${NC}"
+    read -r start_confirm
+    if [[ -z "$start_confirm" || $start_confirm =~ ^[Yy]$ ]]; then
+        print_step "Starting A.A.I.T.I services..."
+        echo -ne "${YELLOW}Starting: "
+        for _ in {1..15}; do
+            echo -ne "▓"
+            sleep 0.1
+        done
+        echo -e " ${GREEN}✓${NC}"
+
+        if ! $COMPOSE_CMD up -d aaiti; then
+            print_error "Failed to start services"
+            print_error "Please check the logs with: $COMPOSE_CMD logs aaiti"
+            exit 1
+        fi
+
+        # Wait for services
+        print_step "Waiting for services to initialize..."
+        echo -ne "${CYAN}Initializing"
+        for _ in {1..30}; do
+            echo -ne "."
+            sleep 0.3
+        done
+        echo -e " ${GREEN}Ready!${NC}"
+    else
+        print_info "You can start later with: ./install start"
     fi
-    
-    # Wait for services
-    print_step "Waiting for services to initialize..."
-    echo -ne "${CYAN}Initializing"
-    for _ in {1..30}; do
-        echo -ne "."
-        sleep 0.3
-    done
-    echo -e " ${GREEN}Ready!${NC}"
     
     # Success message
     echo ""
@@ -160,38 +311,140 @@ install_aaiti() {
     echo -e "${WHITE}📊 A.A.I.T.I Dashboard:${NC} ${BLUE}http://localhost:5000${NC}"
     echo ""
     echo -e "${WHITE}Management Commands:${NC}"
-    echo -e "${CYAN}📋 View logs:${NC} $COMPOSE_CMD logs -f aaiti"
-    echo -e "${CYAN}📊 Check status:${NC} $COMPOSE_CMD ps"
-    echo -e "${CYAN}⏹️  Stop:${NC} $COMPOSE_CMD down"
-    echo -e "${CYAN}🔄 Restart:${NC} $COMPOSE_CMD restart aaiti"
+    echo -e "${CYAN}▶️  Start:${NC} ./install start"
+    echo -e "${CYAN}📊 Check status:${NC} ./install status"
+    echo -e "${CYAN}📋 View logs:${NC} ./install logs"
+    echo -e "${CYAN}⏹️  Stop:${NC} ./install stop"
+    echo -e "${CYAN}🔄 Restart:${NC} ./install restart"
+    echo ""
+    
+    echo -e "${WHITE}Development Commands:${NC}"
+    echo -e "${CYAN}🛠️  Frontend dev:${NC} cd frontend && npm start"
+    echo -e "${CYAN}🛠️  Backend dev:${NC} cd backend && npm run dev"
+    echo -e "${CYAN}🛠️  API Gateway:${NC} cd microservices/api-gateway && npm run dev"
+    echo -e "${CYAN}🛠️  Auth Service:${NC} cd microservices/auth-service && npm run dev"
     echo ""
 }
 
-# Check status of existing installation
-check_status() {
-    print_step "Checking A.A.I.T.I status..."
+# Install only npm dependencies
+install_dependencies_only() {
+    print_step "Installing npm dependencies only..."
     
+    if ! check_nodejs; then
+        print_error "Node.js setup failed. Please install Node.js manually."
+        echo ""
+        echo "Visit: https://nodejs.org/"
+        exit 1
+    fi
+    
+    if ! install_npm_dependencies; then
+        print_error "Failed to install npm dependencies"
+        exit 1
+    fi
+    
+    print_success "All npm dependencies installed successfully!"
+    echo ""
+    echo -e "${WHITE}Next steps:${NC}"
+    echo -e "${CYAN}🛠️  Frontend dev:${NC} cd frontend && npm start"
+    echo -e "${CYAN}🛠️  Backend dev:${NC} cd backend && npm run dev"
+    echo -e "${CYAN}🛠️  API Gateway:${NC} cd microservices/api-gateway && npm run dev"
+    echo -e "${CYAN}🛠️  Auth Service:${NC} cd microservices/auth-service && npm run dev"
+    echo -e "${CYAN}🐳 Full Docker setup:${NC} ./install"
+    echo ""
+}
+
+# Start A.A.I.T.I
+start_aaiti() {
+    print_step "Starting A.A.I.T.I services..."
+
     if ! check_docker; then
         print_error "Docker is not available"
         return 1
     fi
-    
-    # Check if containers are running
-    if $COMPOSE_CMD ps aaiti | grep -q "Up"; then
-        print_success "A.A.I.T.I is running"
+
+    # Build if needed and start
+    if ! $COMPOSE_CMD up -d --build aaiti; then
+        print_error "Failed to start services"
+        print_error "Please check the logs with: $COMPOSE_CMD logs aaiti"
+        return 1
+    fi
+
+    # Wait briefly and show status
+    sleep 2
+    check_status
+}
+
+# Restart A.A.I.T.I
+restart_aaiti() {
+    print_step "Restarting A.A.I.T.I..."
+
+    if ! check_docker; then
+        print_error "Docker is not available"
+        return 1
+    fi
+
+    if $COMPOSE_CMD restart aaiti; then
+        print_success "A.A.I.T.I restarted"
+        sleep 2
+        check_status
+    else
+        print_error "Failed to restart A.A.I.T.I"
+    fi
+}
+
+# Check status of existing installation (robust)
+check_status() {
+    print_step "Checking A.A.I.T.I status..."
+
+    if ! check_docker; then
+        print_error "Docker is not available"
+        return 1
+    fi
+
+    # Get container ID (may be empty)
+    CONTAINER_ID=$($COMPOSE_CMD ps -q aaiti 2>/dev/null || true)
+
+    if [ -z "$CONTAINER_ID" ]; then
+        print_warning "A.A.I.T.I container not created or not running"
+        echo "Use: ./install start"
+        return 0
+    fi
+
+    # Read runtime status and health
+    STATUS=$(docker inspect -f '{{.State.Status}}' "$CONTAINER_ID" 2>/dev/null || echo "unknown")
+    HEALTH=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$CONTAINER_ID" 2>/dev/null || echo "unknown")
+
+    case "$STATUS" in
+        running)
+            print_success "A.A.I.T.I is running (health: $HEALTH)"
+            ;;
+        exited|dead)
+            print_error "A.A.I.T.I is stopped (status: $STATUS)"
+            echo "Use: ./install start"
+            ;;
+        created|restarting|paused)
+            print_warning "A.A.I.T.I status: $STATUS (health: $HEALTH)"
+            ;;
+        *)
+            print_warning "A.A.I.T.I status: $STATUS"
+            ;;
+    esac
+
+    # Show dashboard URL when running
+    if [ "$STATUS" = "running" ]; then
         echo -e "${BLUE}📊 Dashboard: http://localhost:5000${NC}"
-        
-        # Try health check
+        # Quick HTTP health probe (non-fatal)
         if command -v curl &> /dev/null; then
-            if curl -f http://localhost:5000/api/health &> /dev/null; then
-                print_success "Backend is healthy"
+            if curl -fsS http://localhost:5000/api/health >/dev/null 2>&1; then
+                print_success "HTTP health endpoint is responding"
             else
-                print_warning "Backend may still be starting up"
+                print_warning "HTTP health endpoint not responding yet"
             fi
         fi
     else
-        print_warning "A.A.I.T.I is not running"
-        echo "Use option 1 to start installation"
+        # Show last logs to help diagnose
+        print_info "Recent logs (last 50 lines):"
+        $COMPOSE_CMD logs --tail 50 aaiti || true
     fi
 }
 
@@ -236,14 +489,24 @@ show_help() {
     echo "  • 4GB RAM (recommended)"
     echo "  • 2GB disk space"
     echo "  • Internet connection"
+    echo "  • Node.js 18+ and npm (for development mode)"
     echo ""
     echo "Supported Platforms:"
     echo "  • Linux (all distributions with Docker support)"
     echo "  • macOS with Docker Desktop"
     echo ""
+    echo "Installation Types:"
+    echo "  • Docker-only: Production-ready containerized deployment"
+    echo "  • Full: Docker + npm dependencies for development"
+    echo ""
     echo "Usage:"
-    echo "  ./install           # Interactive menu"
-    echo "  ./install help      # Show this help"
+    echo "  ./install             # Interactive menu"
+    echo "  ./install help        # Show this help"
+    echo "  ./install start       # Build (if needed) and start services"
+    echo "  ./install restart     # Restart services"
+    echo "  ./install stop        # Stop services"
+    echo "  ./install status      # Show status"
+    echo "  ./install logs        # Tail logs"
     echo ""
 }
 
@@ -254,15 +517,16 @@ main_menu() {
         echo -e "${CYAN}🔧 ${PROJECT_NAME} Interactive Installer${NC}"
         echo -e "${CYAN}===================================${NC}"
         echo ""
-        echo "1) 🚀 Install ${PROJECT_NAME} (Production Ready)"
-        echo "2) 📊 Check Status"
-        echo "3) ⏹️  Stop ${PROJECT_NAME}"
-        echo "4) 📋 View Logs"
-        echo "5) ❓ Help"
-        echo "6) 🚪 Exit"
+        echo "1) Install ${PROJECT_NAME} (Production Ready)"
+        echo "2) Start ${PROJECT_NAME}"
+        echo "3) Check Status"
+        echo "4) Stop ${PROJECT_NAME}"
+        echo "5) View Logs"
+    echo "6) Help"
+    echo "7) Exit"
         echo ""
         
-        echo -ne "${CYAN}Select an option (1-6): ${NC}"
+    echo -ne "${CYAN}Select an option (1-7): ${NC}"
         read -r choice
         
         case $choice in
@@ -270,23 +534,26 @@ main_menu() {
                 install_aaiti
                 ;;
             2)
-                check_status
+                start_aaiti
                 ;;
             3)
-                stop_aaiti
+                check_status
                 ;;
             4)
-                show_logs
+                stop_aaiti
                 ;;
             5)
-                show_help
+                show_logs
                 ;;
             6)
+                show_help
+                ;;
+            7)
                 print_info "Goodbye! 👋"
                 exit 0
                 ;;
             *)
-                print_error "Invalid selection. Please choose 1-6."
+                print_error "Invalid selection. Please choose 1-7."
                 sleep 2
                 ;;
         esac
@@ -304,6 +571,12 @@ case "${1:-}" in
         ;;
     "status"|"check")
         check_status
+        ;;
+    "start")
+        start_aaiti
+        ;;
+    "restart")
+        restart_aaiti
         ;;
     "stop")
         stop_aaiti

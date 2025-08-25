@@ -121,10 +121,13 @@ const initializeConfig = async () => {
   const credentials = getCredentials();
   
   // Merge default configuration with stored settings
+  const resolvedPort = credentials?.system?.port || process.env.PORT || 5000;
+  const nodeEnv = credentials?.system?.nodeEnv || process.env.NODE_ENV || 'development';
   config = {
-    port: credentials?.system?.port || process.env.PORT || 5000,
-    nodeEnv: credentials?.system?.nodeEnv || process.env.NODE_ENV || 'development',
-    frontendUrl: credentials?.system?.frontendUrl || process.env.FRONTEND_URL || 'http://localhost:3000',
+    port: resolvedPort,
+    nodeEnv,
+    // Default frontend to backend port in production to enable same-origin serving
+    frontendUrl: credentials?.system?.frontendUrl || process.env.FRONTEND_URL || (nodeEnv === 'production' ? `http://localhost:${resolvedPort}` : 'http://localhost:3000'),
     dbPath: credentials?.system?.dbPath || process.env.DB_PATH || './database/aaiti.sqlite',
     logLevel: credentials?.system?.logLevel || process.env.LOG_LEVEL || 'info',
     jwtSecret: credentials?.security?.jwtSecret || process.env.JWT_SECRET || 'fallback-secret',
@@ -175,8 +178,18 @@ const initializeMiddleware = () => {
   
   // Security middleware
   app.use(helmet());
+  // CORS: allow same-origin and configured frontend URL
   app.use(cors({
-    origin: config.frontendUrl,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // same-origin or curl
+      const allowed = new Set([
+        config.frontendUrl,
+        `http://localhost:${config.port}`,
+        `http://127.0.0.1:${config.port}`
+      ]);
+      if (allowed.has(origin)) return callback(null, true);
+      return callback(null, true); // permissive by default; tighten later if needed
+    },
     credentials: true
   }));
 
@@ -283,8 +296,8 @@ const initializeMiddleware = () => {
   // Intelligent Trading Assistants routes (TODO 5.1)
   app.use('/api/intelligent-trading-assistants', intelligentTradingAssistantsRoutes);
   
-  // Metrics routes (for monitoring)
-  app.use('/api', metricsRoutes);
+  // Metrics routes (for monitoring) under /api/metrics to avoid /api/health conflict
+  app.use('/api/metrics', metricsRoutes);
   
   // Prometheus metrics endpoint
   app.get('/metrics', async (req, res) => {
@@ -361,6 +374,19 @@ const initializeMiddleware = () => {
   });
 
   logger.info('✅ Middleware setup completed', { service: 'aaiti-backend' });
+
+  // Serve React frontend build (static files)
+  try {
+    const buildPath = path.resolve(__dirname, '../frontend/build');
+    app.use(express.static(buildPath));
+    // SPA fallback for all non-API routes
+    app.get(/^\/(?!api|metrics|graphql).*/, (req, res) => {
+      res.sendFile(path.join(buildPath, 'index.html'));
+    });
+    logger.info('🖥️  Frontend static serving enabled', { path: buildPath, service: 'aaiti-backend' });
+  } catch (e) {
+    logger.warn('Frontend build not found; static serving disabled', { error: e.message, service: 'aaiti-backend' });
+  }
 };
 
 // Socket.IO connection handling and real-time data

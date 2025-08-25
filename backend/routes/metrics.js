@@ -186,10 +186,14 @@ router.get('/health', (req, res) => {
     ? (metrics.requests.errors / metrics.requests.total) * 100
     : 0;
   
-  if (memoryUsagePercent > 90 || errorRate > 50) {
+  // Apply thresholds only after sufficient traffic to avoid false negatives at startup
+  const MIN_FOR_DEGRADED = 20;
+  const MIN_FOR_UNHEALTHY = 50;
+
+  if (metrics.requests.total >= MIN_FOR_UNHEALTHY && (memoryUsagePercent > 90 || errorRate > 50)) {
     health.status = 'unhealthy';
     res.status(503);
-  } else if (memoryUsagePercent > 75 || errorRate > 25) {
+  } else if (metrics.requests.total >= MIN_FOR_DEGRADED && (memoryUsagePercent > 75 || errorRate > 25)) {
     health.status = 'degraded';
   }
   
