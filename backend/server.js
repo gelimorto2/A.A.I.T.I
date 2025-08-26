@@ -17,6 +17,7 @@ const userRoutes = require('./routes/users');
 const mlRoutes = require('./routes/ml');
 const notificationRoutes = require('./routes/notifications');
 const functionsRoutes = require('./routes/functions');
+const setupRoutes = require('./routes/setup');
 const { router: metricsRoutes, collectRequestMetrics } = require('./routes/metrics');
 // Security & Compliance routes
 const apiKeysRoutes = require('./routes/apiKeys');
@@ -208,11 +209,13 @@ const initializeMiddleware = () => {
       if (!origin) return callback(null, true); // same-origin or curl
       const allowed = new Set([
         config.frontendUrl,
+        'http://localhost:3000', // React dev server
+        'http://127.0.0.1:3000', // React dev server alternative
         `http://localhost:${config.port}`,
         `http://127.0.0.1:${config.port}`
       ]);
       if (allowed.has(origin)) return callback(null, true);
-      return callback(null, true); // permissive by default; tighten later if needed
+      return callback(new Error(`Origin ${origin} not allowed by CORS policy`), false);
     },
     credentials: true
   }));
@@ -278,6 +281,7 @@ const initializeMiddleware = () => {
   logger.info('🛣️ Registering API routes...', { service: 'aaiti-backend' });
 
   // Routes
+  app.use('/api/setup', setupRoutes);
   app.use('/api/auth', authRoutes);
   app.use('/api/bots', botRoutes);
   app.use('/api/trading', tradingRoutes);

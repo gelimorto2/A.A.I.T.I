@@ -39,7 +39,7 @@ import EnhancedChartWidget from './EnhancedChartWidget';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
-const ResponsiveGridLayout = WidthProvider(Responsive) as any;
+const ResponsiveGridLayout = WidthProvider(Responsive) as unknown as React.ComponentType<any>;
 
 interface DashboardWidget {
   id: string;

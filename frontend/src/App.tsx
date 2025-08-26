@@ -8,6 +8,7 @@ import { ThemeContextProvider } from './contexts/ThemeContext';
 import { UserPreferencesProvider } from './contexts/UserPreferencesContext';
 import { RBACProvider } from './contexts/RBACContext';
 import { ActivityProvider } from './contexts/ActivityContext';
+import { SetupProvider } from './contexts/SetupContext';
 import './App.css';
 
 function App() {
@@ -15,15 +16,17 @@ function App() {
     <Provider store={store}>
       <ThemeContextProvider>
         <Router>
-          <SocketProvider>
-            <RBACProvider>
-              <ActivityProvider>
-                <UserPreferencesProvider>
-                  <AppRouter />
-                </UserPreferencesProvider>
-              </ActivityProvider>
-            </RBACProvider>
-          </SocketProvider>
+          <SetupProvider>
+            <SocketProvider>
+              <RBACProvider>
+                <ActivityProvider>
+                  <UserPreferencesProvider>
+                    <AppRouter />
+                  </UserPreferencesProvider>
+                </ActivityProvider>
+              </RBACProvider>
+            </SocketProvider>
+          </SetupProvider>
         </Router>
       </ThemeContextProvider>
     </Provider>
