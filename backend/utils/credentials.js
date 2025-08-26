@@ -209,5 +209,7 @@ module.exports = {
   updateCredentials,
   initializeUserCredentials,
   encrypt,
-  decrypt
+  decrypt,
+  // Alias for backward compatibility
+  setCredentials: storeCredentials
 };

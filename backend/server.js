@@ -205,20 +205,21 @@ const initializeMiddleware = () => {
   }));
   // CORS: allow same-origin and configured frontend URL
   app.use(cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // same-origin or curl
-      const allowed = new Set([
-        config.frontendUrl,
-        'http://localhost:3000', // React dev server
-        'http://127.0.0.1:3000', // React dev server alternative
-        `http://localhost:${config.port}`,
-        `http://127.0.0.1:${config.port}`
-      ]);
-      if (allowed.has(origin)) return callback(null, true);
-      return callback(new Error(`Origin ${origin} not allowed by CORS policy`), false);
-    },
-    credentials: true
+    origin: [
+      'http://localhost:3000',     // React dev server
+      'http://127.0.0.1:3000',     // React dev server alternative
+      'http://localhost:5000',     // Backend server
+      'http://127.0.0.1:5000',     // Backend server alternative
+      config.frontendUrl           // Configured frontend URL
+    ].filter(Boolean),
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    credentials: true,
+    optionsSuccessStatus: 200    // Support legacy browsers
   }));
+
+  // Handle preflight OPTIONS requests explicitly
+  app.options('*', cors());
 
   logger.info('⚡ Configuring rate limiting...', { 
     windowMs: performanceConfig.api.rateLimit.windowMs / 1000 / 60 + ' minutes',

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getCredentials, setCredentials } = require('../utils/credentials');
+const { getCredentials, storeCredentials } = require('../utils/credentials');
 const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
 
@@ -82,7 +82,7 @@ router.post('/complete', async (req, res) => {
     };
 
     // Save configuration
-    await setCredentials(config);
+    await storeCredentials(config);
 
     logger.info('Initial setup completed', {
       admin: admin.username,
@@ -124,7 +124,7 @@ router.post('/reset', async (req, res) => {
     }
 
     // Clear credentials
-    await setCredentials({});
+    await storeCredentials({});
     
     logger.info('Setup reset completed');
     
