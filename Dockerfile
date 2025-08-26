@@ -42,10 +42,10 @@ COPY . .
 RUN set -eux; \
     cd frontend; \
     export GENERATE_SOURCEMAP=false SKIP_PREFLIGHT_CHECK=true DISABLE_ESLINT_PLUGIN=true TSC_COMPILE_ON_ERROR=true; \
-    export NODE_OPTIONS="--max-old-space-size=4096"; \
+    export NODE_OPTIONS="--max-old-space-size=8192"; \
     if ! npm run build --no-progress --silent; then \
         echo 'First build attempt failed, retrying with minimal optimizations...'; \
-        rm -rf build && export NODE_OPTIONS="--max-old-space-size=3072" && npm run build --no-progress --silent || (echo 'Frontend build failed after retry' >&2; exit 1); \
+        rm -rf build && export NODE_OPTIONS="--max-old-space-size=8192" && npm run build --no-progress --silent || (echo 'Frontend build failed after retry' >&2; exit 1); \
     fi
 
 # Production stage with minimal footprint
