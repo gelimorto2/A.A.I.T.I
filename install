@@ -619,24 +619,154 @@ show_help() {
     echo ""
 }
 
+# Reinstall (rebuild) keeping or wiping volumes
+reinstall_aaiti() {
+    print_step "Reinstalling ${PROJECT_NAME}..."
+
+    if ! check_docker; then
+        print_error "Docker is not available"
+        return 1
+    fi
+
+    echo -e "${YELLOW}This will rebuild the image. You may optionally wipe data volumes.${NC}"
+    echo -ne "Preserve existing data volumes? (Y/n): "
+    read -r preserve
+    local remove_vols=false
+    if [[ $preserve =~ ^[Nn]$ ]]; then
+        remove_vols=true
+    fi
+
+    print_info "Stopping services (if running)..."
+    $COMPOSE_CMD down || true
+
+    if [ "$remove_vols" = true ]; then
+        print_warning "Removing volumes (data loss)..."
+        $COMPOSE_CMD down -v || true
+        print_success "Volumes removed"
+        echo -ne "Rotate JWT secret (recommended when wiping)? (Y/n): "
+        read -r rot
+        if [[ -z $rot || $rot =~ ^[Yy]$ ]]; then
+            export AAITI_FORCE_ROTATE_JWT=1
+        fi
+    fi
+
+    echo -ne "Re-run admin configuration? (Y/n): "
+    read -r rerun_conf
+    if [[ -z $rerun_conf || $rerun_conf =~ ^[Yy]$ ]]; then
+        setup_configuration true
+    else
+        print_info "Keeping existing configuration (.aaiti_setup.env)"
+    fi
+
+    print_step "Rebuilding image (no cache)..."
+    if ! $COMPOSE_CMD build --no-cache aaiti; then
+        print_error "Image rebuild failed"
+        return 1
+    fi
+    print_success "Image rebuilt"
+
+    if [ "$remove_vols" = true ] && [ -f .aaiti_setup.env ]; then
+        # shellcheck disable=SC1091
+        source .aaiti_setup.env
+        print_step "Initializing admin in fresh volumes..."
+        INIT_CMD="$COMPOSE_CMD run --rm -e PORT=$AAITI_APP_PORT aaiti node backend/scripts/init-admin.js --username $AAITI_ADMIN_USERNAME --email $AAITI_ADMIN_EMAIL --password $AAITI_ADMIN_PASSWORD --port $AAITI_APP_PORT"
+        if [ "${AAITI_FORCE_ROTATE_JWT:-0}" = "1" ]; then
+            INIT_CMD+=" --rotate-jwt"
+        elif [ "$AAITI_ROTATE_JWT" = "1" ]; then
+            INIT_CMD+=" --rotate-jwt"
+        fi
+        if eval "$INIT_CMD" >/dev/null 2>&1; then
+            print_success "Admin reinitialized"
+        else
+            print_warning "Admin init inside container failed; run manually later."
+        fi
+    fi
+
+    echo -ne "Start services now? (Y/n): "
+    read -r start_now
+    if [[ -z $start_now || $start_now =~ ^[Yy]$ ]]; then
+        start_aaiti
+    else
+        print_info "You can start later with: ./install start"
+    fi
+}
+
+# Complete removal (uninstall)
+remove_aaiti() {
+    print_step "Removing ${PROJECT_NAME}..."
+    if ! check_docker; then
+        print_error "Docker is not available"
+        return 1
+    fi
+    echo -e "${RED}This will stop and delete the container and image. Optionally delete volumes (DATA LOSS).${NC}"
+    echo -ne "Type DELETE to continue: "
+    read -r confirm
+    if [[ "$confirm" != "DELETE" ]]; then
+        print_info "Removal cancelled"
+        return 0
+    fi
+    echo -ne "Also remove volumes? (type WIPE to confirm): "
+    read -r wipe
+    if [[ "$wipe" == "WIPE" ]]; then
+        print_warning "Removing with volumes..."
+        $COMPOSE_CMD down -v || true
+    else
+        $COMPOSE_CMD down || true
+    fi
+    # Attempt to remove image(s) built for service
+    IMG_IDS=$(docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep -i aaiti | awk '{print $2}' | sort -u || true)
+    for iid in $IMG_IDS; do
+        print_info "Removing image $iid"
+        docker rmi -f "$iid" >/dev/null 2>&1 || true
+    done
+    docker image prune -f >/dev/null 2>&1 || true
+    print_success "${PROJECT_NAME} removed. Local config files remain (delete manually if desired)."
+}
+
+# Fancy header showing status & config
+stylish_header() {
+    local status="Not Installed"
+    if command -v docker >/dev/null 2>&1; then
+        if docker ps --format '{{.Names}}' | grep -q '^aaiti$'; then
+            status="Running"
+        elif docker ps -a --format '{{.Names}}' | grep -q '^aaiti$'; then
+            status="Stopped"
+        fi
+    fi
+    echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
+    printf "${BLUE}║${NC}  🚀 %-54s ${BLUE}║\n" "${PROJECT_NAME} v${VERSION}"
+    printf "${BLUE}║${NC}  📊 Status: %-44s ${BLUE}║\n" "$status"
+    if [ -f .aaiti_setup.env ]; then
+        # shellcheck disable=SC1091
+        source .aaiti_setup.env
+        printf "${BLUE}║${NC}  👤 Admin: %-45s ${BLUE}║\n" "${AAITI_ADMIN_USERNAME:-admin}"
+        printf "${BLUE}║${NC}  🌐 Port: %-46s ${BLUE}║\n" "${AAITI_APP_PORT:-5000}"
+    else
+        printf "${BLUE}║${NC}  ⚙️  Run setup to configure admin & port          ${BLUE}║\n"
+    fi
+    echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
+}
+
 # Main menu
 main_menu() {
     while true; do
         echo ""
-        echo -e "${CYAN}🔧 ${PROJECT_NAME} Interactive Installer${NC}"
-        echo -e "${CYAN}===================================${NC}"
+        stylish_header
         echo ""
-        echo "1) Install ${PROJECT_NAME} (Production Ready)"
-        echo "2) Start ${PROJECT_NAME}"
-        echo "3) Check Status"
-        echo "4) Stop ${PROJECT_NAME}"
-        echo "5) View Logs"
+        echo -e "${CYAN}Main Menu${NC}"
+        echo -e "${CYAN}─────────${NC}"
+        echo "1) Install (Production)"
+        echo "2) Start"
+        echo "3) Status"
+        echo "4) Stop"
+        echo "5) Logs"
         echo "6) Help"
-        echo "7) Re-run Setup / Admin Configuration"
-        echo "8) Exit"
+        echo "7) Re-run Setup / Admin Config"
+        echo "8) Reinstall"
+        echo "9) Remove (Uninstall)"
+        echo "0) Exit"
         echo ""
-        
-    echo -ne "${CYAN}Select an option (1-8): ${NC}"
+        echo -ne "${CYAN}Select an option (0-9): ${NC}"
         read -r choice
         
         case $choice in
@@ -662,11 +792,17 @@ main_menu() {
                 setup_configuration true
                 ;;
             8)
+                reinstall_aaiti
+                ;;
+            9)
+                remove_aaiti
+                ;;
+            0)
                 print_info "Goodbye! 👋"
                 exit 0
                 ;;
             *)
-                print_error "Invalid selection. Please choose 1-8."
+                print_error "Invalid selection. Please choose 0-9."
                 sleep 2
                 ;;
         esac
