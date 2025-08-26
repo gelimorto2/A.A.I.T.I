@@ -399,34 +399,112 @@ class MarketDataService {
    */
   async getMultipleQuotes(symbols) {
     const startTime = Date.now();
-    logger.info('Fetching multiple quotes', { 
-      symbolCount: symbols.length, 
+    logger.info('Fetching multiple quotes (batched)', {
+      symbolCount: symbols.length,
       symbols,
       service: 'market-data'
     });
-    
-    const promises = symbols.map(symbol => this.getQuote(symbol));
-    const results = await Promise.allSettled(promises);
-    
-    const processedResults = results.map((result, index) => ({
-      symbol: symbols[index],
-      success: result.status === 'fulfilled',
-      data: result.status === 'fulfilled' ? result.value : null,
-      error: result.status === 'rejected' ? result.reason.message : null
-    }));
 
-    const successCount = processedResults.filter(r => r.success).length;
+    // Normalize & convert symbols first
+    const convertedSymbols = symbols.map(s => this.validateAndConvertSymbol(s));
+    const unique = Array.from(new Set(convertedSymbols));
+    const cacheHits = [];
+    const toFetch = [];
+    const now = Date.now();
+
+    unique.forEach(sym => {
+      const cacheKey = `quote_${sym}`;
+      const cached = this.cache.get(cacheKey);
+      if (cached && (now - cached.timestamp) < this.cacheTimeout) {
+        cacheHits.push({ sym, data: cached.data });
+      } else {
+        toFetch.push(sym);
+      }
+    });
+
+    let fetchedMap = {};
+    if (toFetch.length > 0) {
+      try {
+        // Respect rate limiting by using existing queue & retry wrappers
+        const response = await this.performanceMonitor.monitorAPICall(
+          `coingecko.simple.price[batch:${toFetch.length}]`,
+          async () => {
+            return this.makeRateLimitedRequest(async () => {
+              return this.retryRequest(async () => {
+                return axios.get(`${this.baseUrl}/simple/price`, {
+                  params: {
+                    ids: toFetch.join(','),
+                    vs_currencies: 'usd',
+                    include_24hr_change: 'true',
+                    include_24hr_vol: 'true',
+                    include_last_updated_at: 'true'
+                  },
+                  timeout: 15000,
+                  headers: { 'Accept': 'application/json', 'User-Agent': 'AAITI-Trading-Bot/1.1.0' }
+                });
+              });
+            });
+          }
+        );
+        fetchedMap = response.data || {};
+        // Cache fetched results
+        Object.entries(fetchedMap).forEach(([sym, data]) => {
+          const quote = {
+            symbol: sym,
+            originalSymbol: sym,
+            price: data.usd,
+            change: data.usd_24h_change || 0,
+            changePercent: data.usd_24h_change || 0,
+            volume: data.usd_24h_vol || 0,
+            lastUpdated: new Date(data.last_updated_at ? data.last_updated_at * 1000 : Date.now()).toISOString(),
+            lastRefreshed: new Date().toISOString(),
+            provider: 'CoinGecko',
+            isReal: true
+          };
+          this.cache.set(`quote_${sym}`, { data: quote, timestamp: Date.now() });
+        });
+      } catch (error) {
+        logger.error('Batched quote fetch failed, falling back to individual + mock', {
+          error: error.message,
+          toFetchCount: toFetch.length,
+          service: 'market-data'
+        });
+        // Fallback: individual (still rate limited) or mock
+        for (const sym of toFetch) {
+          try {
+            const q = await this.getQuote(sym); // will use existing logic
+            fetchedMap[sym] = { usd: q.price, usd_24h_change: q.change, usd_24h_vol: q.volume, last_updated_at: Date.now()/1000 };
+          } catch (e) {
+            const mq = this.getMockQuote(sym);
+            fetchedMap[sym] = { usd: mq.price, usd_24h_change: mq.change, usd_24h_vol: mq.volume, last_updated_at: Date.now()/1000 };
+          }
+        }
+      }
+    }
+
+    const results = symbols.map(original => {
+      const conv = this.validateAndConvertSymbol(original);
+      const cacheEntry = this.cache.get(`quote_${conv}`);
+      return {
+        symbol: original,
+        success: Boolean(cacheEntry),
+        data: cacheEntry ? cacheEntry.data : null,
+        error: cacheEntry ? null : 'No data'
+      };
+    });
+
+    const successCount = results.filter(r => r.success).length;
     const responseTime = Date.now() - startTime;
-    
-    logger.info('Completed multiple quotes fetch', { 
+    logger.info('Completed batched multiple quotes fetch', {
       totalSymbols: symbols.length,
+      batchedFetched: toFetch.length,
+      cacheHits: cacheHits.length,
       successCount,
       failureCount: symbols.length - successCount,
       responseTime: `${responseTime}ms`,
       service: 'market-data'
     });
-    
-    return processedResults;
+    return results;
   }
 
   /**

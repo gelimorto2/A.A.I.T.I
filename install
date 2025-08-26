@@ -50,6 +50,93 @@ print_step() {
     echo -e "${PURPLE}🔧 $1${NC}"
 }
 
+# ----------------------------------------------------------------------------
+# Interactive configuration & admin setup (must be defined before use)
+# ----------------------------------------------------------------------------
+setup_configuration() {
+    # $1 == true indicates forced re-run
+    local force_rerun=${1:-false}
+    local cred_file="backend/config/credentials.enc"
+    local key_file="backend/config/encryption.key"
+
+    if [ -f "$cred_file" ] && [ "$force_rerun" != true ]; then
+        print_info "Existing encrypted credentials detected (backend/config/credentials.enc)"
+        echo -ne "${CYAN}Run admin setup anyway? (y/N): ${NC}"
+        read -r rerun
+        if [[ ! $rerun =~ ^[Yy]$ ]]; then
+            print_info "Skipping configuration setup"
+            return 0
+        fi
+    fi
+
+    if ! check_nodejs; then
+        print_warning "Node.js not available – skipping admin setup (will use defaults)."
+        return 0
+    fi
+
+    echo ""
+    print_info "Collecting initial configuration values (press Enter to accept defaults)"
+
+    # Admin details
+    read -r -p "Admin username [admin]: " ADMIN_USERNAME
+    ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+
+    read -r -p "Admin email [admin@example.com]: " ADMIN_EMAIL
+    ADMIN_EMAIL=${ADMIN_EMAIL:-admin@example.com}
+
+    # Secure password input (double entry)
+    while true; do
+        echo -ne "Admin password (min 8 chars): "
+        stty -echo; read -r ADMIN_PASSWORD; stty echo; echo ""
+        echo -ne "Confirm password: "
+        stty -echo; read -r ADMIN_PASSWORD_CONFIRM; stty echo; echo ""
+        if [ "${#ADMIN_PASSWORD}" -lt 8 ]; then
+            print_error "Password too short."
+            continue
+        fi
+        if [ "$ADMIN_PASSWORD" != "$ADMIN_PASSWORD_CONFIRM" ]; then
+            print_error "Passwords do not match."
+            continue
+        fi
+        break
+    done
+
+    # Port (optional)
+    read -r -p "Backend port [5000]: " APP_PORT
+    APP_PORT=${APP_PORT:-5000}
+
+    # Optionally rotate JWT secret
+    echo -ne "Rotate JWT secret? (Y/n): "
+    read -r rotate_secret
+    if [[ -z "$rotate_secret" || $rotate_secret =~ ^[Yy]$ ]]; then
+        ROTATE_JWT="--rotate-jwt"
+    else
+        ROTATE_JWT=""
+    fi
+
+    print_step "Applying configuration..."
+    # Run host-side (may use host DB path) mainly to set encrypted credentials; container init will ensure user in container DB volume
+    node backend/scripts/init-admin.js \
+        --username "$ADMIN_USERNAME" \
+        --email "$ADMIN_EMAIL" \
+        --password "$ADMIN_PASSWORD" \
+        --port "$APP_PORT" $ROTATE_JWT || {
+            print_warning "Host admin setup script failed; will still attempt inside container."
+        }
+
+    # Persist values for later container initialization
+    cat > .aaiti_setup.env <<EOF
+AAITI_ADMIN_USERNAME=${ADMIN_USERNAME}
+AAITI_ADMIN_EMAIL=${ADMIN_EMAIL}
+AAITI_ADMIN_PASSWORD=${ADMIN_PASSWORD}
+AAITI_APP_PORT=${APP_PORT}
+AAITI_ROTATE_JWT=$([ -n "$ROTATE_JWT" ] && echo 1 || echo 0)
+EOF
+    chmod 600 .aaiti_setup.env || true
+
+    print_success "Configuration captured. Will initialize admin inside container after build."
+}
+
 # Check if Node.js and npm are installed
 check_nodejs() {
     print_step "Checking Node.js installation..."
@@ -255,6 +342,11 @@ install_aaiti() {
     else
         print_info "Skipping npm dependency installation (Node.js not available)."
     fi
+
+    # Run first‑time setup (admin user / configuration) before building images
+    echo ""
+    print_step "Configuration & Admin setup"
+    setup_configuration
     
     # Build image(s)
     print_step "Building Docker containers (this may take a few minutes)..."
@@ -269,6 +361,23 @@ install_aaiti() {
         print_error "Failed to build Docker containers"
         print_error "Please check Docker is running and try again"
         exit 1
+    fi
+
+    # Initialize admin inside container volume using temporary run
+    if [ -f .aaiti_setup.env ]; then
+        # shellcheck disable=SC1091
+        source .aaiti_setup.env
+        print_step "Initializing admin user inside container volume..."
+        INIT_CMD="$COMPOSE_CMD run --rm -e PORT=$AAITI_APP_PORT aaiti node backend/scripts/init-admin.js --username $AAITI_ADMIN_USERNAME --email $AAITI_ADMIN_EMAIL --password $AAITI_ADMIN_PASSWORD --port $AAITI_APP_PORT"
+        if [ "$AAITI_ROTATE_JWT" = "1" ]; then
+            INIT_CMD+=" --rotate-jwt"
+        fi
+        # Avoid echoing password
+        if eval "$INIT_CMD" >/dev/null 2>&1; then
+            print_success "Admin initialized inside container volume"
+        else
+            print_warning "Container admin initialization failed. You can run: $COMPOSE_CMD run --rm aaiti node backend/scripts/init-admin.js --username $AAITI_ADMIN_USERNAME --email $AAITI_ADMIN_EMAIL --password '<secret>' --port $AAITI_APP_PORT"
+        fi
     fi
 
     # Offer to start now
@@ -522,11 +631,12 @@ main_menu() {
         echo "3) Check Status"
         echo "4) Stop ${PROJECT_NAME}"
         echo "5) View Logs"
-    echo "6) Help"
-    echo "7) Exit"
+        echo "6) Help"
+        echo "7) Re-run Setup / Admin Configuration"
+        echo "8) Exit"
         echo ""
         
-    echo -ne "${CYAN}Select an option (1-7): ${NC}"
+    echo -ne "${CYAN}Select an option (1-8): ${NC}"
         read -r choice
         
         case $choice in
@@ -549,11 +659,14 @@ main_menu() {
                 show_help
                 ;;
             7)
+                setup_configuration true
+                ;;
+            8)
                 print_info "Goodbye! 👋"
                 exit 0
                 ;;
             *)
-                print_error "Invalid selection. Please choose 1-7."
+                print_error "Invalid selection. Please choose 1-8."
                 sleep 2
                 ;;
         esac

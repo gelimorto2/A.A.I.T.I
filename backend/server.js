@@ -176,8 +176,32 @@ const initializeMiddleware = () => {
   // Prometheus metrics middleware (before other middleware)
   app.use(metrics.createMiddleware());
   
-  // Security middleware
-  app.use(helmet());
+  // Security middleware with adjusted CSP to allow frontend -> API calls when served from same origin or dev origins
+  const cspDirectives = {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'", "'unsafe-inline'"], // inline tolerated for React build hydration, can tighten later
+    styleSrc: ["'self'", "'unsafe-inline'"],
+    imgSrc: ["'self'", 'data:', 'blob:'],
+    fontSrc: ["'self'", 'data:'],
+    connectSrc: [
+      "'self'",
+      config.frontendUrl,
+      `http://localhost:${config.port}`,
+      `ws://localhost:${config.port}`,
+      `http://127.0.0.1:${config.port}`,
+      `ws://127.0.0.1:${config.port}`
+    ].filter(Boolean),
+    objectSrc: ["'none'"],
+    frameAncestors: ["'self'"],
+    baseUri: ["'self'"],
+    formAction: ["'self'"]
+  };
+  app.use(helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: cspDirectives
+    }
+  }));
   // CORS: allow same-origin and configured frontend URL
   app.use(cors({
     origin: (origin, callback) => {

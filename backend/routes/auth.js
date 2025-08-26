@@ -82,40 +82,45 @@ router.post('/register', auditLog('user_register'), async (req, res) => {
   }
 });
 
-// Login
+// Login (supports username OR email as identifier)
 router.post('/login', auditLog('user_login'), async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, email, password } = req.body;
+    const identifier = username || email; // allow either field
 
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username and password are required' });
+    if (!identifier || !password) {
+      return res.status(400).json({ error: 'Username/email and password are required' });
     }
 
-    // Find user
+    // Find user by username or email
     db.get(
       'SELECT id, username, email, password_hash, role, is_active FROM users WHERE username = ? OR email = ?',
-      [username, username],
+      [identifier, identifier],
       async (err, user) => {
         if (err) {
-          logger.error('Database error during login:', err);
+          logger.error('Database error during login', { error: err.message, identifier });
           return res.status(500).json({ error: 'Internal server error' });
         }
 
-        if (!user || !user.is_active) {
+        if (!user) {
+          logger.warn('Login attempt for non-existent user', { identifier });
+          return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        if (!user.is_active) {
+          logger.warn('Login attempt for inactive user', { identifier, userId: user.id });
           return res.status(401).json({ error: 'Invalid credentials or inactive account' });
         }
 
         // Verify password
         const isValidPassword = await bcrypt.compare(password, user.password_hash);
         if (!isValidPassword) {
+          logger.warn('Invalid password attempt', { identifier, userId: user.id });
           return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        // Update last login
-        db.run(
-          'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?',
-          [user.id]
-        );
+        // Update last login (non-blocking)
+        db.run('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', [user.id]);
 
         // Generate JWT
         const jwtConfig = getJwtConfig();
@@ -125,7 +130,7 @@ router.post('/login', auditLog('user_login'), async (req, res) => {
           { expiresIn: jwtConfig.expiresIn }
         );
 
-        logger.info(`User logged in: ${user.username}`);
+        logger.info('User logged in', { username: user.username, userId: user.id, role: user.role });
         res.json({
           message: 'Login successful',
           token,
@@ -139,7 +144,7 @@ router.post('/login', auditLog('user_login'), async (req, res) => {
       }
     );
   } catch (error) {
-    logger.error('Login error:', error);
+    logger.error('Login error', { error: error.message, stack: error.stack });
     res.status(500).json({ error: 'Internal server error' });
   }
 });

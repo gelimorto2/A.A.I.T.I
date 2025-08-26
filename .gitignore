@@ -49,6 +49,30 @@ lerna-debug.log*
 *.db
 *.sqlite-wal
 *.sqlite-shm
+database/*.sqlite*
+backend/database/*.db*
+backend/database/**/*.sqlite*
+
+# Encrypted credentials & keys (should never be committed)
+backend/config/credentials.enc
+backend/config/encryption.key
+backend/config/*.enc
+backend/config/*.key
+.aaiti_setup.env
+
+# Local runtime data & volumes
+data/
+backend/data/
+cache/
+backend/cache/
+volumes/
+backend/logs/
+logs/
+
+# Local backups & exports
+exports/
+*.dump
+*.sql
 
 # Temporary files
 tmp/
