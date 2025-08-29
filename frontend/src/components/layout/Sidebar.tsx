@@ -27,10 +27,13 @@ import {
   AccountTree,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Security } from '@mui/icons-material';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store/store';
 
 const DRAWER_WIDTH = 240;
 
-const menuItems = [
+const baseMenuItems = [
   { 
     text: 'Command Center', 
     icon: <Dashboard />, 
@@ -90,6 +93,7 @@ const menuItems = [
 const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const authUser = useSelector((s:RootState)=>s.auth.user);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -134,7 +138,7 @@ const Sidebar: React.FC = () => {
       <Divider sx={{ borderColor: 'grey.700' }} />
 
       <List sx={{ pt: 1 }}>
-        {menuItems.map((item) => (
+        {[...baseMenuItems, ...(authUser?.role==='admin'? [{ text:'Admin', icon:<Security/>, path:'/admin', description:'User & System'}]: [])].map((item) => (
           <ListItemButton
             key={item.text}
             selected={location.pathname === item.path}

@@ -18,6 +18,7 @@ import MLModelDetailPage from '../pages/MLModelDetailPage';
 import AdvancedMLPage from '../pages/AdvancedMLPage';
 import IntegrationsPage from '../pages/IntegrationsPage';
 import StrategyCreatorPage from '../pages/StrategyCreatorPage';
+import AdminPage from '../pages/AdminPage';
 
 import Navbar from './layout/Navbar';
 import Sidebar from './layout/Sidebar';
@@ -84,6 +85,7 @@ const AppRouter: React.FC = () => {
             <Route path="/trading" element={<TradingPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/admin" element={<AdminPage />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Box>

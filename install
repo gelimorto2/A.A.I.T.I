@@ -670,8 +670,8 @@ main_menu() {
         echo "4) Stop"
         echo "5) Logs"
         echo "6) Help"
-        echo "7) Re-run Setup / Admin Config"
-        echo "8) Reinstall"
+    echo "7) Reset Accounts & Credentials (Destructive)"
+    echo "8) Rebuild Image"
         echo "9) Remove (Uninstall)"
         echo "0) Exit"
         echo ""
@@ -698,10 +698,44 @@ main_menu() {
                 show_help
                 ;;
             7)
-                setup_configuration true
+                echo -e "${RED}This will DELETE all user accounts, audit logs & credentials. Next registered user becomes ADMIN.${NC}"
+                echo -ne "Type RESET to proceed: "
+                read -r confirm_reset
+                if [[ "$confirm_reset" == "RESET" ]]; then
+                    if ! check_docker; then
+                        print_error "Docker not available"
+                    else
+                        print_step "Wiping user accounts & audit logs via node (no sqlite3 CLI dependency)..."
+                        # Use an ephemeral container (safer if service not running)
+                        if $COMPOSE_CMD run --rm aaiti node -e "const fs=require('fs');const path=require('path');const sqlite3=require('sqlite3').verbose();const dbPaths=['backend/database/aaiti.sqlite','backend/database/trading.db'];let acted=false;for(const p of dbPaths){if(fs.existsSync(p)){const db=new sqlite3.Database(p);db.serialize(()=>{db.run('DELETE FROM users');db.run('DELETE FROM audit_logs');});db.close();acted=true;}}if(!acted){console.error('No database file found.');process.exit(2);}fs.rmSync('backend/config/credentials.enc',{force:true});fs.rmSync('backend/config/encryption.key',{force:true});console.log('Reset complete.');" 2>/dev/null; then
+                            print_success "Accounts & credentials wiped. Register a new user to bootstrap admin."
+                        else
+                            print_warning "Automatic wipe failed. Run manually (inside repo):"
+                            echo "node -e \"const fs=require('fs');const sqlite3=require('sqlite3').verbose();['backend/database/aaiti.sqlite','backend/database/trading.db'].forEach(p=>{if(fs.existsSync(p)){const db=new sqlite3.Database(p);db.serialize(()=>{db.run('DELETE FROM users');db.run('DELETE FROM audit_logs');});db.close();}});fs.rmSync('backend/config/credentials.enc',{force:true});fs.rmSync('backend/config/encryption.key',{force:true});console.log('Done');\"" 
+                        fi
+                    fi
+                else
+                    print_info "Reset cancelled"
+                fi
                 ;;
             8)
-                reinstall_aaiti
+                echo -e "${PURPLE}Rebuilding image (no data volume wipe)...${NC}"
+                if ! check_docker; then
+                    print_error "Docker not available"
+                else
+                    if $COMPOSE_CMD build --no-cache aaiti; then
+                        print_success "Image rebuilt"
+                        echo -ne "Restart running service now? (Y/n): "
+                        read -r rs
+                        if [[ -z $rs || $rs =~ ^[Yy]$ ]]; then
+                            $COMPOSE_CMD up -d aaiti && print_success "Service running with rebuilt image" || print_error "Failed to start service"
+                        else
+                            print_info "You can start later with: ./install start"
+                        fi
+                    else
+                        print_error "Rebuild failed"
+                    fi
+                fi
                 ;;
             9)
                 remove_aaiti

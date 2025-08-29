@@ -3,6 +3,8 @@ const { db } = require('../database/init');
 const { authenticateToken, requireRole, auditLog } = require('../middleware/auth');
 const { getCredentials, updateCredentials } = require('../utils/credentials');
 const logger = require('../utils/logger');
+const fs = require('fs');
+const path = require('path');
 
 const router = express.Router();
 
@@ -416,6 +418,52 @@ router.post('/system/backup', authenticateToken, requireRole(['admin']), auditLo
     logger.error('Error creating backup:', error);
     res.status(500).json({ error: 'Failed to create backup' });
   }
+});
+
+// Admin only: RESET ALL ACCOUNTS & CREDENTIALS (Destructive)
+// Deletes all users and related auth data, forcing a new first-user admin creation on next registration.
+router.post('/system/reset-accounts', authenticateToken, requireRole(['admin']), auditLog('system_reset_accounts','system'), (req, res) => {
+  const { confirm } = req.body;
+  if (confirm !== 'RESET') {
+    return res.status(400).json({ error: 'Confirmation phrase missing. Send {"confirm":"RESET"} to proceed' });
+  }
+  // Wrap in transaction for atomicity
+  db.serialize(() => {
+    db.run('BEGIN TRANSACTION');
+    db.run('DELETE FROM users', (err) => {
+      if (err) {
+        logger.error('Error deleting users during reset:', err);
+        db.run('ROLLBACK');
+        return res.status(500).json({ error: 'Failed to delete users' });
+      }
+      // Clear audit logs referencing old users (optional for clean slate)
+      db.run('DELETE FROM audit_logs', (err2) => {
+        if (err2) {
+          logger.error('Error deleting audit logs during reset:', err2);
+          db.run('ROLLBACK');
+          return res.status(500).json({ error: 'Failed to delete audit logs' });
+        }
+        db.run('COMMIT', (err3) => {
+          if (err3) {
+            logger.error('Commit failed during reset:', err3);
+            return res.status(500).json({ error: 'Failed to finalize reset' });
+          }
+          // Remove stored credentials & key for clean slate
+            try {
+              const credentialsPath = path.join(__dirname,'..','config','credentials.enc');
+              const keyPath = path.join(__dirname,'..','config','encryption.key');
+              if (fs.existsSync(credentialsPath)) fs.unlinkSync(credentialsPath);
+              if (fs.existsSync(keyPath)) fs.unlinkSync(keyPath);
+              logger.info('Credentials and encryption key removed as part of system reset');
+            } catch(e) {
+              logger.error('Failed to remove credentials files during reset:', e);
+            }
+          logger.warn(`SYSTEM RESET: All user accounts & credentials deleted by admin ${req.user.username}`);
+          res.json({ message: 'All accounts & credentials deleted. Next registered user becomes admin.', next_step: 'Register a new user to bootstrap admin.' });
+        });
+      });
+    });
+  });
 });
 
 module.exports = router;
