@@ -14,6 +14,7 @@ import {
   ListItemText,
   Divider,
 } from '@mui/material';
+  import { Popover, List, ListItem, ListItemAvatar, Avatar } from '@mui/material';
 import {
   Notifications,
   AccountCircle,
@@ -23,6 +24,7 @@ import {
   SettingsBrightness,
   KeyboardArrowDown,
 } from '@mui/icons-material';
+  import { Warning, CheckCircle, TrendingUp } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
 import { logout } from '../../store/slices/authSlice';
@@ -36,10 +38,22 @@ const Navbar: React.FC = () => {
   const { isDarkMode, themeMode, setThemeMode, systemPrefersDark } = useTheme();
   
   const [themeMenuAnchor, setThemeMenuAnchor] = useState<null | HTMLElement>(null);
+  const [notifAnchor, setNotifAnchor] = useState<null | HTMLElement>(null);
 
   const handleLogout = () => {
     dispatch(logout());
   };
+
+  // Notifications demo data (could be wired to backend later)
+  const notifications = [
+    { id: '1', type: 'system', icon: <CheckCircle color="success" fontSize="small" />, title: 'System Stable', detail: 'All services operational', time: 'just now' },
+  { id: '2', type: 'trading', icon: <TrendingUp color="primary" fontSize="small" />, title: 'BTC Strategy', detail: 'Generated new buy signal', time: '2m' },
+    { id: '3', type: 'risk', icon: <Warning color="warning" fontSize="small" />, title: 'Drawdown Watch', detail: 'Bot Alpha nearing risk limit', time: '10m' },
+  ];
+
+  const openNotifications = (e: React.MouseEvent<HTMLElement>) => setNotifAnchor(e.currentTarget);
+  const closeNotifications = () => setNotifAnchor(null);
+  const notifOpen = Boolean(notifAnchor);
 
   const handleThemeMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setThemeMenuAnchor(event.currentTarget);
@@ -122,6 +136,52 @@ const Navbar: React.FC = () => {
               fontFamily: 'monospace',
             }}
           />
+
+          {/* Notifications */}
+          <IconButton color="inherit" onClick={openNotifications} aria-describedby="notifications-popover">
+            <Badge badgeContent={notifications.length} color="error">
+              <Notifications />
+            </Badge>
+          </IconButton>
+          <Popover
+            id="notifications-popover"
+            open={notifOpen}
+            anchorEl={notifAnchor}
+            onClose={closeNotifications}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            PaperProps={{ sx: { width: 320, maxHeight: 400 } }}
+          >
+            <Box sx={{ p: 1.5, pb: 0 }}>
+              <Typography variant="subtitle2" fontWeight={600}>Notifications</Typography>
+              <Typography variant="caption" color="text.secondary">Latest system & trading updates</Typography>
+            </Box>
+            <Divider sx={{ my: 1 }} />
+            <List dense sx={{ py: 0 }}>
+              {notifications.map(n => (
+                <ListItem key={n.id} alignItems="flex-start" sx={{ py: 0.75 }}>
+                  <ListItemAvatar>
+                    <Avatar sx={{ width: 28, height: 28, bgcolor: 'background.paper' }}>
+                      {n.icon}
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={<Typography variant="body2" fontWeight={500}>{n.title}</Typography>}
+                    secondary={
+                      <Typography variant="caption" color="text.secondary">
+                        {n.detail} • {n.time}
+                      </Typography>
+                    }
+                  />
+                </ListItem>
+              ))}
+              {notifications.length === 0 && (
+                <ListItem>
+                  <ListItemText primary={<Typography variant="body2" color="text.secondary">No notifications</Typography>} />
+                </ListItem>
+              )}
+            </List>
+          </Popover>
 
           {/* Enhanced Theme Selector */}
           <Tooltip title="Theme Settings">
@@ -210,7 +270,7 @@ const Navbar: React.FC = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <AccountCircle />
             <Typography variant="body2" color="text.primary">
-              {user?.username}
+              {user?.username === 'admin' ? 'Administrator' : user?.username}
             </Typography>
             <Chip 
               label={user?.role?.toUpperCase()} 

@@ -6,6 +6,58 @@ const logger = require('../utils/logger');
 
 const router = express.Router();
 
+// Utility: list valid roles
+router.get('/roles', authenticateToken, requireRole(['admin']), (req, res) => {
+  res.json({ roles: ['admin','trader','viewer'] });
+});
+
+// Promote a user to admin (idempotent)
+router.post('/:userId/promote', authenticateToken, requireRole(['admin']), auditLog('user_promote','user'), (req, res) => {
+  const targetId = req.params.userId;
+  if (targetId === req.user.id) {
+    return res.status(400).json({ error: 'Cannot promote self (already logged in); role change unnecessary' });
+  }
+  db.run('UPDATE users SET role = "admin", updated_at = CURRENT_TIMESTAMP WHERE id = ?', [targetId], function(err) {
+    if (err) {
+      logger.error('Error promoting user:', err);
+      return res.status(500).json({ error: 'Failed to promote user' });
+    }
+    if (this.changes === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    logger.info(`User promoted to admin: ${targetId} by ${req.user.username}`);
+    res.json({ message: 'User promoted to admin' });
+  });
+});
+
+// Safeguard: prevent last admin demotion
+router.post('/:userId/demote', authenticateToken, requireRole(['admin']), auditLog('user_demote','user'), (req, res) => {
+  const targetId = req.params.userId;
+  if (targetId === req.user.id) {
+    return res.status(400).json({ error: 'Admins cannot demote themselves' });
+  }
+  db.get('SELECT COUNT(*) as admins FROM users WHERE role = "admin"', [], (err, row) => {
+    if (err) {
+      logger.error('Error counting admins:', err);
+      return res.status(500).json({ error: 'Failed to change role' });
+    }
+    if (row.admins <= 1) {
+      return res.status(409).json({ error: 'Cannot demote the last admin' });
+    }
+    db.run('UPDATE users SET role = "trader", updated_at = CURRENT_TIMESTAMP WHERE id = ?', [targetId], function(err2) {
+      if (err2) {
+        logger.error('Error demoting user:', err2);
+        return res.status(500).json({ error: 'Failed to change role' });
+      }
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      logger.info(`User demoted to trader: ${targetId} by ${req.user.username}`);
+      res.json({ message: 'User demoted to trader' });
+    });
+  });
+});
+
 // Get user profile (already covered in auth, but here for completeness)
 router.get('/profile', authenticateToken, (req, res) => {
   res.json({

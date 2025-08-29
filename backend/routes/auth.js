@@ -21,7 +21,7 @@ const getJwtConfig = () => {
 // Register new user
 router.post('/register', auditLog('user_register'), async (req, res) => {
   try {
-    const { username, email, password, role = 'trader' } = req.body;
+  let { username, email, password, role = 'trader' } = req.body;
 
     // Validation
     if (!username || !email || !password) {
@@ -46,7 +46,19 @@ router.post('/register', auditLog('user_register'), async (req, res) => {
           return res.status(409).json({ error: 'Username or email already exists' });
         }
 
-        // Hash password
+        // Determine if this is the first user -> auto elevate to admin
+        db.get('SELECT COUNT(*) as count FROM users', [], async (err2, countRow) => {
+          if (err2) {
+            logger.error('Database error counting users during registration:', err2);
+            return res.status(500).json({ error: 'Internal server error' });
+          }
+
+          if (countRow.count === 0) {
+            role = 'admin';
+            logger.info('First user registration detected — assigning admin role automatically');
+          }
+
+          // Hash password
         const saltRounds = 12;
         const passwordHash = await bcrypt.hash(password, saltRounds);
 
@@ -74,6 +86,7 @@ router.post('/register', auditLog('user_register'), async (req, res) => {
             });
           }
         );
+        });
       }
     );
   } catch (error) {

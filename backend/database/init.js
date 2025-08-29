@@ -124,6 +124,8 @@ const initializeDatabase = async () => {
           exit_price REAL,
           pnl REAL,
           commission REAL,
+          data_provenance TEXT,
+          trading_mode TEXT,
           status TEXT DEFAULT 'open',
           opened_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           closed_at DATETIME,

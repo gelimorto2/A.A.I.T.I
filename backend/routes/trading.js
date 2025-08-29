@@ -7,6 +7,55 @@ const logger = require('../utils/logger');
 
 const router = express.Router();
 
+// Capability metadata (update as features mature)
+const tradingCapabilities = {
+  version: '1.0.0',
+  timestamp: () => new Date().toISOString(),
+  data: {
+    marketData: {
+      provider: 'CoinGecko',
+      fallback: true,
+      fallbackFlag: 'isMock',
+      intervals: ['1min','hourly','daily','weekly','monthly'],
+      reliabilityNotes: 'If isMock true, data is synthetic – live trading blocks execution.'
+    },
+    execution: {
+      manual: true,
+      strategies: 'planned',
+      orderTypes: ['market','limit (planned)'],
+      slippageModel: 'none (planned)',
+      idempotency: 'supported via Idempotency-Key header'
+    },
+    risk: {
+      maxPositionSize: 'enforced (risk_parameters.max_position_size)',
+      maxDailyLoss: 'enforced (risk_parameters.max_daily_loss)',
+      drawdown: 'planned',
+      var: 'simulated (not blocking)',
+      leverage: 'tracked (not enforced yet)',
+      provenanceTagging: 'entry/close responses include data_provenance'
+    },
+    modes: {
+      paper: true,
+      shadow: true,
+      live: 'enabled (blocks on mock data)'
+    },
+    transparency: {
+      tradeResponseFields: ['data_provenance','trading_mode','order_type'],
+      warnings: ['Live trades rejected if quote.isMock']
+    }
+  }
+};
+
+// Capability & status endpoint
+router.get('/capabilities', authenticateToken, (req, res) => {
+  res.json({
+    service: 'trading',
+    version: tradingCapabilities.version,
+    generatedAt: tradingCapabilities.timestamp(),
+    ...tradingCapabilities.data
+  });
+});
+
 // Get trading signals for a bot
 router.get('/signals/:botId', authenticateToken, (req, res) => {
   // Verify bot belongs to user
@@ -84,117 +133,236 @@ router.get('/trades/:botId', authenticateToken, (req, res) => {
   );
 });
 
-// Execute manual trade
-router.post('/execute', authenticateToken, auditLog('manual_trade', 'trade'), (req, res) => {
-  const { botId, symbol, side, quantity, price } = req.body;
+// In-memory idempotency cache (resets on process restart)
+const idempotencyCache = new Map(); // key -> { timestamp, response }
 
-  if (!botId || !symbol || !side || !quantity) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
+// Helper to promisify db.get
+function dbGet(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.get(sql, params, (err, row) => {
+      if (err) return reject(err);
+      resolve(row);
+    });
+  });
+}
 
-  // Verify bot belongs to user
-  db.get(
-    'SELECT id, trading_mode FROM bots WHERE id = ? AND user_id = ?',
-    [botId, req.user.id],
-    (err, bot) => {
-      if (err) {
-        logger.error('Error checking bot ownership:', err);
-        return res.status(500).json({ error: 'Internal server error' });
-      }
+// Helper to promisify db.all
+function dbAll(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => {
+      if (err) return reject(err);
+      resolve(rows);
+    });
+  });
+}
 
-      if (!bot) {
-        return res.status(404).json({ error: 'Bot not found' });
-      }
+// Helper to promisify db.run
+function dbRun(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.run(sql, params, function(err) {
+      if (err) return reject(err);
+      resolve(this);
+    });
+  });
+}
 
-      // In a real implementation, this would interface with actual trading APIs
-      // For now, we'll simulate the trade execution
-      const tradeId = uuidv4();
-      const executionPrice = price || (Math.random() * 1000 + 100); // Mock price
-      const currentTime = new Date().toISOString();
-
-      db.run(
-        `INSERT INTO trades (id, bot_id, symbol, side, quantity, entry_price, status, opened_at)
-         VALUES (?, ?, ?, ?, ?, ?, 'open', ?)`,
-        [tradeId, botId, symbol, side, quantity, executionPrice, currentTime],
-        function(err) {
-          if (err) {
-            logger.error('Error executing trade:', err);
-            return res.status(500).json({ error: 'Failed to execute trade' });
-          }
-
-          logger.info(`Manual trade executed: ${side} ${quantity} ${symbol} at ${executionPrice}`);
-          
-          res.json({
-            message: 'Trade executed successfully',
-            trade: {
-              id: tradeId,
-              symbol,
-              side,
-              quantity,
-              entry_price: executionPrice,
-              status: 'open'
-            }
-          });
-        }
-      );
+// Execute manual trade (now with real quote, risk checks, idempotency, and live-mode validation)
+router.post('/execute', authenticateToken, auditLog('manual_trade', 'trade'), async (req, res) => {
+  try {
+    const { botId, symbol, side, quantity, price, order_type = 'market' } = req.body;
+    if (!botId || !symbol || !side || !quantity) {
+      return res.status(400).json({ error: 'Missing required fields' });
     }
-  );
+    if (!['buy', 'sell'].includes(side)) {
+      return res.status(400).json({ error: 'Invalid side' });
+    }
+    if (quantity <= 0) {
+      return res.status(400).json({ error: 'Quantity must be > 0' });
+    }
+
+    // Idempotency handling
+    const idempotencyKey = req.header('Idempotency-Key');
+    const idemCacheKey = idempotencyKey ? `${req.user.id}:${idempotencyKey}` : null;
+    if (idemCacheKey && idempotencyCache.has(idemCacheKey)) {
+      const cached = idempotencyCache.get(idemCacheKey);
+      res.set('Idempotent-Replay', 'true');
+      return res.json(cached.response);
+    }
+
+    // Verify bot
+    const bot = await dbGet('SELECT id, trading_mode FROM bots WHERE id = ? AND user_id = ?', [botId, req.user.id]);
+    if (!bot) {
+      return res.status(404).json({ error: 'Bot not found' });
+    }
+
+    // Fetch risk parameters
+    const riskParams = await dbGet('SELECT * FROM risk_parameters WHERE bot_id = ?', [botId]);
+
+    // Get current quote if market order or if no explicit price
+    let quote = null;
+    let executionPrice = price;
+    if (!price || order_type === 'market') {
+      try {
+        quote = await marketDataService.getQuote(symbol);
+        executionPrice = quote.price;
+      } catch (e) {
+        logger.error('Quote fetch failed for execution', { symbol, error: e.message });
+        return res.status(502).json({ error: 'Failed to fetch market quote' });
+      }
+    }
+
+    // Enforce real data in live mode
+    if (bot.trading_mode === 'live' && quote && quote.isMock) {
+      return res.status(503).json({ error: 'Live trading unavailable: real market data unavailable (mock fallback in use)' });
+    }
+
+    // Basic risk checks
+    const exposureRow = await dbGet("SELECT COALESCE(SUM(quantity * entry_price),0) as exposure FROM trades WHERE bot_id = ? AND status = 'open'", [botId]);
+    const currentExposure = exposureRow?.exposure || 0;
+    const newNotional = executionPrice * quantity;
+    const projectedExposure = side === 'sell' ? Math.max(0, currentExposure - newNotional) : currentExposure + newNotional;
+
+    let riskChecks = [];
+    if (riskParams && riskParams.max_position_size && projectedExposure > riskParams.max_position_size) {
+      riskChecks.push({
+        type: 'MAX_POSITION_SIZE',
+        status: 'FAIL',
+        currentExposure,
+        projectedExposure,
+        limit: riskParams.max_position_size
+      });
+      return res.status(422).json({ error: 'Max position size limit exceeded', risk_checks: riskChecks });
+    }
+
+    // Daily loss limit (realized PnL for today)
+    if (riskParams && riskParams.max_daily_loss) {
+      const today = new Date().toISOString().slice(0,10);
+      const pnlRow = await dbGet("SELECT COALESCE(SUM(pnl),0) as realized FROM trades WHERE bot_id = ? AND status='closed' AND date(closed_at) = ?", [botId, today]);
+      const realized = pnlRow?.realized || 0;
+      if (realized < 0 && Math.abs(realized) >= riskParams.max_daily_loss) {
+        riskChecks.push({
+          type: 'MAX_DAILY_LOSS',
+          status: 'FAIL',
+          realizedLoss: realized,
+          limit: riskParams.max_daily_loss
+        });
+        return res.status(422).json({ error: 'Max daily loss limit reached', risk_checks: riskChecks });
+      }
+    }
+
+    const tradeId = uuidv4();
+    const currentTime = new Date().toISOString();
+
+    await dbRun(
+      `INSERT INTO trades (id, bot_id, symbol, side, quantity, entry_price, commission, data_provenance, trading_mode, status, opened_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)`,
+      [
+        tradeId,
+        botId,
+        symbol,
+        side,
+        quantity,
+        executionPrice,
+        0, // commission placeholder
+        quote ? (quote.isMock ? 'mock_fallback' : 'real') : (price ? 'user_supplied' : 'unknown'),
+        bot.trading_mode,
+        currentTime
+      ]
+    );
+
+    logger.info('Manual trade executed', {
+      tradeId,
+      botId,
+      symbol,
+      side,
+      quantity,
+      executionPrice,
+      trading_mode: bot.trading_mode,
+      data_provenance: quote ? (quote.isMock ? 'mock_fallback' : 'real') : (price ? 'user_supplied' : 'unknown')
+    });
+
+    const responsePayload = {
+      message: 'Trade executed successfully',
+      trade: {
+        id: tradeId,
+        bot_id: botId,
+        symbol,
+        side,
+        quantity,
+        entry_price: executionPrice,
+        status: 'open',
+        trading_mode: bot.trading_mode,
+        order_type,
+        data_provenance: quote ? (quote.isMock ? 'mock_fallback' : 'real') : (price ? 'user_supplied' : 'unknown')
+      },
+      risk_checks: riskChecks
+    };
+
+    if (idemCacheKey) {
+      idempotencyCache.set(idemCacheKey, { timestamp: Date.now(), response: responsePayload });
+    }
+
+    res.json(responsePayload);
+  } catch (error) {
+    logger.error('Error executing trade', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Failed to execute trade' });
+  }
 });
 
 // Close trade
-router.post('/trades/:tradeId/close', authenticateToken, auditLog('close_trade', 'trade'), (req, res) => {
-  const { price } = req.body;
+router.post('/trades/:tradeId/close', authenticateToken, auditLog('close_trade', 'trade'), async (req, res) => {
+  try {
+    const { price } = req.body;
+    const trade = await dbGet(`SELECT t.*, b.user_id, b.trading_mode FROM trades t 
+      JOIN bots b ON t.bot_id = b.id 
+      WHERE t.id = ? AND b.user_id = ?`, [req.params.tradeId, req.user.id]);
 
-  // First, verify the trade belongs to the user's bot
-  db.get(
-    `SELECT t.*, b.user_id FROM trades t 
-     JOIN bots b ON t.bot_id = b.id 
-     WHERE t.id = ? AND b.user_id = ?`,
-    [req.params.tradeId, req.user.id],
-    (err, trade) => {
-      if (err) {
-        logger.error('Error checking trade ownership:', err);
-        return res.status(500).json({ error: 'Internal server error' });
-      }
-
-      if (!trade) {
-        return res.status(404).json({ error: 'Trade not found' });
-      }
-
-      if (trade.status !== 'open') {
-        return res.status(400).json({ error: 'Trade is not open' });
-      }
-
-      const exitPrice = price || (Math.random() * 1000 + 100); // Mock price
-      const pnl = (exitPrice - trade.entry_price) * trade.quantity * (trade.side === 'buy' ? 1 : -1);
-      const currentTime = new Date().toISOString();
-
-      db.run(
-        `UPDATE trades 
-         SET exit_price = ?, pnl = ?, status = 'closed', closed_at = ?
-         WHERE id = ?`,
-        [exitPrice, pnl, currentTime, req.params.tradeId],
-        function(err) {
-          if (err) {
-            logger.error('Error closing trade:', err);
-            return res.status(500).json({ error: 'Failed to close trade' });
-          }
-
-          logger.info(`Trade closed: ${req.params.tradeId} with PnL: ${pnl}`);
-          
-          res.json({
-            message: 'Trade closed successfully',
-            trade: {
-              id: req.params.tradeId,
-              exit_price: exitPrice,
-              pnl,
-              status: 'closed'
-            }
-          });
-        }
-      );
+    if (!trade) {
+      return res.status(404).json({ error: 'Trade not found' });
     }
-  );
+    if (trade.status !== 'open') {
+      return res.status(400).json({ error: 'Trade is not open' });
+    }
+
+    let exitPrice = price;
+    let quote = null;
+    if (!price) {
+      try {
+        quote = await marketDataService.getQuote(trade.symbol);
+        exitPrice = quote.price;
+      } catch (e) {
+        logger.error('Quote fetch failed for close', { symbol: trade.symbol, error: e.message });
+        return res.status(502).json({ error: 'Failed to fetch market quote' });
+      }
+    }
+
+    if (trade.trading_mode === 'live' && quote && quote.isMock) {
+      return res.status(503).json({ error: 'Live trading unavailable: real market data unavailable (mock fallback in use)' });
+    }
+
+    const pnl = (exitPrice - trade.entry_price) * trade.quantity * (trade.side === 'buy' ? 1 : -1);
+    const currentTime = new Date().toISOString();
+
+    await dbRun(`UPDATE trades 
+      SET exit_price = ?, pnl = ?, status = 'closed', closed_at = ?
+      WHERE id = ?`, [exitPrice, pnl, currentTime, req.params.tradeId]);
+
+    logger.info('Trade closed', { tradeId: req.params.tradeId, exitPrice, pnl });
+
+    res.json({
+      message: 'Trade closed successfully',
+      trade: {
+        id: req.params.tradeId,
+        exit_price: exitPrice,
+        pnl,
+        status: 'closed',
+        data_provenance: quote ? (quote.isMock ? 'mock_fallback' : 'real') : (price ? 'user_supplied' : 'unknown')
+      }
+    });
+  } catch (error) {
+    logger.error('Error closing trade', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Failed to close trade' });
+  }
 });
 
 // Get market data (real data from Alpha Vantage)

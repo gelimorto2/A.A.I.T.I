@@ -86,6 +86,8 @@ interface Trade {
   status: 'open' | 'closed';
   opened_at: string;
   closed_at?: string;
+  trading_mode?: string;
+  data_provenance?: string;
 }
 
 const TradingPage: React.FC = () => {
@@ -101,6 +103,7 @@ const TradingPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [capabilities, setCapabilities] = useState<any>(null);
   
   // Trade execution dialog
   const [tradeDialogOpen, setTradeDialogOpen] = useState(false);
@@ -118,6 +121,7 @@ const TradingPage: React.FC = () => {
     fetchMarketData();
     fetchHistoricalData(selectedSymbol);
     fetchTrades();
+  fetchCapabilities();
     
     // Set up real-time data updates
     const interval = setInterval(fetchMarketData, 10000); // Every 10 seconds
@@ -182,6 +186,18 @@ const TradingPage: React.FC = () => {
     }
   };
 
+  const fetchCapabilities = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const resp = await fetch('/api/trading/capabilities', { headers: { 'Authorization': `Bearer ${token}` }});
+      if (resp.ok) {
+        setCapabilities(await resp.json());
+      }
+    } catch (e) {
+      // non-fatal
+    }
+  };
+
   const executeTrade = async () => {
     if (!tradeForm.botId) {
       setError('Please select a bot to execute the trade');
@@ -207,6 +223,7 @@ const TradingPage: React.FC = () => {
         setSuccess('Trade executed successfully!');
         setTradeDialogOpen(false);
         fetchTrades(); // Refresh trades
+  fetchCapabilities(); // refresh in case limits evolve
         
         // Reset form
         setTradeForm({
@@ -219,6 +236,9 @@ const TradingPage: React.FC = () => {
       } else {
         const errorData = await response.json();
         setError(errorData.error || 'Failed to execute trade');
+        if (errorData.risk_checks) {
+          console.warn('Risk checks failed', errorData.risk_checks);
+        }
       }
     } catch (error) {
       setError('Network error while executing trade');
@@ -319,6 +339,7 @@ const TradingPage: React.FC = () => {
         <Tab label="Market Watch" />
         <Tab label="Charts" />
         <Tab label="Active Trades" />
+  <Tab label="Capabilities" />
       </Tabs>
 
       {/* Market Watch Tab */}
@@ -466,7 +487,7 @@ const TradingPage: React.FC = () => {
       )}
 
       {/* Active Trades Tab */}
-      {activeTab === 2 && (
+  {activeTab === 2 && (
         <Grid container spacing={3}>
           <Grid item xs={12}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333' }}>
@@ -498,6 +519,8 @@ const TradingPage: React.FC = () => {
                           <TableCell sx={{ color: 'text.primary', fontWeight: 'bold' }}>Side</TableCell>
                           <TableCell sx={{ color: 'text.primary', fontWeight: 'bold' }}>Quantity</TableCell>
                           <TableCell sx={{ color: 'text.primary', fontWeight: 'bold' }}>Entry Price</TableCell>
+                          <TableCell sx={{ color: 'text.primary', fontWeight: 'bold' }}>Mode</TableCell>
+                          <TableCell sx={{ color: 'text.primary', fontWeight: 'bold' }}>Data</TableCell>
                           <TableCell sx={{ color: 'text.primary', fontWeight: 'bold' }}>Current P&L</TableCell>
                           <TableCell sx={{ color: 'text.primary', fontWeight: 'bold' }}>Status</TableCell>
                           <TableCell sx={{ color: 'text.primary', fontWeight: 'bold' }}>Actions</TableCell>
@@ -516,6 +539,12 @@ const TradingPage: React.FC = () => {
                             </TableCell>
                             <TableCell>{trade.quantity}</TableCell>
                             <TableCell>${trade.entry_price.toFixed(2)}</TableCell>
+                            <TableCell>
+                              <Chip label={(trade.trading_mode||'').toUpperCase()} size="small" />
+                            </TableCell>
+                            <TableCell>
+                              <Chip label={trade.data_provenance || 'n/a'} size="small" color={trade.data_provenance === 'real' ? 'success' : trade.data_provenance === 'mock_fallback' ? 'warning' : 'default'} />
+                            </TableCell>
                             <TableCell>
                               <Typography 
                                 color={trade.pnl && trade.pnl >= 0 ? '#00ff88' : '#ff3366'}
@@ -548,6 +577,28 @@ const TradingPage: React.FC = () => {
             </Card>
           </Grid>
         </Grid>
+      )}
+
+      {/* Capabilities Tab */}
+      {activeTab === 3 && (
+        <Card sx={{ bgcolor: 'background.paper', border: '1px solid #333', p:2 }}>
+          <Typography variant="h6" fontWeight="bold" gutterBottom>Trading Capabilities</Typography>
+          {!capabilities && (
+            <Typography variant="body2" color="text.secondary">Loading capabilities...</Typography>
+          )}
+          {capabilities && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Typography variant="caption" color="text.secondary">Generated: {capabilities.generatedAt}</Typography>
+              <Typography variant="body2">Market Provider: {capabilities.marketData?.provider}</Typography>
+              <Typography variant="body2">Fallback Enabled: {String(capabilities.marketData?.fallback)}</Typography>
+              <Typography variant="body2">Execution Idempotency: {capabilities.execution?.idempotency}</Typography>
+              <Typography variant="body2">Risk: Max Position Size: {capabilities.risk?.maxPositionSize}</Typography>
+              <Typography variant="body2">Risk: Max Daily Loss: {capabilities.risk?.maxDailyLoss}</Typography>
+              <Typography variant="body2">Modes: Live: {String(capabilities.modes?.live)}</Typography>
+              <Typography variant="body2" color="warning.main">Warning: {capabilities.transparency?.warnings?.[0]}</Typography>
+            </Box>
+          )}
+        </Card>
       )}
 
       {/* Trade Execution Dialog */}

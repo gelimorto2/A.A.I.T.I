@@ -80,7 +80,8 @@ const TradingChart: React.FC<TradingChartProps> = ({
   const theme = useTheme();
   const [chartType, setChartType] = useState<ChartType>('candlestick');
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('1h');
-  const [indicators, setIndicators] = useState<string[]>(['sma20', 'ema12']);
+  // Indicators placeholder (future local ML/TA calculations)
+  const [indicators] = useState<string[]>(['sma20', 'ema12']);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Simulated real-time data updates
@@ -111,8 +112,35 @@ const TradingChart: React.FC<TradingChartProps> = ({
     }
   }, [realTime, data]);
 
+  // Adjust data based on selected timeframe by simple downsampling/aggregation
+  const aggregatedData = useMemo(() => {
+    const source = (liveData.length > 0 ? liveData : data).slice();
+    if (source.length === 0) return [] as CandlestickData[];
+    const frameMap: Record<TimeFrame, number> = { '1m': 1, '5m': 5, '15m': 15, '1h': 60, '4h': 240, '1d': 1440, '1w': 10080 };
+    const targetMinutes = frameMap[timeFrame];
+    // Assume base interval ~1h or less; estimate base minutes from first 2 candles
+    const baseMs = source.length > 1 ? (new Date(source[1].timestamp).getTime() - new Date(source[0].timestamp).getTime()) : 60*60*1000;
+    const baseMinutes = Math.max(1, Math.round(baseMs / 60000));
+    const groupSize = Math.max(1, Math.round(targetMinutes / baseMinutes));
+    if (groupSize <= 1) return source;
+    const aggregated: CandlestickData[] = [];
+    for (let i = 0; i < source.length; i += groupSize) {
+      const slice = source.slice(i, i + groupSize);
+      if (slice.length === 0) continue;
+      aggregated.push({
+        timestamp: slice[0].timestamp,
+        open: slice[0].open,
+        high: Math.max(...slice.map(s => s.high)),
+        low: Math.min(...slice.map(s => s.low)),
+        close: slice[slice.length - 1].close,
+        volume: slice.reduce((a, s) => a + s.volume, 0),
+      });
+    }
+    return aggregated;
+  }, [liveData, data, timeFrame]);
+
   const chartData = useMemo(() => {
-    const workingData = liveData.length > 0 ? liveData : data;
+    const workingData = aggregatedData;
     
     if (workingData.length === 0) {
       return {
@@ -121,7 +149,12 @@ const TradingChart: React.FC<TradingChartProps> = ({
       };
     }
 
-    const labels = workingData.map(d => new Date(d.timestamp).toLocaleTimeString());
+    const labels = workingData.map(d => {
+      const dt = new Date(d.timestamp);
+      if (['1d','1w'].includes(timeFrame)) return dt.toLocaleDateString();
+      if (['4h','1h'].includes(timeFrame)) return dt.toLocaleString(undefined,{ hour:'2-digit', minute:'2-digit'});
+      return dt.toLocaleTimeString();
+    });
     
     if (chartType === 'line') {
       return {
@@ -142,29 +175,34 @@ const TradingChart: React.FC<TradingChartProps> = ({
     }
 
     if (chartType === 'candlestick') {
-      // Using close prices as lines since Chart.js doesn't have native candlesticks
+      // Approximate candlesticks using bar chart (high-low as background band + close line)
       const bullishColor = theme.palette.mode === 'dark' ? '#00ff88' : '#2e7d32';
       const bearishColor = theme.palette.mode === 'dark' ? '#ff3366' : '#d32f2f';
-      
+      const ohlcHeights = workingData.map(d => d.high - d.low);
       return {
         labels,
         datasets: [
           {
-            label: 'Close Price',
-            data: workingData.map(d => d.close),
-            borderColor: workingData.map(d => 
-              d.close > d.open ? bullishColor : bearishColor
-            ),
-            backgroundColor: workingData.map(d => 
-              d.close > d.open ? bullishColor + '20' : bearishColor + '20'
-            ),
-            borderWidth: 2,
-            pointBackgroundColor: workingData.map(d => 
-              d.close > d.open ? bullishColor : bearishColor
-            ),
-            pointRadius: 1,
+            type: 'bar' as const,
+            label: 'Range',
+            data: workingData.map((d, idx) => ({ x: labels[idx], y: d.high, y1: d.low })),
+            // Chart.js fallback – represent range via top value; styling hints
+            dataParser: 'ohlc', // custom hint (not native)
+            backgroundColor: workingData.map(d => (d.close >= d.open ? bullishColor + '25' : bearishColor + '25')),
+            borderColor: workingData.map(d => (d.close >= d.open ? bullishColor : bearishColor)),
+            borderWidth: 1,
           },
-        ],
+          {
+            label: 'Close',
+            data: workingData.map(d => d.close),
+            borderColor: theme.palette.primary.main,
+            backgroundColor: theme.palette.primary.main,
+            pointRadius: 1,
+            borderWidth: 2,
+            tension: 0.2,
+            type: 'line' as const,
+          }
+        ]
       };
     }
 
@@ -184,7 +222,7 @@ const TradingChart: React.FC<TradingChartProps> = ({
     }
 
     return { labels: [], datasets: [] };
-  }, [liveData, data, chartType, symbol, theme]);
+  }, [aggregatedData, chartType, symbol, theme, timeFrame]);
 
   const chartOptions: ChartOptions<'line' | 'bar'> = useMemo(() => ({
     responsive: true,

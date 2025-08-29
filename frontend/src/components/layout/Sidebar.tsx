@@ -62,12 +62,6 @@ const menuItems = [
     description: 'AI Intelligence'
   },
   { 
-    text: 'AI Insights', 
-    icon: <Lightbulb />, 
-    path: '/ai-insights',
-    description: 'Natural Language AI'
-  },
-  { 
     text: 'Integrations', 
     icon: <Extension />, 
     path: '/integrations',

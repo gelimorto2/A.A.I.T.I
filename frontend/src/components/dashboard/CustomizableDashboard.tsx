@@ -272,7 +272,7 @@ const CustomizableDashboard: React.FC = () => {
               fontSize: { xs: '0.875rem', sm: '1rem' }
             }}
           >
-            Welcome back, {user?.username} • Mission Status: ACTIVE
+            Welcome back, {user?.username === 'admin' ? 'Administrator' : user?.username} • Mission Status: ACTIVE
           </Typography>
         </Box>
 
@@ -335,13 +335,14 @@ const CustomizableDashboard: React.FC = () => {
       )}
 
       {/* Dashboard Grid */}
-      <ResponsiveGridLayout
+  <ResponsiveGridLayout
         className="layout"
         layouts={layouts}
         onLayoutChange={handleLayoutChange}
         breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 320 }}
         cols={{ lg: 12, md: 12, sm: 12, xs: 12, xxs: 12 }}
-        rowHeight={70}
+    // Increased row height for better content visibility
+    rowHeight={90}
         isDraggable={isEditMode}
         isResizable={isEditMode}
         margin={[8, 8]}
@@ -360,6 +361,8 @@ const CustomizableDashboard: React.FC = () => {
                 transform: isEditMode ? 'scale(1.02)' : 'none',
                 zIndex: isEditMode ? 10 : 'auto',
               },
+      // Ensure a reasonable minimum height to avoid cramped widgets
+      minHeight: 180
             }}
           >
             {renderWidget(widget)}

@@ -28,7 +28,8 @@ import {
   AppBar,
   Toolbar,
   useTheme,
-  alpha
+  alpha,
+  Tooltip
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -253,6 +254,35 @@ const AVAILABLE_COMPONENTS: StrategyComponent[] = [
   }
 ];
 
+// Simple Error Boundary for this page
+class StrategyCreatorErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: any }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: any, info: any) {
+    // eslint-disable-next-line no-console
+    console.error('Strategy Creator crashed:', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <Box sx={{ p: 4, textAlign: 'center' }}>
+          <Typography variant="h5" gutterBottom>Strategy Creator Error</Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+            Something went wrong rendering the visual strategy creator. The UI has been safely recovered.
+          </Typography>
+          <Button variant="contained" onClick={() => window.location.reload()}>Reload Page</Button>
+        </Box>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const StrategyCreatorPage: React.FC = () => {
   const theme = useTheme();
   const [strategy, setStrategy] = useState<Strategy>({
@@ -432,39 +462,55 @@ const StrategyCreatorPage: React.FC = () => {
                 {strategy.name}
               </Typography>
               
-              <Button
-                startIcon={<SaveIcon />}
-                onClick={saveStrategy}
-                disabled={isSaving}
-                sx={{ mr: 1 }}
-              >
-                {isSaving ? 'Saving...' : 'Save'}
-              </Button>
+              <Tooltip title="Persist the current strategy layout & parameters (mock save)">
+                <span>
+                  <Button
+                    startIcon={<SaveIcon />}
+                    onClick={saveStrategy}
+                    disabled={isSaving}
+                    sx={{ mr: 1 }}
+                  >
+                    {isSaving ? 'Saving...' : 'Save'}
+                  </Button>
+                </span>
+              </Tooltip>
               
-              <Button
-                startIcon={<PlayIcon />}
-                onClick={testStrategy}
-                disabled={isTesting}
-                variant="contained"
-                sx={{ mr: 1 }}
-              >
-                {isTesting ? 'Testing...' : 'Test Strategy'}
-              </Button>
+              <Tooltip title="Run a mock backtest (placeholder for future ML backtesting integration)">
+                <span>
+                  <Button
+                    startIcon={<PlayIcon />}
+                    onClick={testStrategy}
+                    disabled={isTesting}
+                    variant="contained"
+                    sx={{ mr: 1 }}
+                  >
+                    {isTesting ? 'Testing...' : 'Test Strategy'}
+                  </Button>
+                </span>
+              </Tooltip>
               
-              <Button
-                startIcon={<DownloadIcon />}
-                onClick={exportStrategy}
-                sx={{ mr: 1 }}
-              >
-                Export
-              </Button>
+              <Tooltip title="Export this strategy definition as JSON">
+                <span>
+                  <Button
+                    startIcon={<DownloadIcon />}
+                    onClick={exportStrategy}
+                    sx={{ mr: 1 }}
+                  >
+                    Export
+                  </Button>
+                </span>
+              </Tooltip>
               
-              <Button
-                startIcon={<VisibilityIcon />}
-                onClick={() => setPreviewOpen(true)}
-              >
-                Preview
-              </Button>
+              <Tooltip title="View a summarized preview of all components used">
+                <span>
+                  <Button
+                    startIcon={<VisibilityIcon />}
+                    onClick={() => setPreviewOpen(true)}
+                  >
+                    Preview
+                  </Button>
+                </span>
+              </Tooltip>
             </Toolbar>
           </AppBar>
 
@@ -910,4 +956,11 @@ const StrategyPreview: React.FC<{ strategy: Strategy }> = ({ strategy }) => {
   );
 };
 
-export default StrategyCreatorPage;
+// Export wrapped with error boundary for resilience
+const WrappedStrategyCreator: React.FC = () => (
+  <StrategyCreatorErrorBoundary>
+    <StrategyCreatorPage />
+  </StrategyCreatorErrorBoundary>
+);
+
+export default WrappedStrategyCreator;
