@@ -25,11 +25,12 @@ A.A.I.T.I is designed for:
 - **Support Vector Machines**: Classification and regression models
 - **Technical Indicators**: RSI, MACD, Bollinger Bands, and more
 
-### 📊 Market Data Integration
-- **Real-time Data**: Live cryptocurrency prices via CoinGecko API
-- **Historical Data**: Comprehensive historical price data collection
-- **50+ Cryptocurrencies**: Major cryptocurrencies and tokens
-- **Data Management**: Automated data collection and storage
+### 📊 Market Data & Visualization
+- **Real-time Data**: Live cryptocurrency prices via CoinGecko API (provenance flagged when synthetic/mock)
+- **Historical Loader**: Timeframe-aware historical fetch on chart interval changes
+- **Dedicated Charts Page**: Full-screen multi-timeframe chart separate from dashboard
+- **Dashboard Mini Chart**: Quick-glance price action widget
+- **Pluggable Sources**: Architecture ready for exchange OHLC adapters
 
 ### 💼 Portfolio Optimization
 - **Modern Portfolio Theory**: Sharpe ratio optimization
@@ -44,12 +45,13 @@ A.A.I.T.I is designed for:
 - **Risk Analysis**: Value at Risk (VaR) and risk-adjusted returns
 - **Visualization**: Equity curves and performance charts
 
-### 🏗️ Modern Architecture
-- **Docker-First**: Production-ready containerized deployment
-- **Microservices**: Modular, scalable architecture
-- **RESTful API**: Comprehensive API for all platform features
-- **Real-time Updates**: Socket.io for live data streaming
-- **Security**: JWT authentication and rate limiting
+### 🏗️ Modern Architecture & Reliability
+- **Docker-First**: One-command production bootstrap
+- **Role & Governance**: First user auto-admin + admin panel (promote/demote/reset)
+- **Destructive Reset**: Admin can wipe accounts+credentials; onboarding reappears
+- **REST API**: Idempotent trade execution & data provenance tags
+- **Real-time**: Socket.io streaming + weighted health scoring
+- **Security & Risk**: JWT auth, rate limiting, risk gating (position size/daily loss)
 
 ## 🚀 Quick Installation
 
@@ -97,12 +99,14 @@ cd frontend && npm start
 
 ### Basic Workflow
 
-1. **Start the Platform**: Run `./install` or use Docker Compose
-2. **Access Dashboard**: Open http://localhost:5000
-3. **Explore Data**: View real-time market data and historical charts
-4. **Create Strategies**: Use the strategy builder or API
-5. **Run Backtests**: Test strategies with historical data
-6. **Analyze Results**: Review performance metrics and visualizations
+1. **Install**: Run `./install` (Docker build + start)
+2. **Onboard**: If no users exist you get the Welcome Setup Wizard
+3. **Create Account**: First registered user auto-elevated to Administrator
+4. **Customize Dashboard**: Edit mode → drag/resize/toggle widgets (Agents, PnL, Win Rate, Health, Heat Map, Clocks, Mini Chart)
+5. **Deep Charts**: Use new Charts page for large timeframe analysis (auto-loads history on change)
+6. **Paper Trade**: Execute trades; transparency via mode & provenance columns
+7. **Admin Tools**: Promote/demote users or perform a system reset
+8. **Iterate & Improve**: Refine strategies, observe health, adjust risk
 
 ### API Examples
 
@@ -206,7 +210,22 @@ A.A.I.T.I/
 - **APIs**: CoinGecko for market data
 - **Real-time**: Socket.io for live updates
 
-## 📊 Performance & Monitoring
+## �️ Dashboard Widgets (Adaptive)
+
+| Widget | Purpose | Adaptive Behavior |
+|--------|---------|-------------------|
+| AI Agents Status | Running / stopped / error counts | Larger: highlights failing agents |
+| Profit & Loss | Aggregate PnL & trades | Larger: expanded breakdown (future: per-symbol) |
+| Win Rate | Current win ratio | Larger: trend sparkline (planned) |
+| System Health | Weighted backend health | Larger: subsystem metrics (latency, risk, data) |
+| Market Heat Map | Relative market performance | Wider: more assets rendered |
+| Enhanced Chart | Mini timeframe chart | Larger: more bars + overlays (extensible) |
+| World Clocks | Global trading session times | Larger: additional time zones |
+| (Charts Page) | Full analysis canvas | Independent of grid layout |
+
+Adaptive logic progressively reveals richer context when widget area exceeds thresholds; compact mode keeps essentials visible for comfort and clarity.
+
+## �📊 Performance & Monitoring
 
 ### Health Checks
 ```bash
@@ -274,9 +293,16 @@ This project is licensed under the ISC License - see the [LICENSE](LICENSE) file
 - **Discussions**: https://github.com/gelimorto2/A.A.I.T.I/discussions
 - **Releases**: https://github.com/gelimorto2/A.A.I.T.I/releases
 
-## 🎯 Roadmap
+## 🎯 Roadmap (Snapshot)
 
-See our [TODO-ROADMAP.md](TODO-ROADMAP.md) for planned features and development milestones.
+Current focus:
+- Replace synthetic OHLC with real aggregated exchange candles
+- Add indicators (RSI, MACD overlays) to Charts page
+- Persist dashboard layouts per-user server-side (not just localStorage)
+- Extend risk engine: slippage, commissions, drawdown guard
+- Automated tests for onboarding/reset/role transitions
+
+Full list: see [TODO-ROADMAP.md](TODO-ROADMAP.md)
 
 ---
 

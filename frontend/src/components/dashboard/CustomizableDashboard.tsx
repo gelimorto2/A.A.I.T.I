@@ -34,6 +34,7 @@ import WinRateWidget from './WinRateWidget';
 import SystemHealthWidget from './SystemHealthWidget';
 import MarketHeatMapWidget from './MarketHeatMapWidget';
 import EnhancedChartWidget from './EnhancedChartWidget';
+import ClockWidget from './ClockWidget';
 
 // CSS for react-grid-layout
 import 'react-grid-layout/css/styles.css';
@@ -55,6 +56,7 @@ const availableWidgets: DashboardWidget[] = [
   { id: 'system-health', type: 'system-health', title: 'System Health', enabled: true },
   { id: 'enhanced-chart', type: 'enhanced-chart', title: 'Enhanced Trading Chart', enabled: true },
   { id: 'market-heatmap', type: 'market-heatmap', title: 'Market Heat Map', enabled: true },
+  { id: 'clocks', type: 'clocks', title: 'World Clocks', enabled: true },
 ];
 
 const defaultLayouts = {
@@ -65,6 +67,7 @@ const defaultLayouts = {
     { i: 'system-health', x: 9, y: 0, w: 3, h: 3 },
     { i: 'enhanced-chart', x: 0, y: 3, w: 8, h: 4 },
     { i: 'market-heatmap', x: 8, y: 3, w: 4, h: 4 },
+  { i: 'clocks', x: 8, y: 7, w: 4, h: 2 },
   ],
   md: [
     { i: 'bots-status', x: 0, y: 0, w: 6, h: 3 },
@@ -73,6 +76,7 @@ const defaultLayouts = {
     { i: 'system-health', x: 6, y: 3, w: 6, h: 3 },
     { i: 'enhanced-chart', x: 0, y: 6, w: 12, h: 4 },
     { i: 'market-heatmap', x: 0, y: 10, w: 12, h: 4 },
+  { i: 'clocks', x: 0, y: 14, w: 12, h: 2 },
   ],
   sm: [
     { i: 'bots-status', x: 0, y: 0, w: 12, h: 3 },
@@ -81,6 +85,7 @@ const defaultLayouts = {
     { i: 'system-health', x: 0, y: 9, w: 12, h: 3 },
     { i: 'enhanced-chart', x: 0, y: 12, w: 12, h: 4 },
     { i: 'market-heatmap', x: 0, y: 16, w: 12, h: 4 },
+  { i: 'clocks', x: 0, y: 20, w: 12, h: 3 },
   ],
   xs: [
     { i: 'bots-status', x: 0, y: 0, w: 12, h: 4 },
@@ -89,6 +94,7 @@ const defaultLayouts = {
     { i: 'system-health', x: 0, y: 12, w: 12, h: 4 },
     { i: 'enhanced-chart', x: 0, y: 16, w: 12, h: 5 },
     { i: 'market-heatmap', x: 0, y: 21, w: 12, h: 5 },
+  { i: 'clocks', x: 0, y: 26, w: 12, h: 3 },
   ],
   xxs: [
     { i: 'bots-status', x: 0, y: 0, w: 12, h: 5 },
@@ -97,6 +103,7 @@ const defaultLayouts = {
     { i: 'system-health', x: 0, y: 15, w: 12, h: 5 },
     { i: 'enhanced-chart', x: 0, y: 20, w: 12, h: 6 },
     { i: 'market-heatmap', x: 0, y: 26, w: 12, h: 6 },
+  { i: 'clocks', x: 0, y: 32, w: 12, h: 4 },
   ],
 };
 
@@ -231,6 +238,13 @@ const CustomizableDashboard: React.FC = () => {
       case 'enhanced-chart':
         return (
           <EnhancedChartWidget
+            id={widget.id}
+            onRemove={isEditMode ? removeWidget : undefined}
+          />
+        );
+      case 'clocks':
+        return (
+          <ClockWidget
             id={widget.id}
             onRemove={isEditMode ? removeWidget : undefined}
           />

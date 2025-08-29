@@ -25,8 +25,11 @@ export const useSetupStatus = (): SetupStatus & {
       
       if (response.ok) {
         const serverStatus = await response.json();
-        const isComplete = serverStatus.setupComplete || !!localSetup;
-        
+        // If server reports zero users, force setup regardless of local flag (handles destructive reset)
+        const isComplete = serverStatus.setupComplete && serverStatus.userCount > 0;
+        if (!isComplete && serverStatus.userCount === 0) {
+          localStorage.removeItem('aaiti-setup-complete');
+        }
         setIsSetupComplete(isComplete);
         setNeedsSetup(!isComplete);
       } else {
@@ -37,7 +40,7 @@ export const useSetupStatus = (): SetupStatus & {
         setNeedsSetup(!hasLocalSetup);
       }
     } catch (error) {
-      console.warn('Could not check setup status from server, using local storage');
+  console.warn('Could not check setup status from server, using local storage');
       const localSetup = localStorage.getItem('aaiti-setup-complete');
       const hasLocalSetup = !!localSetup;
       setIsSetupComplete(hasLocalSetup);

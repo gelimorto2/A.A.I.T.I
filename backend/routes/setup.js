@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getCredentials, storeCredentials } = require('../utils/credentials');
+const { db } = require('../database/init');
 const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
 
@@ -8,22 +9,27 @@ const logger = require('../utils/logger');
 router.get('/status', async (req, res) => {
   try {
     const credentials = getCredentials();
-    
-    // Check if basic configuration exists
-    const hasAdmin = credentials?.admin?.username && credentials?.admin?.password;
     const hasSystemConfig = credentials?.system?.port;
-    
-    res.json({
-      setupComplete: !!hasAdmin && !!hasSystemConfig,
-      hasAdmin: !!hasAdmin,
-      hasSystemConfig: !!hasSystemConfig,
-      version: '2.1.0'
+    // Determine admin/user existence from users table to avoid stale credentials file reliance
+    db.get('SELECT COUNT(*) as count FROM users', [], (err, row) => {
+      let userCount = 0;
+      if (!err && row) userCount = row.count;
+      const hasAnyUser = userCount > 0;
+      const setupComplete = hasAnyUser; // Core requirement: at least one user (first becomes admin via auto-promotion logic)
+      res.json({
+        setupComplete,
+        hasUsers: hasAnyUser,
+        userCount,
+        hasSystemConfig: !!hasSystemConfig,
+        version: '2.1.0'
+      });
     });
   } catch (error) {
     logger.error('Error checking setup status:', error);
     res.json({
       setupComplete: false,
-      hasAdmin: false,
+      hasUsers: false,
+      userCount: 0,
       hasSystemConfig: false,
       version: '2.1.0'
     });
@@ -81,8 +87,8 @@ router.post('/complete', async (req, res) => {
       }
     };
 
-    // Save configuration
-    await storeCredentials(config);
+  // Save configuration (non-blocking baseline); but final authority for setupComplete now is presence of at least one user
+  await storeCredentials(config);
 
     logger.info('Initial setup completed', {
       admin: admin.username,

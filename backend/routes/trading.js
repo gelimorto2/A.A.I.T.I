@@ -7,6 +7,55 @@ const logger = require('../utils/logger');
 
 const router = express.Router();
 
+// Basic in-memory cache for historical market data to reduce external calls
+const histCache = new Map(); // key: symbol|tf, value: { ts, candles }
+
+// Map timeframe to minutes and sample size
+const TF_CONFIG = {
+  '1m': { minutes: 1, points: 500 },
+  '5m': { minutes: 5, points: 500 },
+  '15m': { minutes: 15, points: 400 },
+  '1h': { minutes: 60, points: 400 },
+  '4h': { minutes: 240, points: 300 },
+  '1d': { minutes: 1440, points: 365 }
+};
+
+// GET /api/market/history?symbol=bitcoin&tf=1h
+router.get('/market/history', async (req, res) => {
+  try {
+    const symbol = (req.query.symbol || 'bitcoin').toString().toLowerCase();
+    const tf = (req.query.tf || '1h').toString();
+    if (!TF_CONFIG[tf]) return res.status(400).json({ error: 'Invalid timeframe' });
+    const cacheKey = symbol + '|' + tf;
+    const cached = histCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < 30_000) {
+      return res.json({ symbol, tf, candles: cached.candles, cached: true });
+    }
+    // For now use existing marketData service for spot price sampling (placeholder). Ideally integrate real OHLC source.
+    const { minutes, points } = TF_CONFIG[tf];
+    const now = Date.now();
+    const candles = [];
+    let lastClose = null;
+    for (let i = points - 1; i >= 0; i--) {
+      const t = now - i * minutes * 60 * 1000;
+      // Price approximation (could be replaced with external API call aggregation)
+      const base = Math.sin(t / 3.6e6) * 50 + 50000; // synthetic wave baseline
+      const noise = (Math.random() - 0.5) * 100;
+      const close = base + noise;
+      const open = lastClose == null ? close + (Math.random() - 0.5) * 50 : lastClose;
+      const high = Math.max(open, close) + Math.random() * 30;
+      const low = Math.min(open, close) - Math.random() * 30;
+      candles.push({ time: t, open: round(open), high: round(high), low: round(low), close: round(close) });
+      lastClose = close;
+    }
+    histCache.set(cacheKey, { ts: Date.now(), candles });
+    res.json({ symbol, tf, candles, cached: false, provenance: 'synthetic_demo' });
+  } catch (e) {
+    logger.error('history error', e);
+    res.status(500).json({ error: 'Failed to load history' });
+  }
+});
+
 // Capability metadata (update as features mature)
 const tradingCapabilities = {
   version: '1.0.0',

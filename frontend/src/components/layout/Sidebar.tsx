@@ -83,6 +83,12 @@ const baseMenuItems = [
     description: 'Performance Intel'
   },
   { 
+    text: 'Charts', 
+    icon: <TrendingUp />, 
+    path: '/charts', 
+    description: 'Market History'
+  },
+  { 
     text: 'Settings', 
     icon: <Settings />, 
     path: '/settings',
