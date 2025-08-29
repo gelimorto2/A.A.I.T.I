@@ -705,13 +705,12 @@ main_menu() {
                     if ! check_docker; then
                         print_error "Docker not available"
                     else
-                        print_step "Wiping user accounts & audit logs via node (no sqlite3 CLI dependency)..."
-                        # Use an ephemeral container (safer if service not running)
-                        if $COMPOSE_CMD run --rm aaiti node -e "const fs=require('fs');const path=require('path');const sqlite3=require('sqlite3').verbose();const dbPaths=['backend/database/aaiti.sqlite','backend/database/trading.db'];let acted=false;for(const p of dbPaths){if(fs.existsSync(p)){const db=new sqlite3.Database(p);db.serialize(()=>{db.run('DELETE FROM users');db.run('DELETE FROM audit_logs');});db.close();acted=true;}}if(!acted){console.error('No database file found.');process.exit(2);}fs.rmSync('backend/config/credentials.enc',{force:true});fs.rmSync('backend/config/encryption.key',{force:true});console.log('Reset complete.');" 2>/dev/null; then
+                        print_step "Wiping user accounts & audit logs (script)..."
+                        if $COMPOSE_CMD run --rm aaiti node backend/scripts/reset-accounts.js 2>/dev/null; then
                             print_success "Accounts & credentials wiped. Register a new user to bootstrap admin."
                         else
-                            print_warning "Automatic wipe failed. Run manually (inside repo):"
-                            echo "node -e \"const fs=require('fs');const sqlite3=require('sqlite3').verbose();['backend/database/aaiti.sqlite','backend/database/trading.db'].forEach(p=>{if(fs.existsSync(p)){const db=new sqlite3.Database(p);db.serialize(()=>{db.run('DELETE FROM users');db.run('DELETE FROM audit_logs');});db.close();}});fs.rmSync('backend/config/credentials.enc',{force:true});fs.rmSync('backend/config/encryption.key',{force:true});console.log('Done');\"" 
+                            print_warning "Automatic wipe failed. Manual command inside container shell:"
+                            echo "node backend/scripts/reset-accounts.js"
                         fi
                     fi
                 else
