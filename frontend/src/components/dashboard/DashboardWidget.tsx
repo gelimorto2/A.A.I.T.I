@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useLayoutEffect, useState, createContext, useContext } from 'react';
 import { Card, CardContent, Typography, Box, IconButton } from '@mui/material';
 import { DragIndicator, Settings, Close } from '@mui/icons-material';
 
@@ -11,6 +11,14 @@ export interface WidgetProps {
   isDragging?: boolean;
 }
 
+interface Size { width: number; height: number; }
+const WidgetSizeContext = createContext<Size | undefined>(undefined);
+export const useWidgetSize = () => {
+  const ctx = useContext(WidgetSizeContext);
+  if (!ctx) return { width: 0, height: 0 };
+  return ctx;
+};
+
 const DashboardWidget: React.FC<WidgetProps> = ({
   id,
   title,
@@ -19,6 +27,22 @@ const DashboardWidget: React.FC<WidgetProps> = ({
   onSettings,
   isDragging = false,
 }) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [size, setSize] = useState<Size>({ width: 0, height: 0 });
+
+  useLayoutEffect(() => {
+    if (!containerRef.current) return;
+    const el = containerRef.current;
+    const obs = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        setSize({ width, height });
+      }
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
   return (
     <Card
       sx={{
@@ -100,8 +124,10 @@ const DashboardWidget: React.FC<WidgetProps> = ({
       </Box>
 
       {/* Widget Content */}
-      <CardContent sx={{ flexGrow: 1, p: 2 }}>
-        {children}
+      <CardContent ref={containerRef} sx={{ flexGrow: 1, p: 2 }}>
+        <WidgetSizeContext.Provider value={size}>
+          {children}
+        </WidgetSizeContext.Provider>
       </CardContent>
     </Card>
   );

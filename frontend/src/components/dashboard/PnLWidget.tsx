@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { TrendingUp, TrendingDown } from '@mui/icons-material';
-import DashboardWidget from './DashboardWidget';
+import DashboardWidget, { useWidgetSize } from './DashboardWidget';
 import PnLChartTooltip from '../common/PnLChartTooltip';
 
 interface PnLWidgetProps {
@@ -20,6 +20,8 @@ const PnLWidget: React.FC<PnLWidgetProps> = ({
   onSettings,
 }) => {
   const isPositive = totalPnL >= 0;
+  const { width, height } = useWidgetSize();
+  const showExtended = width > 260 && height > 220;
 
   return (
     <DashboardWidget
@@ -47,13 +49,15 @@ const PnLWidget: React.FC<PnLWidgetProps> = ({
             ${Math.abs(totalPnL).toFixed(2)}
           </Typography>
           
-          <Typography 
-            variant="body2" 
-            color="text.secondary"
-            sx={{ mb: 2 }}
-          >
+          <Typography variant="body2" color="text.secondary" sx={{ mb: showExtended ? 1 : 2 }}>
             {totalTrades} Total Trades
           </Typography>
+
+          {showExtended && (
+            <Typography variant="caption" color="text.secondary" sx={{ display:'block', mb:2 }}>
+              Avg PnL / Trade: ${(totalTrades? (totalPnL/totalTrades):0).toFixed(2)}
+            </Typography>
+          )}
 
           <Box 
             sx={{ 
