@@ -6,6 +6,8 @@
 
 📖 **[View Presentation](presentation.html)** | 🚀 **[Quick Start](#quick-installation)** | 📚 **[Documentation](docs/)**
 
+Note: The default build runs in Public Demo Mode. No login or registration is required; the app loads with a guest session and paper trading enabled by default.
+
 ## 🎯 Overview
 
 A.A.I.T.I is designed for:

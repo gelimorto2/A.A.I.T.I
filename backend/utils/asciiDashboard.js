@@ -4,6 +4,8 @@ const path = require('path');
 
 class ASCIIDashboard {
   constructor() {
+    // Disable dashboard rendering in test or non-interactive environments
+    this.enabled = process.env.NODE_ENV !== 'test' && process.env.DISABLE_DASHBOARD !== 'true' && process.stdout && process.stdout.isTTY;
     this.stats = {
       serverStatus: 'INITIALIZING',
       uptime: 0,
@@ -103,6 +105,7 @@ class ASCIIDashboard {
   }
 
   render() {
+    if (!this.enabled) return; // No-op in tests or when disabled
     const memUsage = process.memoryUsage();
     const cpuCount = os.cpus().length;
     const terminal = this.getTerminalSize();
@@ -193,10 +196,8 @@ ${this.centerText(`Last Update: ${new Date().toLocaleTimeString()} • Productio
   }
 
   start() {
-    // Initial render
+    if (!this.enabled) return; // Skip rendering loop in tests
     this.render();
-    
-    // Update every 5 seconds
     this.interval = setInterval(() => {
       this.render();
     }, 5000);
@@ -209,6 +210,7 @@ ${this.centerText(`Last Update: ${new Date().toLocaleTimeString()} • Productio
   }
 
   addLog(level, message, meta = {}) {
+    if (!this.enabled) return; // Avoid console updates in tests
     // Add log to internal storage
     const logEntry = {
       time: new Date().toLocaleTimeString(),
@@ -239,6 +241,7 @@ ${this.centerText(`Last Update: ${new Date().toLocaleTimeString()} • Productio
   }
 
   log(level, message, meta = {}) {
+    if (!this.enabled) return;
     this.addLog(level, message, meta);
   }
 }

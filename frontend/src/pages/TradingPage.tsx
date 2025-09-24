@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Grid,
@@ -39,29 +39,8 @@ import {
   Close,
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
+import { createChart, ColorType } from 'lightweight-charts';
 import { AppDispatch, RootState } from '../store/store';
-
-// Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
 
 interface MarketData {
   symbol: string;
@@ -227,63 +206,58 @@ const TradingPage: React.FC = () => {
     }
   };
 
-  const getChartData = () => {
-    if (!historicalData?.data) return null;
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<any>(null);
 
-    const labels = historicalData.data.map((d: any) => d.date);
-    const prices = historicalData.data.map((d: any) => d.close);
+  // Initialize TradingView chart
+  useEffect(() => {
+    if (!chartContainerRef.current || !historicalData?.data) return;
 
-    return {
-      labels,
-      datasets: [
-        {
-          label: `${selectedSymbol} Price`,
-          data: prices,
-          borderColor: '#00ff88',
-          backgroundColor: 'rgba(0, 255, 136, 0.1)',
-          borderWidth: 2,
-          fill: true,
-          tension: 0.1,
-        },
-      ],
-    };
-  };
+    const chart = createChart(chartContainerRef.current, {
+      width: chartContainerRef.current.clientWidth,
+      height: 400,
+      layout: {
+        background: { type: ColorType.Solid, color: 'transparent' },
+        textColor: '#bbb',
+      },
+      grid: {
+        vertLines: { color: '#222' },
+        horzLines: { color: '#222' },
+      },
+      timeScale: { timeVisible: true, secondsVisible: false },
+      rightPriceScale: { borderVisible: false },
+    });
 
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-        labels: {
-          color: '#ffffff'
-        }
-      },
-      title: {
-        display: true,
-        text: `${selectedSymbol} - 30 Day Price Chart`,
-        color: '#ffffff'
-      },
-    },
-    scales: {
-      y: {
-        ticks: {
-          color: '#ffffff'
-        },
-        grid: {
-          color: '#333'
-        }
-      },
-      x: {
-        ticks: {
-          color: '#ffffff'
-        },
-        grid: {
-          color: '#333'
-        }
+    const lineSeries = chart.addLineSeries({
+      color: '#00ff88',
+      lineWidth: 2,
+    });
+
+    const chartData = historicalData.data.map((d: any) => ({
+      time: Math.floor(new Date(d.date).getTime() / 1000) as any,
+      value: d.close,
+    }));
+
+    lineSeries.setData(chartData);
+    chartRef.current = chart;
+
+    const handleResize = () => {
+      if (chartContainerRef.current && chartRef.current) {
+        chartRef.current.applyOptions({ width: chartContainerRef.current.clientWidth });
       }
-    },
-    maintainAspectRatio: false,
-  };
+    };
+    const ro = new ResizeObserver(handleResize);
+    ro.observe(chartContainerRef.current);
+
+    return () => {
+      ro.disconnect();
+      chart.remove();
+    };
+  }, [historicalData, selectedSymbol]);
+        grid: {
+          color: '#333'
+        }
+
 
   return (
     <Box>
@@ -454,11 +428,11 @@ const TradingPage: React.FC = () => {
                   </FormControl>
                 </Box>
 
-                <Box sx={{ height: 400 }}>
-                  {getChartData() && (
-                    <Line data={getChartData()!} options={chartOptions} />
-                  )}
-                </Box>
+                <Box 
+                  ref={chartContainerRef}
+                  sx={{ height: 400, width: '100%' }}
+                />
+</invoke>
               </CardContent>
             </Card>
           </Grid>

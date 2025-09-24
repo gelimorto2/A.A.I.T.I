@@ -48,13 +48,21 @@ jobs:
         cd frontend
         npm run lint || true  # Continue on linting errors for now
     
-    - name: Run backend tests
+    - name: Run backend tests with coverage
       run: |
         cd backend
-        npm test
+        npm run coverage
       env:
         NODE_ENV: test
         DB_PATH: ':memory:'
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage/lcov.info
+        flags: backend
+        name: backend-coverage
+        fail_ci_if_error: true
     
     - name: Run frontend tests
       run: |

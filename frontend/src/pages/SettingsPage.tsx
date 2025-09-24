@@ -173,10 +173,7 @@ const SettingsPage: React.FC = () => {
 
   const loadSettings = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/users/settings', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await fetch('/api/users/settings');
       
       if (response.ok) {
         const data = await response.json();
@@ -200,10 +197,7 @@ const SettingsPage: React.FC = () => {
 
   const loadSystemInfo = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/analytics/system-info', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await fetch('/api/analytics/system-info');
       
       if (response.ok) {
         const data = await response.json();
@@ -243,12 +237,10 @@ const SettingsPage: React.FC = () => {
   const saveSettings = async (category: string, settings: any) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`/api/users/settings/${category}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(settings)
       });
@@ -268,10 +260,8 @@ const SettingsPage: React.FC = () => {
   const testApiConnection = async (provider: string) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`/api/trading/test-connection/${provider}`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (response.ok) {
@@ -288,10 +278,7 @@ const SettingsPage: React.FC = () => {
 
   const exportData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/users/export-data', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await fetch('/api/users/export-data');
 
       if (response.ok) {
         const blob = await response.blob();
@@ -312,10 +299,8 @@ const SettingsPage: React.FC = () => {
   const backupDatabase = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/users/system/backup', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (response.ok) {
@@ -346,7 +331,7 @@ const SettingsPage: React.FC = () => {
       </Typography>
       
       <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 3 }}>
-        Manage system settings and configurations • User: {user?.username}
+        Manage system settings and configurations • Public Demo Mode
       </Typography>
 
       {error && (

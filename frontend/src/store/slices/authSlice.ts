@@ -11,9 +11,10 @@ interface AuthState {
 }
 
 const initialState: AuthState = {
-  user: null,
-  token: localStorage.getItem('aaiti_token'),
-  isAuthenticated: false,
+  // Public mode: default to guest user and authenticated
+  user: { id: 'guest', username: 'guest', email: '', role: 'admin' },
+  token: null,
+  isAuthenticated: true,
   isLoading: false,
   error: null,
 };
@@ -23,9 +24,8 @@ export const login = createAsyncThunk(
   'auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
-      const response = await authAPI.login(credentials);
-      localStorage.setItem('aaiti_token', response.token);
-      return response;
+      // Public mode: immediately resolve to guest
+      return { token: null, user: { id: 'guest', username: 'guest', email: '', role: 'admin' } as User };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || 'Login failed');
     }
@@ -36,8 +36,8 @@ export const register = createAsyncThunk(
   'auth/register',
   async (userData: RegisterData, { rejectWithValue }) => {
     try {
-      const response = await authAPI.register(userData);
-      return response;
+      // Public mode: registration disabled; pretend success
+      return { success: true } as any;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || 'Registration failed');
     }
@@ -48,8 +48,8 @@ export const getProfile = createAsyncThunk(
   'auth/getProfile',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await authAPI.getProfile();
-      return response;
+      // Public mode: return guest profile
+      return { user: { id: 'guest', username: 'guest', email: '', role: 'admin' } as User };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || 'Failed to get profile');
     }
@@ -60,9 +60,8 @@ export const refreshToken = createAsyncThunk(
   'auth/refreshToken',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await authAPI.refreshToken();
-      localStorage.setItem('aaiti_token', response.token);
-      return response;
+      // Public mode: no token refresh
+      return { token: null } as any;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || 'Token refresh failed');
     }
@@ -74,18 +73,18 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     logout: (state) => {
-      state.user = null;
+      // Public mode: keep guest user and remain authenticated
+      state.user = { id: 'guest', username: 'guest', email: '', role: 'admin' };
       state.token = null;
-      state.isAuthenticated = false;
+      state.isAuthenticated = true;
       state.error = null;
-      localStorage.removeItem('aaiti_token');
     },
     clearError: (state) => {
       state.error = null;
     },
     setToken: (state, action: PayloadAction<string>) => {
-      state.token = action.payload;
-      localStorage.setItem('aaiti_token', action.payload);
+      // Public mode: ignore tokens
+      state.token = null;
     },
   },
   extraReducers: (builder) => {
@@ -98,14 +97,13 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false;
         state.user = action.payload.user;
-        state.token = action.payload.token;
         state.isAuthenticated = true;
         state.error = null;
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
-        state.isAuthenticated = false;
+        state.isAuthenticated = true;
       })
       // Register
       .addCase(register.pending, (state) => {
@@ -131,14 +129,12 @@ const authSlice = createSlice({
       })
       .addCase(getProfile.rejected, (state) => {
         state.isLoading = false;
-        state.isAuthenticated = false;
-        state.user = null;
-        state.token = null;
-        localStorage.removeItem('aaiti_token');
+        // Stay in guest mode
+        state.isAuthenticated = true;
       })
       // Refresh Token
       .addCase(refreshToken.fulfilled, (state, action) => {
-        state.token = action.payload.token;
+        state.token = null;
       });
   },
 });

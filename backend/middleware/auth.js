@@ -10,86 +10,44 @@ const getJwtSecret = () => {
   return credentials?.security?.jwtSecret || process.env.JWT_SECRET || 'fallback-secret';
 };
 
+// Public-mode: allow all requests and use a default guest user if none provided
 const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
-  }
-
-  jwt.verify(token, getJwtSecret(), (err, decoded) => {
-    if (err) {
-      return res.status(403).json({ error: 'Invalid or expired token' });
-    }
-
-    // Verify user still exists and is active
-    db.get(
-      'SELECT id, username, email, role, is_active FROM users WHERE id = ?',
-      [decoded.userId],
-      (err, user) => {
-        if (err) {
-          logger.error('Database error during token verification:', err);
-          return res.status(500).json({ error: 'Internal server error' });
-        }
-
-        if (!user || !user.is_active) {
-          return res.status(403).json({ error: 'User account not found or inactive' });
-        }
-
-        req.user = user;
-        next();
+  try {
+    // Try to decode if a token is present, but don't require it
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, getJwtSecret());
+        // Best-effort user lookup, but continue regardless
+        db.get(
+          'SELECT id, username, email, role, is_active FROM users WHERE id = ?',
+          [decoded.userId],
+          (err, user) => {
+            req.user = user || { id: 'guest', username: 'guest', email: null, role: 'admin', is_active: 1 };
+            return next();
+          }
+        );
+        return; // Will call next in callback
+      } catch (_) {
+        // Ignore invalid token in public mode
       }
-    );
-  });
+    }
+  } catch (_) {}
+  // Fallback to guest
+  req.user = { id: 'guest', username: 'guest', email: null, role: 'admin', is_active: 1 };
+  return next();
 };
 
 const authenticateSocket = (socket, next) => {
-  const token = socket.handshake.auth.token;
-
-  if (!token) {
-    return next(new Error('Authentication error: No token provided'));
-  }
-
-  jwt.verify(token, getJwtSecret(), (err, decoded) => {
-    if (err) {
-      return next(new Error('Authentication error: Invalid token'));
-    }
-
-    // Verify user exists and is active
-    db.get(
-      'SELECT id, username, email, role, is_active FROM users WHERE id = ?',
-      [decoded.userId],
-      (err, user) => {
-        if (err) {
-          logger.error('Database error during socket authentication:', err);
-          return next(new Error('Authentication error: Database error'));
-        }
-
-        if (!user || !user.is_active) {
-          return next(new Error('Authentication error: User not found or inactive'));
-        }
-
-        socket.userId = user.id;
-        socket.user = user;
-        next();
-      }
-    );
-  });
+  // Public-mode sockets: attach a pseudo-user based on socket ID
+  socket.userId = socket.id;
+  socket.user = { id: socket.id, username: 'guest', role: 'admin' };
+  return next();
 };
 
 const requireRole = (roles) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
-    }
-
-    next();
-  };
+  return (_req, _res, next) => next();
 };
 
 const auditLog = (action, resourceType = null) => {
@@ -185,58 +143,13 @@ const logSecurityEvent = (eventType, severity = 'info', description = '') => {
  * API Key Authentication Middleware
  * Supports both JWT tokens and API keys
  */
-const authenticateApiKey = async (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const apiKey = req.headers['x-api-key'];
-
-  // If API key is provided, use API key authentication
-  if (apiKey) {
-    try {
-      const keyData = await apiKeyManager.validateKey(apiKey);
-      
-      if (!keyData) {
-        // Log failed API key attempt
-        db.run(
-          `INSERT INTO security_events (id, event_type, event_severity, description, ip_address, user_agent, additional_data)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [
-            require('uuid').v4(),
-            'api_key_authentication_failed',
-            'warning',
-            'Invalid API key authentication attempt',
-            req.ip,
-            req.get('User-Agent'),
-            JSON.stringify({ apiKey: apiKey.substring(0, 8) + '...' })
-          ]
-        );
-        
-        return res.status(401).json({ error: 'Invalid API key' });
-      }
-
-      // Set user data from API key
-      req.user = {
-        id: keyData.userId,
-        username: keyData.username,
-        email: keyData.email,
-        role: keyData.role
-      };
-      req.apiKeyData = keyData;
-      req.authMethod = 'api_key';
-
-      next();
-    } catch (error) {
-      logger.error('API key authentication error:', error);
-      return res.status(500).json({ error: 'Authentication service error' });
-    }
+const authenticateApiKey = async (req, _res, next) => {
+  // Public-mode: always allow, attach guest user if missing
+  if (!req.user) {
+    req.user = { id: 'guest', username: 'guest', email: null, role: 'admin', is_active: 1 };
   }
-  // Otherwise, fall back to JWT authentication
-  else if (authHeader) {
-    authenticateToken(req, res, next);
-  }
-  // No authentication provided
-  else {
-    return res.status(401).json({ error: 'Authentication required (JWT token or API key)' });
-  }
+  req.authMethod = 'public';
+  return next();
 };
 
 /**
@@ -244,57 +157,7 @@ const authenticateApiKey = async (req, res, next) => {
  * @param {Array} requiredPermissions - Array of required permissions
  */
 const requirePermissions = (requiredPermissions) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    // If authenticated via API key, check API key permissions
-    if (req.authMethod === 'api_key' && req.apiKeyData) {
-      const hasPermission = requiredPermissions.every(permission => 
-        req.apiKeyData.permissions.includes(permission) || 
-        req.apiKeyData.permissions.includes('all')
-      );
-
-      if (!hasPermission) {
-        // Log permission denial
-        db.run(
-          `INSERT INTO security_events (id, user_id, event_type, event_severity, description, ip_address, additional_data)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [
-            require('uuid').v4(),
-            req.user.id,
-            'permission_denied',
-            'warning',
-            `Access denied - insufficient API key permissions`,
-            req.ip,
-            JSON.stringify({ 
-              required: requiredPermissions, 
-              available: req.apiKeyData.permissions,
-              keyName: req.apiKeyData.name
-            })
-          ]
-        );
-
-        return res.status(403).json({ 
-          error: 'Insufficient API key permissions',
-          required: requiredPermissions,
-          available: req.apiKeyData.permissions
-        });
-      }
-    }
-    // For JWT authentication, use role-based access (existing logic)
-    else {
-      // Convert permissions to roles for backward compatibility
-      const allowedRoles = requiredPermissions.includes('admin') ? ['admin'] : ['admin', 'trader'];
-      
-      if (!allowedRoles.includes(req.user.role)) {
-        return res.status(403).json({ error: 'Insufficient permissions' });
-      }
-    }
-
-    next();
-  };
+  return (_req, _res, next) => next();
 };
 
 module.exports = {

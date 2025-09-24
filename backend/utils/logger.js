@@ -5,6 +5,10 @@ const path = require('path');
 // Dashboard instance will be set by the main application
 let dashboardInstance = null;
 
+// In-memory recent logs buffer for quick API access
+const RECENT_LOGS_MAX = 50;
+let recentLogs = [];
+
 // GitHub issue reporter instance
 let githubReporter = null;
 
@@ -44,13 +48,26 @@ const logger = winston.createLogger({
 class DashboardTransport extends winston.Transport {
   log(info, callback) {
     try {
+      const entry = {
+        timestamp: info.timestamp || new Date().toISOString(),
+        level: info.level,
+        message: info.message,
+        meta: { ...info }
+      };
+
+      // Track recent logs for API access
+      recentLogs.push(entry);
+      if (recentLogs.length > RECENT_LOGS_MAX) {
+        recentLogs = recentLogs.slice(-RECENT_LOGS_MAX);
+      }
+
       // Send to dashboard
       if (dashboardInstance && typeof dashboardInstance.addLog === 'function') {
         dashboardInstance.addLog(info.level, info.message, info);
       }
 
-      // Send critical errors to GitHub Issues
-      if (githubReporter && (info.level === 'error' || info.level === 'critical')) {
+      // Send critical errors to GitHub Issues (only if reporter enabled)
+      if (githubReporter && githubReporter.getStatus && githubReporter.getStatus().enabled && (info.level === 'error' || info.level === 'critical')) {
         const error = new Error(info.message);
         error.stack = info.stack;
         error.metadata = info.metadata || info;
@@ -101,7 +118,7 @@ logger.setGitHubReporter = (reporter) => {
 logger.reportError = async (error, context = {}) => {
   logger.error(error.message, { stack: error.stack, ...context });
   
-  if (githubReporter) {
+  if (githubReporter && githubReporter.getStatus && githubReporter.getStatus().enabled) {
     try {
       await githubReporter.reportError(error, context);
     } catch (err) {
@@ -129,3 +146,11 @@ logger.reportPerformanceIssue = async (metric, value, threshold, context = {}) =
 };
 
 module.exports = logger;
+
+// Expose recent logs helper methods at the end to avoid circular issues
+logger.getRecentLogs = (limit = 10) => {
+  const n = Math.max(1, Math.min(limit, RECENT_LOGS_MAX));
+  return recentLogs.slice(-n);
+};
+
+logger.getLastLog = () => recentLogs.length ? recentLogs[recentLogs.length - 1] : null;

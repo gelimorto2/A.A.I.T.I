@@ -21,6 +21,8 @@ import {
   Refresh,
   Add,
 } from '@mui/icons-material';
+import HelperBanner from '../components/common/HelperBanner';
+import CoinLogo from '../components/common/CoinLogo';
 
 interface MarketData {
   symbol: string;
@@ -40,12 +42,10 @@ const TradingPageSimple: React.FC = () => {
 
   const fetchMarketData = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/trading/quotes', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ symbols: popularSymbols })
       });
@@ -70,6 +70,9 @@ const TradingPageSimple: React.FC = () => {
 
   return (
     <Box>
+      <HelperBanner title="Live Trading" severity="info">
+        Monitor quotes and market movements. Execute trades from bots. Symbols include a quick visual logo for familiarity.
+      </HelperBanner>
       <Typography 
         variant="h4" 
         gutterBottom 
@@ -134,7 +137,8 @@ const TradingPageSimple: React.FC = () => {
                 {marketData.map((stock) => (
                   <TableRow key={stock.symbol}>
                     <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <CoinLogo symbol={stock.symbol} />
                         <Typography fontWeight="bold">{stock.symbol}</Typography>
                         {stock.isMock && (
                           <Chip 

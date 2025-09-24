@@ -2,51 +2,61 @@ const crypto = require('crypto');
 const { getCredentials } = require('./credentials');
 const logger = require('./logger');
 
-// Encryption configuration
+// Encryption configuration (AES-256-GCM with per-message salt)
 const ALGORITHM = 'aes-256-gcm';
-const IV_LENGTH = 12; // For GCM, this is 12 bytes
-const SALT_LENGTH = 32;
-const TAG_LENGTH = 16;
-const KEY_LENGTH = 32;
+const IV_LENGTH = 12; // 96-bit IV recommended for GCM
+const SALT_LENGTH = 16; // salt for key derivation
+const TAG_LENGTH = 16; // 128-bit auth tag
+const KEY_LENGTH = 32; // 256-bit key
 
 /**
- * Get encryption key from credentials or generate one
+ * Get master encryption key from credentials or environment.
+ * Returns a Buffer of KEY_LENGTH bytes.
  */
 const getEncryptionKey = () => {
-  const credentials = getCredentials();
-  const encryptionKey = credentials?.security?.encryptionKey || process.env.ENCRYPTION_KEY;
-  
-  if (!encryptionKey) {
-    logger.warn('No encryption key found in credentials. Using fallback key generation.');
-    // In production, this should be set in credentials
-    return crypto.scryptSync('fallback-encryption-key', 'salt', KEY_LENGTH);
+  try {
+    const credentials = getCredentials();
+    const encryptionKeyHex = credentials?.security?.encryptionKey || process.env.ENCRYPTION_KEY;
+    if (encryptionKeyHex && typeof encryptionKeyHex === 'string') {
+      const buf = Buffer.from(encryptionKeyHex, 'hex');
+      if (buf.length === KEY_LENGTH) return buf;
+      // If provided but incorrect length, derive to correct length
+      return crypto.scryptSync(encryptionKeyHex, 'aaiti-key-normalize', KEY_LENGTH);
+    }
+    logger.warn('No encryption key configured. Using derived fallback key (non-production).');
+    return crypto.scryptSync('fallback-encryption-key', 'aaiti-fallback-salt', KEY_LENGTH);
+  } catch (e) {
+    logger.error('Error obtaining encryption key:', e);
+    // ultimate fallback to constant-length buffer
+    return crypto.scryptSync('fallback-encryption-key', 'aaiti-fallback-salt', KEY_LENGTH);
   }
-  
-  return Buffer.from(encryptionKey, 'hex');
 };
 
 /**
- * Encrypt sensitive data using AES-256-CBC
- * @param {string} text - Text to encrypt
- * @returns {object} - Encrypted data with IV and encrypted text
+ * Encrypt sensitive data using AES-256-GCM with scrypt-derived key.
+ * @param {string} text - UTF-8 text to encrypt
+ * @returns {{iv:string,salt:string,tag:string,encrypted:string}}
  */
 const encrypt = (text) => {
   try {
-    if (!text) {
+    if (typeof text !== 'string' || text.length === 0) {
       throw new Error('Text to encrypt cannot be empty');
     }
 
-    const key = getEncryptionKey();
-    const iv = crypto.randomBytes(16); // 128-bit IV for AES
-    
-    const cipher = crypto.createCipher('aes256', key);
-    
-    let encrypted = cipher.update(text, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
+    const masterKey = getEncryptionKey();
+    const salt = crypto.randomBytes(SALT_LENGTH);
+    const iv = crypto.randomBytes(IV_LENGTH);
+    const key = crypto.scryptSync(masterKey, salt, KEY_LENGTH);
+
+    const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+    const ciphertext = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
+    const tag = cipher.getAuthTag();
 
     return {
       iv: iv.toString('hex'),
-      encrypted: encrypted
+      salt: salt.toString('hex'),
+      tag: tag.toString('hex'),
+      encrypted: ciphertext.toString('hex')
     };
   } catch (error) {
     logger.error('Encryption error:', error);
@@ -55,25 +65,28 @@ const encrypt = (text) => {
 };
 
 /**
- * Decrypt sensitive data
- * @param {object} encryptedData - Object containing encrypted text
- * @returns {string} - Decrypted text
+ * Decrypt data produced by the encrypt() function above.
+ * @param {{iv:string,salt:string,tag:string,encrypted:string}} encryptedData
+ * @returns {string} Decrypted UTF-8 string
  */
 const decrypt = (encryptedData) => {
   try {
-    if (!encryptedData || !encryptedData.encrypted) {
+    if (!encryptedData || !encryptedData.encrypted || !encryptedData.iv || !encryptedData.salt || !encryptedData.tag) {
       throw new Error('Invalid encrypted data provided');
     }
 
-    const { encrypted } = encryptedData;
-    const key = getEncryptionKey();
+    const iv = Buffer.from(encryptedData.iv, 'hex');
+    const salt = Buffer.from(encryptedData.salt, 'hex');
+    const tag = Buffer.from(encryptedData.tag, 'hex');
+    const ciphertext = Buffer.from(encryptedData.encrypted, 'hex');
 
-    const decipher = crypto.createDecipher('aes256', key);
+    const masterKey = getEncryptionKey();
+    const key = crypto.scryptSync(masterKey, salt, KEY_LENGTH);
 
-    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-
-    return decrypted;
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+    decipher.setAuthTag(tag);
+    const plaintext = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+    return plaintext.toString('utf8');
   } catch (error) {
     logger.error('Decryption error:', error);
     throw new Error('Failed to decrypt data');

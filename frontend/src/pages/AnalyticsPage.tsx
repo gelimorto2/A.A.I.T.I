@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Grid,
@@ -33,34 +33,9 @@ import {
   Refresh,
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
-import { Line, Bar, Doughnut } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-} from 'chart.js';
+import { createChart, ColorType } from 'lightweight-charts';
 import { AppDispatch, RootState } from '../store/store';
 import { fetchPortfolio } from '../store/slices/analyticsSlice';
-
-// Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-);
 
 interface PerformanceData {
   date: string;
@@ -93,189 +68,127 @@ const AnalyticsPage: React.FC = () => {
   const [botPerformance, setBotPerformance] = useState<BotPerformance[]>([]);
   const [error, setError] = useState('');
 
-  // Generate mock data for demonstration
-  const generateMockPerformanceData = useCallback((days: number): PerformanceData[] => {
-    const data: PerformanceData[] = [];
-    let cumulativePnl = 0;
-    
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      
-      const dailyPnl = (Math.random() - 0.4) * 200; // Slightly positive bias
-      cumulativePnl += dailyPnl;
-      
-      data.push({
-        date: date.toISOString().split('T')[0],
-        pnl: cumulativePnl,
-        trades: Math.floor(Math.random() * 10) + 1,
-        winRate: Math.random() * 40 + 40, // 40-80%
-        sharpeRatio: Math.random() * 2 + 0.5, // 0.5-2.5
-        maxDrawdown: Math.random() * -10 - 2 // -2% to -12%
-      });
+  // Load real performance data from backend
+  const loadPerformanceData = useCallback(async (days: number): Promise<PerformanceData[]> => {
+    try {
+      const response = await fetch(`/api/analytics/performance?days=${days}`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.performance || [];
+      } else {
+        throw new Error('Failed to load performance data');
+      }
+    } catch (error) {
+      console.error('Error loading performance data:', error);
+      // Return minimal fallback data structure
+      return [{
+        date: new Date().toISOString().split('T')[0],
+        pnl: 0,
+        trades: 0,
+        winRate: 0,
+        sharpeRatio: 0,
+        maxDrawdown: 0
+      }];
     }
-    
-    return data;
   }, []);
 
-  const generateMockBotPerformance = useCallback((): BotPerformance[] => {
-    return [
-      {
-        botId: '1',
-        botName: 'Momentum Trader',
-        totalTrades: 156,
-        totalPnl: 2347.50,
-        winRate: 57.1,
-        sharpeRatio: 1.34,
-        maxDrawdown: -5.2,
-        status: 'running'
-      },
-      {
-        botId: '2',
-        botName: 'Arbitrage Hunter',
-        totalTrades: 203,
-        totalPnl: 1892.30,
-        winRate: 66.0,
-        sharpeRatio: 1.78,
-        maxDrawdown: -3.1,
-        status: 'running'
-      },
-      {
-        botId: '3',
-        botName: 'Grid Trader',
-        totalTrades: 87,
-        totalPnl: -234.10,
-        winRate: 51.7,
-        sharpeRatio: 0.89,
-        maxDrawdown: -8.4,
-        status: 'stopped'
+  const loadBotPerformance = useCallback(async (): Promise<BotPerformance[]> => {
+    try {
+      const response = await fetch('/api/bots/performance');
+      if (response.ok) {
+        const data = await response.json();
+        return data.bots || [];
+      } else {
+        throw new Error('Failed to load bot performance data');
       }
-    ];
+    } catch (error) {
+      console.error('Error loading bot performance data:', error);
+      // Return empty array as fallback
+      return [];
+    }
   }, []);
+
 
   const fetchAnalyticsData = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      
-      // Fetch performance data
-      const perfResponse = await fetch(`/api/analytics/performance?days=${timeframe}&botId=${selectedBot}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (perfResponse.ok) {
-        setPerformanceData(generateMockPerformanceData(timeframe));
-      }
+      const headers: any = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      // Fetch bot-specific performance
-      const botResponse = await fetch('/api/analytics/bots-performance', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (botResponse.ok) {
-        setBotPerformance(generateMockBotPerformance());
-      }
+      // Load real performance data
+      const perfData = await loadPerformanceData(timeframe);
+      setPerformanceData(perfData);
+
+      // Load real bot performance data
+      const botData = await loadBotPerformance();
+      setBotPerformance(botData);
     } catch (error) {
       setError('Failed to fetch analytics data');
+      console.error('Analytics data fetch error:', error);
+      // Set empty fallback data
+      setPerformanceData([]);
+      setBotPerformance([]);
     }
-  }, [timeframe, selectedBot, generateMockPerformanceData, generateMockBotPerformance]);
+  }, [timeframe, selectedBot, loadPerformanceData, loadBotPerformance]);
+
+  // Initialize TradingView chart
+  useEffect(() => {
+    if (!chartContainerRef.current || performanceData.length === 0) return;
+
+    const chart = createChart(chartContainerRef.current, {
+      width: chartContainerRef.current.clientWidth,
+      height: 400,
+      layout: {
+        background: { type: ColorType.Solid, color: 'transparent' },
+        textColor: '#bbb',
+      },
+      grid: {
+        vertLines: { color: '#222' },
+        horzLines: { color: '#222' },
+      },
+      timeScale: { timeVisible: true, secondsVisible: false },
+      rightPriceScale: { borderVisible: false },
+    });
+
+    const lineSeries = chart.addLineSeries({
+      color: performanceData[performanceData.length - 1]?.pnl >= 0 ? '#00ff88' : '#ff3366',
+      lineWidth: 2,
+    });
+
+    const chartData = performanceData.map(d => ({
+      time: Math.floor(new Date(d.date).getTime() / 1000) as any,
+      value: d.pnl,
+    }));
+
+    lineSeries.setData(chartData);
+    chartRef.current = chart;
+
+    const handleResize = () => {
+      if (chartContainerRef.current && chartRef.current) {
+        chartRef.current.applyOptions({ width: chartContainerRef.current.clientWidth });
+      }
+    };
+    const ro = new ResizeObserver(handleResize);
+    ro.observe(chartContainerRef.current);
+
+    return () => {
+      ro.disconnect();
+      chart.remove();
+    };
+  }, [performanceData]);
 
   useEffect(() => {
     dispatch(fetchPortfolio());
     fetchAnalyticsData();
   }, [dispatch, fetchAnalyticsData]);
 
-  const getPerformanceChartData = () => {
-    const labels = performanceData.map(d => d.date);
-    const pnlData = performanceData.map(d => d.pnl);
-    
-    return {
-      labels,
-      datasets: [
-        {
-          label: 'Cumulative P&L ($)',
-          data: pnlData,
-          borderColor: pnlData[pnlData.length - 1] >= 0 ? '#00ff88' : '#ff3366',
-          backgroundColor: pnlData[pnlData.length - 1] >= 0 ? 'rgba(0, 255, 136, 0.1)' : 'rgba(255, 51, 102, 0.1)',
-          borderWidth: 2,
-          fill: true,
-          tension: 0.1,
-        },
-      ],
-    };
-  };
-
-  const getTradesChartData = () => {
-    const labels = performanceData.map(d => d.date);
-    const tradesData = performanceData.map(d => d.trades);
-    
-    return {
-      labels,
-      datasets: [
-        {
-          label: 'Daily Trades',
-          data: tradesData,
-          backgroundColor: '#00ff88',
-          borderColor: '#00ff88',
-          borderWidth: 1,
-        },
-      ],
-    };
-  };
-
   const getBotAllocationData = () => {
     const runningBots = botPerformance.filter(bot => bot.status === 'running');
-    
     return {
       labels: runningBots.map(bot => bot.botName),
-      datasets: [
-        {
-          data: runningBots.map(bot => Math.abs(bot.totalPnl)),
-          backgroundColor: [
-            '#00ff88',
-            '#ff3366',
-            '#ffaa00',
-            '#00aaff',
-            '#ff6600',
-            '#9966ff',
-            '#66ffaa',
-            '#ff66aa',
-          ],
-          borderWidth: 0,
-        },
-      ],
+      data: runningBots.map(bot => Math.abs(bot.totalPnl)),
+      colors: ['#00ff88', '#ff3366', '#ffaa00', '#00aaff', '#ff6600', '#9966ff', '#66ffaa', '#ff66aa']
     };
-  };
-
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-        labels: { color: '#ffffff' }
-      },
-    },
-    scales: {
-      y: {
-        ticks: { color: '#ffffff' },
-        grid: { color: '#333' }
-      },
-      x: {
-        ticks: { color: '#ffffff' },
-        grid: { color: '#333' }
-      }
-    },
-    maintainAspectRatio: false,
-  };
-
-  const doughnutOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'right' as const,
-        labels: { color: '#ffffff' }
-      },
-    },
-    maintainAspectRatio: false,
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

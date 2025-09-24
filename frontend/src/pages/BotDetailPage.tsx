@@ -35,11 +35,14 @@ import {
   Timeline,
   Assessment,
   Settings,
+  Download,
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store/store';
 import { fetchBots } from '../store/slices/botsSlice';
 import { Bot, Trade, TradingSignal } from '../types';
+import HelperBanner from '../components/common/HelperBanner';
+import CoinLogo from '../components/common/CoinLogo';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -97,21 +100,15 @@ const BotDetailPage: React.FC = () => {
 
   const loadBotData = async (botId: string) => {
     try {
-      const token = localStorage.getItem('token');
-      
       // Load trades
-      const tradesResponse = await fetch(`/api/trading/trades/${botId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const tradesResponse = await fetch(`/api/trading/trades/${botId}`);
       if (tradesResponse.ok) {
         const tradesData = await tradesResponse.json();
         setTrades(tradesData);
       }
 
       // Load signals
-      const signalsResponse = await fetch(`/api/trading/signals/${botId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const signalsResponse = await fetch(`/api/trading/signals/${botId}`);
       if (signalsResponse.ok) {
         const signalsData = await signalsResponse.json();
         setSignals(signalsData);
@@ -125,10 +122,8 @@ const BotDetailPage: React.FC = () => {
     if (!bot) return;
 
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`/api/bots/${bot.id}/${action}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        method: 'POST'
       });
 
       if (response.ok) {
@@ -202,6 +197,9 @@ const BotDetailPage: React.FC = () => {
 
   return (
     <Box>
+      <HelperBanner title="Bot Overview" severity="info">
+        Review performance, trades and signals. Use the CSV button to export recent trade history for analysis in spreadsheets or notebooks.
+      </HelperBanner>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -225,6 +223,19 @@ const BotDetailPage: React.FC = () => {
             onClick={() => navigate(`/bots/${bot.id}/edit`)}
           >
             Edit
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Download />}
+            onClick={() => {
+              const url = `/api/bots/${bot.id}/history.csv?limit=2000`;
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `bot_${bot.id}_history.csv`;
+              a.click();
+            }}
+          >
+            CSV
           </Button>
           {bot.status === 'running' ? (
             <Button
@@ -409,7 +420,12 @@ const BotDetailPage: React.FC = () => {
                 <TableBody>
                   {trades.slice(0, 10).map((trade) => (
                     <TableRow key={trade.id}>
-                      <TableCell>{trade.symbol}</TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <CoinLogo symbol={trade.symbol} />
+                          {trade.symbol}
+                        </Box>
+                      </TableCell>
                       <TableCell>
                         <Chip 
                           label={trade.side} 
@@ -460,7 +476,12 @@ const BotDetailPage: React.FC = () => {
                 <TableBody>
                   {signals.slice(0, 10).map((signal) => (
                     <TableRow key={signal.id}>
-                      <TableCell>{signal.symbol}</TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <CoinLogo symbol={signal.symbol} />
+                          {signal.symbol}
+                        </Box>
+                      </TableCell>
                       <TableCell>
                         <Chip 
                           label={signal.signal_type} 

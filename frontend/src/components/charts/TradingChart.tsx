@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState, useRef } from 'react';
 import {
   Box,
   FormControl,
@@ -23,30 +23,7 @@ import {
   ShowChart,
   TrendingUp,
 } from '@mui/icons-material';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip as ChartTooltip,
-  Legend,
-  ChartOptions,
-} from 'chart.js';
-import { Line, Bar } from 'react-chartjs-2';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  ChartTooltip,
-  Legend
-);
+import { createChart, ColorType } from 'lightweight-charts';
 
 interface CandlestickData {
   timestamp: string;

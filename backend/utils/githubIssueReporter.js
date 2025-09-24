@@ -17,7 +17,7 @@ class GitHubIssueReporter {
       baseUrl: config.baseUrl || 'https://api.github.com',
       
       // Issue creation settings
-      enabled: config.enabled !== false && (config.githubToken || process.env.GITHUB_TOKEN),
+  enabled: (config.enabled !== false) && (process.env.NODE_ENV === 'production') && (config.githubToken || process.env.GITHUB_TOKEN),
       autoCreate: config.autoCreate !== false,
       assignees: config.assignees || [],
       labels: config.labels || ['bug', 'auto-generated', 'aaiti'],
@@ -28,7 +28,8 @@ class GitHubIssueReporter {
       maxIssuesPerHour: config.maxIssuesPerHour || 5,
       
       // Error filtering
-      minSeverity: config.minSeverity || 'error', // info, warning, error, critical
+      // In non-production default to critical only
+      minSeverity: config.minSeverity || (process.env.NODE_ENV === 'production' ? 'error' : 'critical'), // info, warning, error, critical
       excludePatterns: config.excludePatterns || [
         /ECONNREFUSED/,
         /ETIMEDOUT/,
@@ -58,7 +59,7 @@ class GitHubIssueReporter {
         autoCreate: this.config.autoCreate
       });
     } else {
-      logger.warn('GitHub Issue Reporter disabled - no token provided');
+      logger.warn('GitHub Issue Reporter disabled', { reason: process.env.NODE_ENV !== 'production' ? 'non-production environment' : 'no token provided' });
     }
   }
 
@@ -163,8 +164,8 @@ class GitHubIssueReporter {
       return false;
     }
 
-    // Check exclusion patterns
-    if (this.isExcluded(error)) {
+    // Check exclusion patterns and benign contexts
+    if (this.isExcluded(error) || this.isBenignContext(context)) {
       return false;
     }
 
@@ -175,6 +176,18 @@ class GitHubIssueReporter {
     }
 
     return true;
+  }
+
+  /**
+   * Treat certain contexts as benign and skip issue creation
+   */
+  isBenignContext(context = {}) {
+    const env = process.env.NODE_ENV || 'development';
+    if (env !== 'production') return true; // never auto-create outside prod
+    // Skip known benign types
+    const benignTypes = new Set(['validation', 'user_error', 'oauth_test']);
+    if (context.type && benignTypes.has(context.type)) return true;
+    return false;
   }
 
   /**

@@ -206,28 +206,21 @@ const Navbar: React.FC = () => {
             </Badge>
           </IconButton>
 
-          {/* User Info */}
+          {/* User Info (guest in public mode) */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <AccountCircle />
             <Typography variant="body2" color="text.primary">
-              {user?.username}
+              {user?.username || 'guest'}
             </Typography>
             <Chip 
-              label={user?.role?.toUpperCase()} 
+              label={(user?.role || 'admin').toUpperCase()} 
               size="small" 
               color="secondary"
               sx={{ fontWeight: 'bold', fontSize: '0.7rem' }}
             />
           </Box>
 
-          {/* Logout */}
-          <IconButton 
-            color="error" 
-            onClick={handleLogout}
-            title="Logout"
-          >
-            <PowerSettingsNew />
-          </IconButton>
+          {/* Logout hidden in public mode; keep button for future private mode if needed */}
         </Box>
       </Toolbar>
     </AppBar>

@@ -35,8 +35,14 @@ class OAuthService {
   getOAuthConfig(provider) {
     const credentials = getCredentials();
     const oauthConfig = credentials?.oauth?.[provider];
-    
+    // In test mode, allow fallback stub credentials
     if (!oauthConfig || !oauthConfig.clientId || !oauthConfig.clientSecret) {
+      if (process.env.NODE_ENV === 'test') {
+        return {
+          clientId: `test-${provider}-client-id`,
+          clientSecret: `test-${provider}-client-secret`
+        };
+      }
       throw new Error(`OAuth configuration for ${provider} not found or incomplete`);
     }
 

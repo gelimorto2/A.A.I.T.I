@@ -4,6 +4,7 @@ const { db } = require('../database/init');
 const { authenticateToken, auditLog } = require('../middleware/auth');
 const PaperTradingService = require('../utils/paperTradingService');
 const logger = require('../utils/logger');
+const { evaluateOrder } = require('../utils/riskEngine');
 
 const router = express.Router();
 
@@ -161,25 +162,13 @@ router.get('/portfolios/:portfolioId', authenticateToken, (req, res) => {
 });
 
 // Place paper trading order
-router.post('/portfolios/:portfolioId/orders', authenticateToken, async (req, res) => {
+const { validate, schemas } = require('../utils/validation');
+router.post('/portfolios/:portfolioId/orders', authenticateToken, validate(schemas.paperOrderSchema), async (req, res) => {
   try {
     const { portfolioId } = req.params;
-    const {
-      symbol,
-      side, // 'buy' or 'sell'
-      type, // 'market', 'limit', 'stop', 'stop_limit'
-      quantity,
-      price = null,
-      stopPrice = null,
-      timeInForce = 'GTC'
-    } = req.body;
+    const { symbol, side, type, quantity, price = null, stopPrice = null, timeInForce = 'GTC' } = req.validated;
 
-    // Validate required fields
-    if (!symbol || !side || !type || !quantity) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: symbol, side, type, quantity' 
-      });
-    }
+    // Fields are pre-validated by middleware
 
     // Verify portfolio ownership
     const query = 'SELECT * FROM paper_portfolios WHERE id = ? AND user_id = ?';
@@ -194,6 +183,19 @@ router.post('/portfolios/:portfolioId/orders', authenticateToken, async (req, re
       }
 
       try {
+        // Risk checks
+        const risk = evaluateOrder({
+          portfolio,
+          symbol,
+          side,
+          type,
+          quantity: parseFloat(quantity),
+          price: price ? parseFloat(price) : null
+        });
+        if (!risk.allowed) {
+          return res.status(400).json({ error: `Order blocked by risk engine: ${risk.reason}` });
+        }
+
         const order = await paperTradingService.placeOrder(portfolioId, {
           symbol,
           side,

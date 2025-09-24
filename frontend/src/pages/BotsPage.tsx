@@ -36,11 +36,14 @@ import {
   CheckCircle,
   Error,
   Close,
+  Download,
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store/store';
 import { fetchBots } from '../store/slices/botsSlice';
 import { Bot } from '../types';
+import CoinLogo from '../components/common/CoinLogo';
+import HelperBanner from '../components/common/HelperBanner';
 
 
 
@@ -96,12 +99,10 @@ const BotsPage: React.FC = () => {
 
   const handleCreateBot = async () => {
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/bots', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(botForm)
       });
@@ -124,12 +125,10 @@ const BotsPage: React.FC = () => {
     if (!selectedBot) return;
 
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`/api/bots/${selectedBot.id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(botForm)
       });
@@ -153,12 +152,9 @@ const BotsPage: React.FC = () => {
     if (!window.confirm('Are you sure you want to delete this bot?')) return;
 
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`/api/bots/${botId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: {}
       });
 
       if (response.ok) {
@@ -175,12 +171,9 @@ const BotsPage: React.FC = () => {
 
   const handleBotAction = async (botId: string, action: 'start' | 'stop' | 'pause') => {
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`/api/bots/${botId}/${action}`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: {}
       });
 
       if (response.ok) {
@@ -266,6 +259,9 @@ const BotsPage: React.FC = () => {
 
   return (
     <Box>
+      <HelperBanner title="Bots Manager" severity="info">
+        Create, start/stop, and monitor AI agents. Use the menu on each card to edit or delete. You can also export recent trade history as CSV for analysis.
+      </HelperBanner>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
           <Typography 
@@ -463,6 +459,20 @@ const BotsPage: React.FC = () => {
                     onClick={() => openEditDialog(bot)}
                   >
                     Edit
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<Download />}
+                    onClick={() => {
+                      const url = `/api/bots/${bot.id}/history.csv?limit=1000`;
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `bot_${bot.id}_history.csv`;
+                      a.click();
+                    }}
+                  >
+                    CSV
                   </Button>
                 </Box>
               </CardContent>

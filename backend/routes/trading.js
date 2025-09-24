@@ -1,27 +1,21 @@
 const express = require('express');
-const { v4: uuidv4 } = require('uuid');
 const { db } = require('../database/init');
+const tradesRepository = require('../repositories/tradesRepository');
+const botsRepository = require('../repositories/botsRepository');
 const { authenticateToken, auditLog } = require('../middleware/auth');
 const marketDataService = require('../utils/marketData');
 const logger = require('../utils/logger');
+const { validate, schemas } = require('../utils/validation');
+const { evaluateOrder } = require('../utils/riskEngine');
+const tradingService = require('../services/tradingService');
 
 const router = express.Router();
 
 // Get trading signals for a bot
 router.get('/signals/:botId', authenticateToken, (req, res) => {
   // Verify bot belongs to user
-  db.get(
-    'SELECT id FROM bots WHERE id = ? AND user_id = ?',
-    [req.params.botId, req.user.id],
-    (err, bot) => {
-      if (err) {
-        logger.error('Error checking bot ownership:', err);
-        return res.status(500).json({ error: 'Internal server error' });
-      }
-
-      if (!bot) {
-        return res.status(404).json({ error: 'Bot not found' });
-      }
+    botsRepository.findOwnedByUser(req.params.botId, req.user.id).then((bot) => {
+        if (!bot) return res.status(404).json({ error: 'Bot not found' });
 
       const { limit = 50, offset = 0 } = req.query;
 
@@ -40,161 +34,76 @@ router.get('/signals/:botId', authenticateToken, (req, res) => {
           res.json({ signals });
         }
       );
-    }
-  );
+    }).catch((err) => {
+      logger.error('Error checking bot ownership via repository:', { error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
+    });
 });
 
 // Get trades for a bot
 router.get('/trades/:botId', authenticateToken, (req, res) => {
   // Verify bot belongs to user
-  db.get(
-    'SELECT id FROM bots WHERE id = ? AND user_id = ?',
-    [req.params.botId, req.user.id],
-    (err, bot) => {
-      if (err) {
-        logger.error('Error checking bot ownership:', err);
-        return res.status(500).json({ error: 'Internal server error' });
-      }
-
-      if (!bot) {
-        return res.status(404).json({ error: 'Bot not found' });
-      }
+    botsRepository.findOwnedByUser(req.params.botId, req.user.id).then((bot) => {
+        if (!bot) return res.status(404).json({ error: 'Bot not found' });
 
       const { limit = 50, offset = 0, status } = req.query;
-      let query = `SELECT * FROM trades WHERE bot_id = ?`;
-      let params = [req.params.botId];
-
-      if (status) {
-        query += ' AND status = ?';
-        params.push(status);
-      }
-
-      query += ' ORDER BY opened_at DESC LIMIT ? OFFSET ?';
-      params.push(parseInt(limit), parseInt(offset));
-
-      db.all(query, params, (err, trades) => {
-        if (err) {
-          logger.error('Error fetching trades:', err);
-          return res.status(500).json({ error: 'Failed to fetch trades' });
-        }
-
-        res.json({ trades });
-      });
-    }
-  );
+      tradesRepository
+        .listByBot(req.params.botId, { status, limit: parseInt(limit), offset: parseInt(offset) })
+        .then((trades) => res.json({ trades }))
+        .catch((err) => {
+          logger.error('Error fetching trades via repository:', { error: err.message });
+          res.status(500).json({ error: 'Failed to fetch trades' });
+        });
+    }).catch((err) => {
+      logger.error('Error checking bot ownership via repository:', { error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
+    });
 });
 
 // Execute manual trade
-router.post('/execute', authenticateToken, auditLog('manual_trade', 'trade'), (req, res) => {
-  const { botId, symbol, side, quantity, price } = req.body;
-
-  if (!botId || !symbol || !side || !quantity) {
-    return res.status(400).json({ error: 'Missing required fields' });
+router.post('/execute', authenticateToken, validate(schemas.executeTradeSchema), auditLog('manual_trade', 'trade'), async (req, res) => {
+  try {
+    const { botId, symbol, side, quantity, price, order_type } = req.validated;
+    const created = await tradingService.executeManualTrade({
+      userId: req.user.id,
+      botId,
+      symbol,
+      side,
+      quantity,
+      order_type,
+      price
+    });
+    logger.info(`Manual trade executed: ${side} ${quantity} ${symbol} at ${created.entry_price}`, { tradeId: created.id });
+    res.json({
+      message: 'Trade executed successfully',
+      trade: {
+        id: created.id,
+        symbol: created.symbol,
+        side: created.side,
+        quantity: created.quantity,
+        entry_price: created.entry_price,
+        status: created.status || 'open'
+      }
+    });
+  } catch (err) {
+    const status = err.status || 500;
+    logger.error('Error executing manual trade', { error: err.message });
+    res.status(status).json({ error: err.message || 'Failed to execute trade' });
   }
-
-  // Verify bot belongs to user
-  db.get(
-    'SELECT id, trading_mode FROM bots WHERE id = ? AND user_id = ?',
-    [botId, req.user.id],
-    (err, bot) => {
-      if (err) {
-        logger.error('Error checking bot ownership:', err);
-        return res.status(500).json({ error: 'Internal server error' });
-      }
-
-      if (!bot) {
-        return res.status(404).json({ error: 'Bot not found' });
-      }
-
-      // In a real implementation, this would interface with actual trading APIs
-      // For now, we'll simulate the trade execution
-      const tradeId = uuidv4();
-      const executionPrice = price || (Math.random() * 1000 + 100); // Mock price
-      const currentTime = new Date().toISOString();
-
-      db.run(
-        `INSERT INTO trades (id, bot_id, symbol, side, quantity, entry_price, status, opened_at)
-         VALUES (?, ?, ?, ?, ?, ?, 'open', ?)`,
-        [tradeId, botId, symbol, side, quantity, executionPrice, currentTime],
-        function(err) {
-          if (err) {
-            logger.error('Error executing trade:', err);
-            return res.status(500).json({ error: 'Failed to execute trade' });
-          }
-
-          logger.info(`Manual trade executed: ${side} ${quantity} ${symbol} at ${executionPrice}`);
-          
-          res.json({
-            message: 'Trade executed successfully',
-            trade: {
-              id: tradeId,
-              symbol,
-              side,
-              quantity,
-              entry_price: executionPrice,
-              status: 'open'
-            }
-          });
-        }
-      );
-    }
-  );
 });
 
 // Close trade
-router.post('/trades/:tradeId/close', authenticateToken, auditLog('close_trade', 'trade'), (req, res) => {
-  const { price } = req.body;
-
-  // First, verify the trade belongs to the user's bot
-  db.get(
-    `SELECT t.*, b.user_id FROM trades t 
-     JOIN bots b ON t.bot_id = b.id 
-     WHERE t.id = ? AND b.user_id = ?`,
-    [req.params.tradeId, req.user.id],
-    (err, trade) => {
-      if (err) {
-        logger.error('Error checking trade ownership:', err);
-        return res.status(500).json({ error: 'Internal server error' });
-      }
-
-      if (!trade) {
-        return res.status(404).json({ error: 'Trade not found' });
-      }
-
-      if (trade.status !== 'open') {
-        return res.status(400).json({ error: 'Trade is not open' });
-      }
-
-      const exitPrice = price || (Math.random() * 1000 + 100); // Mock price
-      const pnl = (exitPrice - trade.entry_price) * trade.quantity * (trade.side === 'buy' ? 1 : -1);
-      const currentTime = new Date().toISOString();
-
-      db.run(
-        `UPDATE trades 
-         SET exit_price = ?, pnl = ?, status = 'closed', closed_at = ?
-         WHERE id = ?`,
-        [exitPrice, pnl, currentTime, req.params.tradeId],
-        function(err) {
-          if (err) {
-            logger.error('Error closing trade:', err);
-            return res.status(500).json({ error: 'Failed to close trade' });
-          }
-
-          logger.info(`Trade closed: ${req.params.tradeId} with PnL: ${pnl}`);
-          
-          res.json({
-            message: 'Trade closed successfully',
-            trade: {
-              id: req.params.tradeId,
-              exit_price: exitPrice,
-              pnl,
-              status: 'closed'
-            }
-          });
-        }
-      );
-    }
-  );
+router.post('/trades/:tradeId/close', authenticateToken, auditLog('close_trade', 'trade'), async (req, res) => {
+  try {
+    const { price } = req.body;
+    const updated = await tradingService.closeTrade({ userId: req.user.id, tradeId: req.params.tradeId, price });
+    logger.info(`Trade closed: ${req.params.tradeId} with PnL: ${updated.pnl}`);
+    res.json({ message: 'Trade closed successfully', trade: { id: updated.id, exit_price: updated.exit_price, pnl: updated.pnl, status: updated.status } });
+  } catch (err) {
+    const status = err.status || 500;
+    logger.error('Error closing trade', { error: err.message });
+    res.status(status).json({ error: err.message || 'Failed to close trade' });
+  }
 });
 
 // Get market data (real data from Alpha Vantage)

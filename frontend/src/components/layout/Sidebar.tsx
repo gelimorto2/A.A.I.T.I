@@ -32,13 +32,13 @@ const DRAWER_WIDTH = 240;
 
 const menuItems = [
   { 
-    text: 'Command Center', 
+    text: 'Dashboard', 
     icon: <Dashboard />, 
     path: '/dashboard',
-    description: 'Mission Control'
+    description: 'Overview & Stats'
   },
   { 
-    text: 'AI Agents', 
+    text: 'Trading Bots', 
     icon: <SmartToy />, 
     path: '/bots',
     description: 'Bot Management'
@@ -47,7 +47,7 @@ const menuItems = [
     text: 'ML Models', 
     icon: <Science />, 
     path: '/ml',
-    description: 'Machine Learning'
+    description: 'Statistical Models'
   },
   { 
     text: 'Strategy Creator', 
@@ -56,40 +56,22 @@ const menuItems = [
     description: 'Visual Strategy Builder'
   },
   { 
-    text: 'Advanced ML', 
-    icon: <Psychology />, 
-    path: '/ml/advanced',
-    description: 'AI Intelligence'
-  },
-  { 
-    text: 'AI Insights', 
-    icon: <Lightbulb />, 
-    path: '/ai-insights',
-    description: 'Natural Language AI'
-  },
-  { 
-    text: 'Integrations', 
-    icon: <Extension />, 
-    path: '/integrations',
-    description: 'Ecosystem Hub'
-  },
-  { 
     text: 'Live Trading', 
     icon: <TrendingUp />, 
     path: '/trading',
-    description: 'Execution Interface'
+    description: 'Trading Interface'
   },
   { 
     text: 'Analytics', 
     icon: <Analytics />, 
     path: '/analytics',
-    description: 'Performance Intel'
+    description: 'Performance Analytics'
   },
   { 
     text: 'Settings', 
     icon: <Settings />, 
     path: '/settings',
-    description: 'System Config'
+    description: 'Configuration'
   },
 ];
 
@@ -143,7 +125,10 @@ const Sidebar: React.FC = () => {
         {menuItems.map((item) => (
           <ListItemButton
             key={item.text}
-            selected={location.pathname === item.path}
+            selected={
+              location.pathname === item.path ||
+              location.pathname.startsWith(item.path + '/')
+            }
             onClick={() => handleNavigation(item.path)}
             sx={{
               mx: 1,
@@ -175,7 +160,7 @@ const Sidebar: React.FC = () => {
               secondary={!isMobile ? item.description : undefined}
               primaryTypographyProps={{
                 fontSize: '0.9rem',
-                fontWeight: location.pathname === item.path ? 'bold' : 'normal',
+                fontWeight: (location.pathname === item.path || location.pathname.startsWith(item.path + '/')) ? 'bold' : 'normal',
               }}
               secondaryTypographyProps={{
                 fontSize: '0.7rem',

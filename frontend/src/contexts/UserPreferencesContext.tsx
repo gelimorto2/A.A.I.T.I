@@ -128,10 +128,7 @@ export const UserPreferencesProvider: React.FC<UserPreferencesProviderProps> = (
         setIsLoading(true);
         try {
           // Try to load from server first
-          const token = localStorage.getItem('token');
-          const response = await fetch(`/api/users/${user.id}/preferences`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
+          const response = await fetch(`/api/users/${user.id}/preferences`);
 
           if (response.ok) {
             const serverPreferences = await response.json();
@@ -176,12 +173,10 @@ export const UserPreferencesProvider: React.FC<UserPreferencesProviderProps> = (
       
       // Try to save to server
       try {
-        const token = localStorage.getItem('token');
         await fetch(`/api/users/${user.id}/preferences`, {
           method: 'PUT',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify(newPreferences)
         });
@@ -199,10 +194,9 @@ export const UserPreferencesProvider: React.FC<UserPreferencesProviderProps> = (
       
       // Try to reset on server
       try {
-        const token = localStorage.getItem('token');
         await fetch(`/api/users/${user.id}/preferences`, {
           method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: {}
         });
       } catch (error) {
         console.error('Failed to reset preferences on server:', error);

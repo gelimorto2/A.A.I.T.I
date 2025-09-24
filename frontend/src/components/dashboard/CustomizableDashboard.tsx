@@ -34,6 +34,7 @@ import WinRateWidget from './WinRateWidget';
 import SystemHealthWidget from './SystemHealthWidget';
 import MarketHeatMapWidget from './MarketHeatMapWidget';
 import EnhancedChartWidget from './EnhancedChartWidget';
+import LastLogIndicator from './LastLogIndicator';
 
 // CSS for react-grid-layout
 import 'react-grid-layout/css/styles.css';
@@ -49,7 +50,7 @@ interface DashboardWidget {
 }
 
 const availableWidgets: DashboardWidget[] = [
-  { id: 'bots-status', type: 'bots-status', title: 'AI Agents Status', enabled: true },
+  { id: 'bots-status', type: 'bots-status', title: 'Trading Bots Status', enabled: true },
   { id: 'pnl', type: 'pnl', title: 'Profit & Loss', enabled: true },
   { id: 'win-rate', type: 'win-rate', title: 'Win Rate', enabled: true },
   { id: 'system-health', type: 'system-health', title: 'System Health', enabled: true },
@@ -459,6 +460,9 @@ const CustomizableDashboard: React.FC = () => {
           <Add />
         </Fab>
       )}
+
+      {/* Always-on latest log indicator */}
+      <LastLogIndicator />
     </Box>
   );
 };

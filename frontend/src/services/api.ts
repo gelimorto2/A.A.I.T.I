@@ -14,13 +14,9 @@ class APIClient {
       },
     });
 
-    // Request interceptor to add auth token
+    // Request interceptor (public mode: no auth header required)
     this.client.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('aaiti_token');
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
         return config;
       },
       (error) => {
@@ -28,14 +24,11 @@ class APIClient {
       }
     );
 
-    // Response interceptor to handle token expiration
+    // Response interceptor (public mode: do not force redirect on 401)
     this.client.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401) {
-          localStorage.removeItem('aaiti_token');
-          window.location.href = '/login';
-        }
+        // In public mode we simply propagate errors
         return Promise.reject(error);
       }
     );

@@ -24,8 +24,10 @@ class CacheManager {
     this.redis = null;
     this.isRedisConnected = false;
 
-    // Initialize Redis if available
-    this.initializeRedis();
+    // Initialize Redis if available (skip in tests)
+    if (process.env.NODE_ENV !== 'test') {
+      this.initializeRedis();
+    }
 
     // Setup cache event handlers
     this.setupEventHandlers();

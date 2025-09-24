@@ -7,6 +7,36 @@ const marketDataService = require('../utils/marketData');
 
 const router = express.Router();
 
+// Get general performance analytics for user (all bots combined)
+router.get('/performance', (req, res) => {
+  const { days = 30 } = req.query;
+  const numDays = parseInt(days);
+
+  // Generate demo performance data for the frontend
+  const performanceData = Array.from({ length: numDays }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (numDays - i - 1));
+    
+    const basePnl = i * 10; // Gradual upward trend
+    const volatility = Math.random() * 100 - 50; // Random volatility
+    
+    return {
+      date: date.toISOString().split('T')[0],
+      pnl: basePnl + volatility,
+      trades: Math.floor(Math.random() * 15) + 1,
+      winRate: Math.random() * 40 + 50, // 50-90%
+      sharpeRatio: Math.random() * 2 + 0.5, // 0.5-2.5
+      maxDrawdown: Math.random() * -15 - 2 // -2% to -17%
+    };
+  });
+
+  res.json({ 
+    performance: performanceData,
+    period: `${numDays} days`,
+    success: true
+  });
+});
+
 // Get portfolio overview for user
 router.get('/portfolio', authenticateToken, (req, res) => {
   const query = `

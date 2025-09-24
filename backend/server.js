@@ -17,6 +17,7 @@ const userRoutes = require('./routes/users');
 const mlRoutes = require('./routes/ml');
 const notificationRoutes = require('./routes/notifications');
 const functionsRoutes = require('./routes/functions');
+const logsRoutes = require('./routes/logs');
 const setupRoutes = require('./routes/setup');
 const { router: metricsRoutes, collectRequestMetrics } = require('./routes/metrics');
 // Security & Compliance routes
@@ -39,8 +40,12 @@ const paperTradingRoutes = require('./routes/paperTrading');
 const highFrequencyTradingRoutes = require('./routes/highFrequencyTrading');
 // Intelligent Trading Assistants routes (TODO 5.1)
 const intelligentTradingAssistantsRoutes = require('./routes/intelligentTradingAssistants');
+// Production Trading routes - Real ML trading integration
+const productionTradingRoutes = require('./routes/productionTrading');
 
 const { initializeDatabase } = require('./database/init');
+const databaseConfig = require('./config/database');
+const { v4: uuidv4 } = require('uuid');
 const { authenticateSocket } = require('./middleware/auth');
 const { initializeUserCredentials, getCredentials } = require('./utils/credentials');
 const marketDataService = require('./utils/marketData');
@@ -66,6 +71,7 @@ const { getGitHubIssueReporter } = require('./utils/githubIssueReporter');
 
 const app = express();
 const server = http.createServer(app);
+let socketCtx = null;
 
 // Apply performance configurations to server
 server.maxConnections = performanceConfig.server.maxConnections;
@@ -86,9 +92,11 @@ let githubReporter;
 const initializePerformanceServices = () => {
   try {
     // Initialize GitHub issue reporter
+    const isProd = (process.env.NODE_ENV === 'production');
     githubReporter = getGitHubIssueReporter({
-      enabled: process.env.GITHUB_TOKEN ? true : false,
-      autoCreate: process.env.GITHUB_AUTO_CREATE_ISSUES !== 'false'
+      enabled: isProd && !!process.env.GITHUB_TOKEN,
+      autoCreate: isProd && process.env.GITHUB_AUTO_CREATE_ISSUES !== 'false',
+      minSeverity: isProd ? 'error' : 'critical'
     });
     
     // Connect GitHub reporter to logger
@@ -177,75 +185,26 @@ const initializeMiddleware = () => {
   // Prometheus metrics middleware (before other middleware)
   app.use(metrics.createMiddleware());
   
-  // Security middleware with adjusted CSP to allow frontend -> API calls when served from same origin or dev origins
-  const cspDirectives = {
-    defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", "'unsafe-inline'"], // inline tolerated for React build hydration, can tighten later
-    styleSrc: ["'self'", "'unsafe-inline'"],
-    imgSrc: ["'self'", 'data:', 'blob:'],
-    fontSrc: ["'self'", 'data:'],
-    connectSrc: [
-      "'self'",
-      config.frontendUrl,
-      `http://localhost:${config.port}`,
-      `ws://localhost:${config.port}`,
-      `http://127.0.0.1:${config.port}`,
-      `ws://127.0.0.1:${config.port}`
-    ].filter(Boolean),
-    objectSrc: ["'none'"],
-    frameAncestors: ["'self'"],
-    baseUri: ["'self'"],
-    formAction: ["'self'"]
-  };
+  // Security middleware with relaxed CSP for development
   app.use(helmet({
-    contentSecurityPolicy: {
-      useDefaults: true,
-      directives: cspDirectives
-    }
+    contentSecurityPolicy: false,  // Disable CSP for development ease
+    crossOriginEmbedderPolicy: false
   }));
-  // CORS: allow same-origin and configured frontend URL
-  const allowedOrigins = [
-    'http://localhost:3000',     // React dev server
-    'http://127.0.0.1:3000',     // React dev server alternative
-    'http://localhost:5000',     // Backend server
-    'http://127.0.0.1:5000',     // Backend server alternative
-    config.frontendUrl           // Configured frontend URL
-  ].filter(Boolean);
-
-  const corsOptions = {
-    origin: (origin, callback) => {
-      // Allow non-browser or same-origin requests with no Origin header
-      if (!origin) {
-        logger.debug('CORS: Allowing request with no Origin header (likely server-to-server)', { service: 'aaiti-backend' });
-        return callback(null, true);
-      }
-      if (allowedOrigins.includes(origin)) {
-        logger.debug('CORS: Origin allowed', { origin, service: 'aaiti-backend' });
-        return callback(null, true);
-      }
-      logger.warn('CORS: Origin blocked', { origin, allowedOrigins, service: 'aaiti-backend' });
-      return callback(new Error('Not allowed by CORS'));
-    },
+  // Correlation ID middleware
+  app.use((req, res, next) => {
+    const incomingId = req.headers['x-request-id'];
+    req.id = (typeof incomingId === 'string' && incomingId.trim().length > 0) ? incomingId : uuidv4();
+    res.setHeader('x-request-id', req.id);
+    next();
+  });
+  // CORS: Allow all origins for development (simplified)
+  app.use(cors({
+    origin: true,  // Allow all origins
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
     credentials: true,
-    optionsSuccessStatus: 200,    // Support legacy browsers
-    maxAge: 600                   // Cache preflight for 10m
-  };
-
-  app.use(cors(corsOptions));
-
-  // Proper preflight handling with SAME options (avoid wildcard '*')
-  app.options('*', cors(corsOptions));
-
-  // Centralizzato: gestione errori CORS (Error: Not allowed by CORS)
-  app.use((err, req, res, next) => {
-    if (err && err.message === 'Not allowed by CORS') {
-      logger.warn('CORS rejection response sent', { origin: req.headers.origin, path: req.path, service: 'aaiti-backend' });
-      return res.status(403).json({ error: 'Origin non autorizzata', origin: req.headers.origin });
-    }
-    return next(err);
-  });
+    optionsSuccessStatus: 200
+  }));
 
   logger.info('⚡ Configuring rate limiting...', { 
     windowMs: performanceConfig.api.rateLimit.windowMs / 1000 / 60 + ' minutes',
@@ -267,7 +226,8 @@ const initializeMiddleware = () => {
   logger.info('📝 Setting up request logging...', { service: 'aaiti-backend' });
   
   // Logging
-  app.use(morgan('combined'));
+  morgan.token('id', (req) => req.id || '-');
+  app.use(morgan(':id :method :url :status :res[content-length] - :response-time ms'));
 
   // Body parsing with performance configuration
   app.use(express.json({ 
@@ -318,6 +278,7 @@ const initializeMiddleware = () => {
   app.use('/api/ml', mlRoutes);
   app.use('/api/notifications', notificationRoutes);
   app.use('/api/functions', functionsRoutes);
+  app.use('/api/logs', logsRoutes);
   
   // Performance and Issue Reporting routes
   const performanceRoutes = require('./routes/performance');
@@ -351,11 +312,21 @@ const initializeMiddleware = () => {
   // Intelligent Trading Assistants routes (TODO 5.1)
   app.use('/api/intelligent-trading-assistants', intelligentTradingAssistantsRoutes);
   
+  // Production Trading routes - Real ML trading integration
+  app.use('/api/production-trading', productionTradingRoutes);
+  
   // Metrics routes (for monitoring) under /api/metrics to avoid /api/health conflict
   app.use('/api/metrics', metricsRoutes);
   
-  // Prometheus metrics endpoint
+  // Prometheus metrics endpoint (protected in production)
   app.get('/metrics', async (req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+      const expected = process.env.METRICS_TOKEN;
+      const provided = req.header('X-Metrics-Token');
+      if (!expected || provided !== expected) {
+        return res.status(403).send('Forbidden');
+      }
+    }
     try {
       const metrics = getMetrics();
       const metricsData = await metrics.getMetrics();
@@ -402,6 +373,35 @@ const initializeMiddleware = () => {
     res.json(healthData);
   });
 
+  // Readiness endpoint - verify DB connectivity and essential services
+  app.get('/api/ready', async (req, res) => {
+    try {
+      const status = {
+        timestamp: new Date().toISOString(),
+        db: 'unknown',
+        cache: 'ok',
+        api: 'ok'
+      };
+
+      if (databaseConfig.type === 'postgresql') {
+        const pool = databaseConfig.getPool('primary');
+        await pool.query('SELECT 1');
+        status.db = 'ok';
+      } else {
+        const sqlite = require('./database/init').db;
+        await new Promise((resolve, reject) => {
+          sqlite.get('SELECT 1', [], (err) => (err ? reject(err) : resolve()));
+        });
+        status.db = 'ok';
+      }
+
+      res.json({ ready: true, status });
+    } catch (e) {
+      logger.error('Readiness check failed', { error: e.message, service: 'aaiti-backend' });
+      res.status(503).json({ ready: false, error: e.message });
+    }
+  });
+
   // Performance monitoring endpoint with caching
   app.get('/api/performance', cacheMiddleware(60), async (req, res) => {
     try {
@@ -446,7 +446,7 @@ const initializeMiddleware = () => {
 
 // Socket.IO connection handling and real-time data
 const initializeSocketHandlers = (io) => {
-  logger.info('🔌 Setting up WebSocket authentication...', { service: 'aaiti-backend' });
+  logger.info('🔌 Setting up WebSocket (public mode)...', { service: 'aaiti-backend' });
   io.use(authenticateSocket);
 
   io.on('connection', (socket) => {
@@ -573,10 +573,11 @@ const initializeSocketHandlers = (io) => {
   });
 
   // Start real-time data broadcasting
-  setInterval(broadcastData, 5000); // Every 5 seconds
+  const broadcastInterval = setInterval(broadcastData, 5000); // Every 5 seconds
   
   logger.info('✅ WebSocket handlers initialized successfully', { service: 'aaiti-backend' });
-  return io;
+  // Return cleanup handle for graceful shutdown
+  return { io, cleanup: () => clearInterval(broadcastInterval) };
 };
 
 // Initialize database and start server
@@ -596,7 +597,7 @@ const startServer = async () => {
     await initializeConfig();
     logger.info('✅ Configuration initialized successfully', { service: 'aaiti-backend' });
     
-    // Initialize performance enhancements
+  // Initialize performance enhancements
     logger.info('⚡ Initializing performance optimizations...', { service: 'aaiti-backend' });
     
     // Initialize cache system
@@ -626,10 +627,29 @@ const startServer = async () => {
     const versionManager = getVersionManager();
     logger.info('✅ API version manager initialized', { service: 'aaiti-backend' });
     
-    // Initialize database
-    logger.info('💾 Initializing database connection...', { service: 'aaiti-backend' });
-    await initializeDatabase();
-    logger.info('✅ Database initialized successfully', { service: 'aaiti-backend' });
+    // Initialize database (PostgreSQL or SQLite)
+    logger.info('💾 Initializing database configuration...', { service: 'aaiti-backend' });
+    await databaseConfig.initialize();
+    logger.info('✅ Database configuration initialized', { type: databaseConfig.type, service: 'aaiti-backend' });
+
+    if (databaseConfig.type === 'sqlite') {
+      logger.info('💾 Initializing SQLite schema...', { service: 'aaiti-backend' });
+      await initializeDatabase();
+      logger.info('✅ SQLite schema initialized', { service: 'aaiti-backend' });
+    } else {
+      logger.info('📜 Running PostgreSQL migrations (Knex)', { service: 'aaiti-backend' });
+      try {
+        const knexConfig = require('./knexfile');
+        const env = process.env.NODE_ENV === 'production' ? 'production' : 'development';
+        const knex = require('knex')(knexConfig[env]);
+        await knex.migrate.latest();
+        await knex.destroy();
+        logger.info('✅ PostgreSQL migrations applied successfully', { service: 'aaiti-backend' });
+      } catch (e) {
+        logger.error('❌ Failed to run PostgreSQL migrations', { error: e.message, service: 'aaiti-backend' });
+        throw e;
+      }
+    }
     
     // Initialize Security & Compliance services
     logger.info('🔐 Initializing security and compliance services...', { service: 'aaiti-backend' });
@@ -655,8 +675,8 @@ const startServer = async () => {
     
     // Initialize Socket.IO
     logger.info('🔌 Initializing WebSocket server...', { service: 'aaiti-backend' });
-    const io = initializeSocketIO();
-    initializeSocketHandlers(io);
+  const io = initializeSocketIO();
+  socketCtx = initializeSocketHandlers(io);
     logger.info('✅ Socket.IO initialized successfully', { service: 'aaiti-backend' });
     
     // Initialize GraphQL server
@@ -719,6 +739,7 @@ process.on('SIGTERM', () => {
     service: 'aaiti-backend'
   });
   dashboard.stop();
+  try { if (typeof socketCtx?.cleanup === 'function') socketCtx.cleanup(); } catch (e) {}
   server.close(() => {
     logger.info('✅ Server shut down gracefully', { service: 'aaiti-backend' });
     process.exit(0);
@@ -760,4 +781,17 @@ module.exports = { app, config, getCredentials };
 // Start server if this file is run directly
 if (require.main === module) {
   startServer();
+}
+
+// Test environment auto-initialization (routes without listening)
+if (process.env.NODE_ENV === 'test') {
+  (async () => {
+    try {
+      await initializeConfig();
+      await databaseConfig.initialize();
+      initializeMiddleware();
+    } catch (e) {
+      // Keep silent in tests; individual endpoints may still work
+    }
+  })();
 }

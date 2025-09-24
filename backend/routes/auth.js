@@ -3,11 +3,12 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const { db } = require('../database/init');
-const { authenticateToken, auditLog } = require('../middleware/auth');
+const { authenticateToken, authenticateApiKey, auditLog } = require('../middleware/auth');
 const { getCredentials } = require('../utils/credentials');
 const logger = require('../utils/logger');
 
 const router = express.Router();
+const { validate, schemas } = require('../utils/validation');
 
 // Helper function to get JWT configuration from credentials
 const getJwtConfig = () => {
@@ -19,9 +20,9 @@ const getJwtConfig = () => {
 };
 
 // Register new user
-router.post('/register', auditLog('user_register'), async (req, res) => {
+router.post('/register', validate(schemas.registerSchema), auditLog('user_register'), async (req, res) => {
   try {
-    const { username, email, password, role = 'trader' } = req.body;
+    const { username, email, password, role = 'trader' } = req.validated;
 
     // Validation
     if (!username || !email || !password) {
@@ -83,9 +84,9 @@ router.post('/register', auditLog('user_register'), async (req, res) => {
 });
 
 // Login (supports username OR email as identifier)
-router.post('/login', auditLog('user_login'), async (req, res) => {
+router.post('/login', validate(schemas.loginSchema), auditLog('user_login'), async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password } = req.validated;
     const identifier = username || email; // allow either field
 
     if (!identifier || !password) {
@@ -149,8 +150,8 @@ router.post('/login', auditLog('user_login'), async (req, res) => {
   }
 });
 
-// Get current user profile
-router.get('/profile', authenticateToken, (req, res) => {
+// Get current user profile (supports JWT or API Key)
+router.get('/profile', authenticateApiKey, (req, res) => {
   res.json({
     user: {
       id: req.user.id,

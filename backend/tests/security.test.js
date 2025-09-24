@@ -1,6 +1,6 @@
 const request = require('supertest');
 const { expect } = require('chai');
-const app = require('../server');
+const { app } = require('../server');
 const { db } = require('../database/init');
 const apiKeyManager = require('../utils/apiKeyManager');
 const { encrypt, decrypt, generateApiKey } = require('../utils/encryption');
