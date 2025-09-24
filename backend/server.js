@@ -204,22 +204,48 @@ const initializeMiddleware = () => {
     }
   }));
   // CORS: allow same-origin and configured frontend URL
-  app.use(cors({
-    origin: [
-      'http://localhost:3000',     // React dev server
-      'http://127.0.0.1:3000',     // React dev server alternative
-      'http://localhost:5000',     // Backend server
-      'http://127.0.0.1:5000',     // Backend server alternative
-      config.frontendUrl           // Configured frontend URL
-    ].filter(Boolean),
+  const allowedOrigins = [
+    'http://localhost:3000',     // React dev server
+    'http://127.0.0.1:3000',     // React dev server alternative
+    'http://localhost:5000',     // Backend server
+    'http://127.0.0.1:5000',     // Backend server alternative
+    config.frontendUrl           // Configured frontend URL
+  ].filter(Boolean);
+
+  const corsOptions = {
+    origin: (origin, callback) => {
+      // Allow non-browser or same-origin requests with no Origin header
+      if (!origin) {
+        logger.debug('CORS: Allowing request with no Origin header (likely server-to-server)', { service: 'aaiti-backend' });
+        return callback(null, true);
+      }
+      if (allowedOrigins.includes(origin)) {
+        logger.debug('CORS: Origin allowed', { origin, service: 'aaiti-backend' });
+        return callback(null, true);
+      }
+      logger.warn('CORS: Origin blocked', { origin, allowedOrigins, service: 'aaiti-backend' });
+      return callback(new Error('Not allowed by CORS'));
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
     credentials: true,
-    optionsSuccessStatus: 200    // Support legacy browsers
-  }));
+    optionsSuccessStatus: 200,    // Support legacy browsers
+    maxAge: 600                   // Cache preflight for 10m
+  };
 
-  // Handle preflight OPTIONS requests explicitly
-  app.options('*', cors());
+  app.use(cors(corsOptions));
+
+  // Proper preflight handling with SAME options (avoid wildcard '*')
+  app.options('*', cors(corsOptions));
+
+  // Centralizzato: gestione errori CORS (Error: Not allowed by CORS)
+  app.use((err, req, res, next) => {
+    if (err && err.message === 'Not allowed by CORS') {
+      logger.warn('CORS rejection response sent', { origin: req.headers.origin, path: req.path, service: 'aaiti-backend' });
+      return res.status(403).json({ error: 'Origin non autorizzata', origin: req.headers.origin });
+    }
+    return next(err);
+  });
 
   logger.info('⚡ Configuring rate limiting...', { 
     windowMs: performanceConfig.api.rateLimit.windowMs / 1000 / 60 + ' minutes',
