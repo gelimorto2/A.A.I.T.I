@@ -1266,6 +1266,488 @@ class BacktestingService {
     
     return maxDrawdown;
   }
+
+  /**
+   * Run comprehensive backtest with advanced ML integration
+   */
+  async runComprehensiveBacktest(config) {
+    const {
+      backtestId,
+      modelIds,
+      symbols,
+      startDate,
+      endDate,
+      initialCapital,
+      walkForwardOptimization,
+      walkForwardPeriods,
+      monteCarloSimulations,
+      benchmarkSymbol,
+      retrain_frequency,
+      prediction_confidence_threshold,
+      feature_importance_analysis,
+      drift_detection
+    } = config;
+
+    logger.info(`Starting comprehensive backtest ${backtestId} with ${modelIds.length} models`);
+
+    try {
+      // Run individual backtests for each model
+      const modelResults = await Promise.all(
+        modelIds.map(async (modelId) => {
+          const modelConfig = { ...config, modelId };
+          return await this.runBacktest(modelConfig);
+        })
+      );
+
+      // Ensemble model results
+      const ensembleResults = await this.createEnsembleBacktest(modelResults, config);
+
+      // Walk-forward optimization if requested
+      let walkForwardResults = null;
+      if (walkForwardOptimization) {
+        walkForwardResults = await this.runWalkForwardOptimization(config, walkForwardPeriods);
+      }
+
+      // Monte Carlo simulation
+      const monteCarloResults = await this.runMonteCarloSimulation(
+        ensembleResults.trades,
+        monteCarloSimulations
+      );
+
+      // Benchmark comparison
+      const benchmarkResults = await this.compareToBenchmark(
+        ensembleResults,
+        benchmarkSymbol,
+        startDate,
+        endDate
+      );
+
+      // Feature importance analysis if requested
+      let featureImportanceResults = null;
+      if (feature_importance_analysis) {
+        featureImportanceResults = await this.analyzeFeatureImportance(modelIds, ensembleResults.trades);
+      }
+
+      // Model drift analysis if requested
+      let driftAnalysisResults = null;
+      if (drift_detection) {
+        driftAnalysisResults = await this.analyzeDriftOverTime(modelIds, startDate, endDate);
+      }
+
+      // Compile comprehensive results
+      const comprehensiveResults = {
+        backtestId,
+        modelIds,
+        symbols,
+        period: { startDate, endDate },
+        initialCapital,
+        finalCapital: ensembleResults.currentCapital,
+        
+        // Individual model results
+        modelResults: modelResults.map((result, index) => ({
+          modelId: modelIds[index],
+          ...result
+        })),
+
+        // Ensemble results
+        trades: ensembleResults.trades,
+        performance: this.calculateComprehensivePerformance(ensembleResults, initialCapital),
+
+        // Advanced analysis
+        walkForwardOptimization: walkForwardResults,
+        monteCarloAnalysis: monteCarloResults,
+        benchmarkComparison: benchmarkResults,
+        featureImportance: featureImportanceResults,
+        driftAnalysis: driftAnalysisResults,
+
+        // Risk metrics
+        riskMetrics: this.calculateAdvancedRiskMetrics(ensembleResults.trades, ensembleResults.equity),
+
+        // Execution details
+        executedAt: new Date().toISOString()
+      };
+
+      logger.info(`Comprehensive backtest ${backtestId} completed successfully`);
+      return comprehensiveResults;
+
+    } catch (error) {
+      logger.error(`Error in comprehensive backtest ${backtestId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create ensemble backtest from multiple model results
+   */
+  async createEnsembleBacktest(modelResults, config) {
+    const { initialCapital, maxPositions } = config;
+    
+    // Initialize ensemble state
+    const ensembleState = {
+      currentCapital: initialCapital,
+      positions: new Map(),
+      trades: [],
+      equity: [initialCapital],
+      equityDates: []
+    };
+
+    // Combine signals from all models using voting or averaging
+    const combinedSignals = this.combineModelSignals(modelResults);
+
+    // Execute ensemble trading strategy
+    for (const signal of combinedSignals) {
+      // Check position limits
+      if (ensembleState.positions.size >= maxPositions) {
+        continue;
+      }
+
+      // Execute signal with ensemble logic
+      const trade = await this.executeEnsembleSignal(signal, ensembleState, config);
+      if (trade) {
+        ensembleState.trades.push(trade);
+      }
+    }
+
+    return ensembleState;
+  }
+
+  /**
+   * Combine signals from multiple models
+   */
+  combineModelSignals(modelResults) {
+    const allSignals = [];
+    const signalMap = new Map();
+
+    // Collect all signals
+    for (const result of modelResults) {
+      for (const trade of result.trades) {
+        const key = `${trade.symbol}_${trade.entryDate}`;
+        if (!signalMap.has(key)) {
+          signalMap.set(key, []);
+        }
+        signalMap.get(key).push({
+          side: trade.side,
+          confidence: trade.signalConfidence || 0.5,
+          modelWeight: 1.0 / modelResults.length
+        });
+      }
+    }
+
+    // Create ensemble signals
+    for (const [key, signals] of signalMap.entries()) {
+      const [symbol, date] = key.split('_');
+      
+      // Calculate weighted average confidence and direction
+      let buyWeight = 0;
+      let sellWeight = 0;
+      let totalConfidence = 0;
+
+      for (const signal of signals) {
+        const weightedConfidence = signal.confidence * signal.modelWeight;
+        totalConfidence += weightedConfidence;
+        
+        if (signal.side === 'buy') {
+          buyWeight += weightedConfidence;
+        } else {
+          sellWeight += weightedConfidence;
+        }
+      }
+
+      // Create ensemble signal if confidence threshold is met
+      if (totalConfidence > 0.6) {
+        allSignals.push({
+          symbol,
+          date: new Date(date),
+          side: buyWeight > sellWeight ? 'buy' : 'sell',
+          confidence: totalConfidence,
+          modelCount: signals.length
+        });
+      }
+    }
+
+    return allSignals.sort((a, b) => a.date - b.date);
+  }
+
+  /**
+   * Execute ensemble signal
+   */
+  async executeEnsembleSignal(signal, ensembleState, config) {
+    const { commission, slippage } = config;
+    
+    // Skip if already have position in this symbol
+    if (ensembleState.positions.has(signal.symbol)) {
+      return null;
+    }
+
+    // Calculate position size based on confidence
+    const baseQuantity = ensembleState.currentCapital * 0.1; // 10% base allocation
+    const confidenceMultiplier = Math.min(signal.confidence * 1.5, 2.0); // Max 2x leverage
+    const quantity = baseQuantity * confidenceMultiplier;
+
+    // Simulate execution
+    const executionPrice = await this.getSimulatedPrice(signal.symbol, signal.date);
+    const adjustedPrice = executionPrice * (1 + (signal.side === 'buy' ? slippage : -slippage));
+    const totalCost = quantity + (quantity * commission);
+
+    if (totalCost > ensembleState.currentCapital) {
+      return null; // Insufficient capital
+    }
+
+    const trade = {
+      id: uuidv4(),
+      symbol: signal.symbol,
+      side: signal.side,
+      entryDate: signal.date.toISOString(),
+      entryPrice: adjustedPrice,
+      quantity: quantity / adjustedPrice,
+      signalConfidence: signal.confidence,
+      modelCount: signal.modelCount,
+      status: 'open'
+    };
+
+    // Update ensemble state
+    ensembleState.currentCapital -= totalCost;
+    ensembleState.positions.set(signal.symbol, trade);
+
+    return trade;
+  }
+
+  /**
+   * Run walk-forward optimization
+   */
+  async runWalkForwardOptimization(config, periods) {
+    const { startDate, endDate } = config;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const periodLength = Math.floor((end - start) / periods);
+    
+    const walkForwardResults = [];
+
+    for (let i = 0; i < periods; i++) {
+      const periodStart = new Date(start.getTime() + (i * periodLength));
+      const periodEnd = new Date(start.getTime() + ((i + 1) * periodLength));
+      
+      const periodConfig = {
+        ...config,
+        startDate: periodStart.toISOString(),
+        endDate: periodEnd.toISOString()
+      };
+
+      try {
+        const periodResult = await this.runBacktest(periodConfig);
+        walkForwardResults.push({
+          period: i + 1,
+          startDate: periodStart,
+          endDate: periodEnd,
+          result: periodResult
+        });
+      } catch (error) {
+        logger.warn(`Walk-forward period ${i + 1} failed:`, error);
+      }
+    }
+
+    return {
+      periods: walkForwardResults,
+      aggregatedPerformance: this.aggregateWalkForwardResults(walkForwardResults)
+    };
+  }
+
+  /**
+   * Run Monte Carlo simulation
+   */
+  async runMonteCarloSimulation(trades, simulations) {
+    const returns = trades.map(trade => trade.pnl / trade.entryPrice);
+    const simulationResults = [];
+
+    for (let i = 0; i < simulations; i++) {
+      // Randomly sample returns with replacement
+      const shuffledReturns = this.shuffleArray([...returns]);
+      
+      let capital = 100000; // Standardized starting capital
+      const equityCurve = [capital];
+
+      for (const returnValue of shuffledReturns) {
+        capital *= (1 + returnValue);
+        equityCurve.push(capital);
+      }
+
+      simulationResults.push({
+        finalCapital: capital,
+        totalReturn: (capital - 100000) / 100000,
+        maxDrawdown: this.calculateMaxDrawdown(equityCurve)
+      });
+    }
+
+    // Calculate statistics
+    const finalCapitals = simulationResults.map(r => r.finalCapital);
+    const totalReturns = simulationResults.map(r => r.totalReturn);
+    const maxDrawdowns = simulationResults.map(r => r.maxDrawdown);
+
+    return {
+      simulations: simulationResults.length,
+      finalCapital: {
+        mean: mean(finalCapitals),
+        median: this.calculatePercentile(finalCapitals, 0.5),
+        percentile95: this.calculatePercentile(finalCapitals, 0.95),
+        percentile5: this.calculatePercentile(finalCapitals, 0.05)
+      },
+      totalReturn: {
+        mean: mean(totalReturns),
+        median: this.calculatePercentile(totalReturns, 0.5),
+        percentile95: this.calculatePercentile(totalReturns, 0.95),
+        percentile5: this.calculatePercentile(totalReturns, 0.05)
+      },
+      maxDrawdown: {
+        mean: mean(maxDrawdowns),
+        median: this.calculatePercentile(maxDrawdowns, 0.5),
+        percentile95: this.calculatePercentile(maxDrawdowns, 0.95),
+        percentile5: this.calculatePercentile(maxDrawdowns, 0.05)
+      }
+    };
+  }
+
+  /**
+   * Compare to benchmark
+   */
+  async compareToBenchmark(results, benchmarkSymbol, startDate, endDate) {
+    try {
+      // Get benchmark data
+      const benchmarkData = await this.getHistoricalData([benchmarkSymbol], startDate, endDate);
+      
+      if (!benchmarkData || benchmarkData.length === 0) {
+        return { error: 'Benchmark data not available' };
+      }
+
+      const benchmarkReturns = this.calculateBenchmarkReturns(benchmarkData);
+      const strategyReturns = this.calculateStrategyReturns(results.trades);
+
+      return {
+        benchmark: benchmarkSymbol,
+        benchmarkReturn: benchmarkReturns.totalReturn,
+        strategyReturn: results.performance?.totalReturn || 0,
+        alpha: (results.performance?.totalReturn || 0) - benchmarkReturns.totalReturn,
+        beta: this.calculateBeta(strategyReturns, benchmarkReturns.dailyReturns),
+        informationRatio: this.calculateInformationRatio(strategyReturns, benchmarkReturns.dailyReturns),
+        trackingError: this.calculateTrackingError(strategyReturns, benchmarkReturns.dailyReturns)
+      };
+    } catch (error) {
+      logger.warn('Benchmark comparison failed:', error);
+      return { error: 'Benchmark comparison failed' };
+    }
+  }
+
+  /**
+   * Calculate detailed performance metrics
+   */
+  async calculateDetailedPerformance(trades, backtest) {
+    const profitableTrades = trades.filter(t => t.pnl > 0);
+    const losingTrades = trades.filter(t => t.pnl < 0);
+    
+    return {
+      // Basic metrics
+      totalTrades: trades.length,
+      profitableTrades: profitableTrades.length,
+      losingTrades: losingTrades.length,
+      winRate: trades.length > 0 ? profitableTrades.length / trades.length : 0,
+      
+      // Return metrics
+      totalReturn: backtest.total_return,
+      avgTradeReturn: trades.length > 0 ? mean(trades.map(t => t.pnl)) : 0,
+      bestTrade: Math.max(...trades.map(t => t.pnl), 0),
+      worstTrade: Math.min(...trades.map(t => t.pnl), 0),
+      
+      // Risk metrics
+      sharpeRatio: backtest.sharpe_ratio,
+      maxDrawdown: backtest.max_drawdown,
+      profitFactor: backtest.profit_factor,
+      
+      // Trading metrics
+      avgTradeDuration: backtest.avg_trade_duration,
+      maxConsecutiveWins: this.calculateConsecutiveWins(trades),
+      maxConsecutiveLosses: this.calculateConsecutiveLosses(trades),
+      
+      // Advanced metrics
+      calmarRatio: backtest.total_return / (backtest.max_drawdown || 1),
+      sortinoRatio: this.calculateSortinoRatio(trades),
+      recoveryFactor: backtest.total_return / (backtest.max_drawdown || 1),
+      
+      // Model-specific metrics
+      avgPredictionAccuracy: mean(trades.map(t => t.prediction_accuracy || 0.5)),
+      avgSignalConfidence: mean(trades.map(t => t.signal_confidence || 0.5)),
+      highConfidenceWinRate: this.calculateHighConfidenceWinRate(trades)
+    };
+  }
+
+  /**
+   * Generate comparison analysis between backtests
+   */
+  generateComparisonAnalysis(backtestComparisons) {
+    const comparisons = backtestComparisons.map(bc => bc.performance);
+    
+    return {
+      bestPerformer: {
+        totalReturn: this.findBestPerformer(comparisons, 'totalReturn'),
+        sharpeRatio: this.findBestPerformer(comparisons, 'sharpeRatio'),
+        maxDrawdown: this.findBestPerformer(comparisons, 'maxDrawdown', 'min'),
+        winRate: this.findBestPerformer(comparisons, 'winRate')
+      },
+      correlationMatrix: this.calculateCorrelationMatrix(backtestComparisons),
+      riskReturnScatter: this.generateRiskReturnData(comparisons),
+      statisticalSignificance: this.calculateStatisticalSignificance(comparisons)
+    };
+  }
+
+  /**
+   * Helper methods for comprehensive analysis
+   */
+  shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }
+
+  calculatePercentile(values, percentile) {
+    const sorted = [...values].sort((a, b) => a - b);
+    const index = Math.ceil(sorted.length * percentile) - 1;
+    return sorted[Math.max(0, index)];
+  }
+
+  calculateSortinoRatio(trades) {
+    const returns = trades.map(t => t.pnl);
+    const avgReturn = mean(returns);
+    const negativeReturns = returns.filter(r => r < 0);
+    
+    if (negativeReturns.length === 0) return avgReturn > 0 ? Infinity : 0;
+    
+    const downstideDeviation = Math.sqrt(mean(negativeReturns.map(r => r * r)));
+    return avgReturn / downstideDeviation;
+  }
+
+  calculateHighConfidenceWinRate(trades) {
+    const highConfidenceTrades = trades.filter(t => (t.signal_confidence || 0.5) > 0.7);
+    if (highConfidenceTrades.length === 0) return 0;
+    
+    const winners = highConfidenceTrades.filter(t => t.pnl > 0);
+    return winners.length / highConfidenceTrades.length;
+  }
+
+  findBestPerformer(comparisons, metric, mode = 'max') {
+    let bestIndex = 0;
+    let bestValue = comparisons[0][metric];
+    
+    for (let i = 1; i < comparisons.length; i++) {
+      const value = comparisons[i][metric];
+      if (mode === 'max' ? value > bestValue : value < bestValue) {
+        bestValue = value;
+        bestIndex = i;
+      }
+    }
+    
+    return { index: bestIndex, value: bestValue };
+  }
 }
 
 module.exports = new BacktestingService();

@@ -1,53 +1,65 @@
-# Installation Guide
+# Production Deployment Guide
 
-This guide provides comprehensive installation instructions for A.A.I.T.I v2.0.0, supporting all major platforms with Docker-first deployment (recommended) and manual installation options.
+This guide provides enterprise-grade deployment instructions for A.A.I.T.I, covering production infrastructure setup, security configuration, and scalability considerations for professional trading operations.
 
-## 🖥️ Platform Support
+## 🏦 Production Environment Requirements
 
-A.A.I.T.I supports all major operating systems:
-- **🐧 Linux**: Native Docker support, recommended for production
-- **🍎 macOS**: Full Docker Desktop compatibility  
-- **🪟 Windows**: Complete support with specialized scripts
+### Infrastructure Specifications
+- **CPU**: 8+ cores (16+ for high-frequency trading)
+- **RAM**: 32GB minimum (64GB+ recommended for enterprise)
+- **Storage**: 1TB+ NVMe SSD with RAID 1 configuration
+- **Network**: Dedicated low-latency connection (<10ms to exchange APIs)
+- **OS**: Ubuntu 22.04 LTS Server (recommended) or RHEL 8+
 
-**For Windows users**: See the dedicated [Windows Installation Guide](windows.md) for platform-specific instructions.
+### Security Prerequisites
+- **SSL Certificates**: Valid certificates for HTTPS endpoints
+- **Firewall**: Configured firewall rules for secure access
+- **VPN/Private Network**: Secure network access for trading operations
+- **Backup Infrastructure**: Automated database backup and disaster recovery
+- **Monitoring**: System monitoring and alerting infrastructure
 
-## Prerequisites
+### Financial Infrastructure
+- **Exchange Accounts**: Verified accounts with API access on target exchanges
+- **API Keys**: Production API keys with appropriate trading permissions
+- **Risk Limits**: Defined position limits and risk parameters
+- **Compliance**: Regulatory compliance review and documentation
 
-### System Requirements
-- **Docker** (20.0+) and **Docker Compose** (v2.0+)
-- **Git** for cloning the repository
-- **4GB RAM** (recommended for optimal performance)
-- **5GB Disk Space** (recommended)
+## 🚀 Production Deployment
 
-### Optional Requirements
-- **Node.js** 16+ (for manual installation only)
-- **npm** 8+ (for manual installation only)
+### Enterprise Infrastructure Setup
 
-## 🚀 Docker Installation (Recommended)
-
-### Platform-Specific Quick Start
-
-#### 🐧 Linux / 🍎 macOS
+#### Production Environment (Kubernetes)
 ```bash
-# Clone and install
+# Clone production repository
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
-./install-docker.sh
+
+# Configure production environment
+cp config/production.env.example config/production.env
+# Edit production.env with your specific configuration
+
+# Deploy to Kubernetes cluster
+kubectl apply -k k8s/production/
+kubectl get pods -n aaiti-prod
 ```
 
-#### 🪟 Windows
-```batch
-# Clone and install
-git clone https://github.com/gelimorto2/A.A.I.T.I.git
-cd A.A.I.T.I
-scripts\windows\install.bat
-# Or: .\install.ps1
-```
-
-### One-Command Installation (Linux/macOS)
-
+#### Docker Compose Production
 ```bash
-# 1. Clone the repository
+# Production deployment with all services
+docker-compose -f docker-compose.prod.yml up -d
+
+# Initialize production database
+docker-compose exec backend npm run migrate:production
+
+# Verify system health
+curl https://your-domain.com/api/health/detailed
+```
+
+### High-Availability Setup
+
+#### Multi-Node Deployment
+```bash
+# Set up load balancer and multiple instances
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
 

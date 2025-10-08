@@ -1,33 +1,35 @@
-# A.A.I.T.I Documentation
+# A.A.I.T.I Enterprise Documentation
 
-Welcome to the comprehensive documentation for A.A.I.T.I (Auto AI Trading Interface) - a Docker-first Neural Command Deck for AI-powered trading.
+Welcome to the comprehensive documentation for A.A.I.T.I (Autonomous AI Trading Intelligence) - a production-grade cryptocurrency trading platform for institutional and professional traders.
 
-## 🚀 Quick Navigation
+## 🏦 Quick Navigation
 
-- **New Users**: [Installation Guide](installation.md) → [Quick Start](quick-start.md) → [User Guide](user-guide.md)
+- **Enterprise Users**: [Production Deployment](installation.md) → [Live Trading Setup](PRODUCTION_TRADING_API_GUIDE.md) → [Enterprise Features](ENTERPRISE_FEATURES.md)
 - **Developers**: [Development Guide](development.md) → [API Reference](api-reference.md) → [Architecture](architecture.md)
-- **System Admins**: [Docker Guide](docker.md) → [Performance Tuning](performance.md) → [Security Guide](security.md)
+- **Operations**: [Security Implementation](security.md) → [Performance Optimization](performance.md) → [Monitoring](PERFORMANCE_GITHUB_INTEGRATION.md)
 
-## 📚 Documentation Index
+## 📚 Enterprise Documentation Index
 
-### 🎯 Getting Started
-- **[📖 Installation Guide](installation.md)** - Complete setup for Linux/macOS/Windows
-- **[🪟 Windows Guide](windows.md)** - Windows-specific installation and setup
-- **[🎮 Demo Guide](demo.md)** - Quick evaluation with minimal setup
-- **[🚀 Quick Start Guide](quick-start.md)** - 5-minute setup guide with demo
-- **[👤 User Guide](user-guide.md)** - Feature walkthrough with screenshots
+### � Production Deployment
+- **[� Production Deployment](installation.md)** - Enterprise infrastructure setup and configuration
+- **[💼 Live Trading Setup](PRODUCTION_TRADING_API_GUIDE.md)** - Exchange integration and trading configuration  
+- **[� Enterprise Features](ENTERPRISE_FEATURES.md)** - Professional trading platform capabilities
+- **[� Advanced Features](ADVANCED_FEATURES.md)** - Risk management and portfolio optimization
+- **[� Security Implementation](security.md)** - Enterprise security architecture and compliance
 
-### 🔧 Technical Documentation
-- **[🔌 API Reference](api-reference.md)** - Complete REST API documentation
-- **[🧠 ML Models Guide](ml-models.md)** - 16 algorithms with examples
-- **[🐳 Docker Guide](docker.md)** - Container deployment guide
-- **[🏗️ Architecture Overview](architecture.md)** - System design and components
+### 🔧 Technical Architecture
+- **[🔌 Production API Reference](api-reference.md)** - Complete REST API for live trading
+- **[� ML Models Architecture](ml-models.md)** - Neural networks and ensemble methods
+- **[🏗️ System Architecture](architecture.md)** - Microservices and infrastructure design
+- **[📈 Performance Optimization](performance.md)** - System tuning and scalability
+- **[🧪 Testing Framework](../TESTING.md)** - Comprehensive testing strategy
 
-### 🛠 Development & Operations
-- **[💻 Development Guide](development.md)** - Developer setup and guidelines
-- **[🔒 Security Guide](security.md)** - Security best practices and hardening
-- **[📊 Performance Tuning](performance.md)** - Optimization and configuration
-- **[🆘 Troubleshooting](troubleshooting.md)** - Common issues and solutions
+### 🛠 Operations & Development  
+- **[💻 Development Workflow](development.md)** - Professional development standards
+- **[� Monitoring & Analytics](PERFORMANCE_GITHUB_INTEGRATION.md)** - Grafana dashboards and alerting
+- **[� Trading Engine Enhancements](TRADING_ENGINE_ENHANCEMENTS.md)** - Advanced trading capabilities
+- **[🛡️ Security Implementation](SECURITY_IMPLEMENTATION_SUMMARY.md)** - Security features and audit
+- **[🆘 Troubleshooting](troubleshooting.md)** - Production issue resolution
 
 ### 📈 Features & Guides
 - **[📊 Trading Interface](features/trading.md)** - Trading bots and strategy management

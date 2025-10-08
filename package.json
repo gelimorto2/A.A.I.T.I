@@ -1,7 +1,7 @@
 {
   "name": "aaiti",
-  "version": "2.1.0",
-  "description": "A.A.I.T.I v2.1.0 - Auto AI Trading Interface: Production-Ready AI Trading Platform",
+  "version": "2.0.0-rc.1",
+  "description": "A.A.I.T.I v2.0.0-rc.1 - Production-Ready Autonomous AI Trading Intelligence: Enterprise Cryptocurrency Trading Platform",
   "main": "index.js",
   "scripts": {
     "start": "echo '🚀 A.A.I.T.I is production-ready! Use Docker installation instead.' && echo '📖 Run: ./install for interactive Docker setup'",
@@ -13,11 +13,16 @@
     "test": "echo \"✅ Use Docker installation - run './install' for setup\""
   },
   "keywords": [
+    "cryptocurrency",
     "trading",
-    "ai",
-    "interface",
-    "finance",
-    "automation"
+    "machine-learning", 
+    "artificial-intelligence",
+    "enterprise",
+    "professional",
+    "quantitative-finance",
+    "risk-management",
+    "production-ready",
+    "institutional"
   ],
   "author": "",
   "license": "ISC",

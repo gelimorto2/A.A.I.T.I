@@ -1,0 +1,154 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: aaiti-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: aaiti_prod
+      POSTGRES_USER: aaiti_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-aaiti_secure_password_2025}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init-scripts:/docker-entrypoint-initdb.d
+      - ./database/postgresql.conf:/etc/postgresql/postgresql.conf
+    ports:
+      - "5432:5432"
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aaiti_user -d aaiti_prod"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aaiti-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: aaiti-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_secure_password_2025}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - aaiti-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: aaiti-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DB_TYPE: postgresql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: aaiti_prod
+      DB_USER: aaiti_user
+      DB_PASSWORD: ${DB_PASSWORD:-aaiti_secure_password_2025}
+      REDIS_URL: redis://redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_secure_password_2025}
+      JWT_SECRET: ${JWT_SECRET:-your_super_secure_jwt_secret_for_production}
+      BINANCE_API_KEY: ${BINANCE_API_KEY}
+      BINANCE_SECRET_KEY: ${BINANCE_SECRET_KEY}
+      COINBASE_API_KEY: ${COINBASE_API_KEY}
+      COINBASE_SECRET_KEY: ${COINBASE_SECRET_KEY}
+    volumes:
+      - ./backend/logs:/app/logs
+      - ./backend/config:/app/config
+      - backend_uploads:/app/uploads
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - aaiti-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: aaiti-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.prod.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/ssl:/etc/nginx/ssl
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - backend
+    networks:
+      - aaiti-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: aaiti-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - aaiti-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: aaiti-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - aaiti-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  backend_uploads:
+    driver: local
+  nginx_logs:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  aaiti-network:
+    driver: bridge

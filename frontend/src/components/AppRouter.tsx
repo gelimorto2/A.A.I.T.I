@@ -12,7 +12,9 @@ import AnalyticsPage from '../pages/AnalyticsPage';
 import SettingsPage from '../pages/SettingsPage';
 import MLModelsPage from '../pages/MLModelsPage';
 import MLModelDetailPage from '../pages/MLModelDetailPage';
+import ProductionMLPage from '../pages/ProductionMLPage';
 import StrategyCreatorPage from '../pages/StrategyCreatorPage';
+import BacktestingPage from '../pages/BacktestingPage';
 
 import Navbar from './layout/Navbar';
 import Sidebar from './layout/Sidebar';
@@ -49,7 +51,9 @@ const AppRouter: React.FC = () => {
             <Route path="/bots/:botId" element={<BotDetailPage />} />
             <Route path="/ml" element={<MLModelsPage />} />
             <Route path="/ml/models/:modelId" element={<MLModelDetailPage />} />
+            <Route path="/production-ml" element={<ProductionMLPage />} />
             <Route path="/strategy-creator" element={<StrategyCreatorPage />} />
+            <Route path="/backtesting" element={<BacktestingPage />} />
             <Route path="/trading" element={<TradingPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/settings" element={<SettingsPage />} />

@@ -1,257 +1,282 @@
 const express = require('express');
-const router = express.Router();
+const performanceMonitoring = require('../middleware/performanceMonitoring');
+const { authenticateToken } = require('../middleware/auth');
 const logger = require('../utils/logger');
-const { getPerformanceMonitor } = require('../utils/performanceMonitor');
-const { getGitHubIssueReporter } = require('../utils/githubIssueReporter');
+
+const router = express.Router();
+const latencyService = performanceMonitoring.getLatencyService();
 
 /**
- * Performance and Issue Reporting API Routes
- * Provides endpoints for monitoring system performance and GitHub issue reporting
+ * GET /api/performance/metrics
+ * Get comprehensive performance metrics
  */
-
-/**
- * Get current performance metrics
- */
-router.get('/metrics', async (req, res) => {
+router.get('/metrics', authenticateToken, async (req, res) => {
   try {
-    const performanceMonitor = getPerformanceMonitor();
-    const metrics = performanceMonitor.getPerformanceMetrics();
+    const { format = 'json', operation, exchange } = req.query;
     
-    res.json({
-      success: true,
-      timestamp: new Date().toISOString(),
-      metrics
-    });
+    const metrics = latencyService.getMetrics();
+    
+    // Filter by operation if specified
+    if (operation && metrics.operations[operation]) {
+      metrics.operations = { [operation]: metrics.operations[operation] };
+    }
+    
+    // Filter by exchange if specified
+    if (exchange && metrics.exchanges[exchange]) {
+      metrics.exchanges = { [exchange]: metrics.exchanges[exchange] };
+    }
+    
+    if (format === 'prometheus') {
+      res.set('Content-Type', 'text/plain');
+      res.send(latencyService.exportPrometheusMetrics());
+    } else if (format === 'csv') {
+      res.set('Content-Type', 'text/csv');
+      res.attachment('performance-metrics.csv');
+      res.send(performanceMonitoring.exportPerformanceData('csv'));
+    } else {
+      res.json({
+        success: true,
+        data: metrics
+      });
+    }
+
   } catch (error) {
-    logger.error('Failed to get performance metrics', error);
+    logger.error('Failed to get performance metrics', { error: error.message });
     res.status(500).json({
       success: false,
-      error: 'Failed to retrieve performance metrics',
-      message: error.message
+      error: 'Failed to retrieve performance metrics'
     });
   }
 });
 
 /**
- * Get GitHub issue reporter status
+ * GET /api/performance/summary
+ * Get performance summary dashboard
  */
-router.get('/github/status', async (req, res) => {
+router.get('/summary', authenticateToken, async (req, res) => {
   try {
-    const githubReporter = getGitHubIssueReporter();
-    const status = githubReporter.getStatus();
+    const summary = performanceMonitoring.getPerformanceSummary();
     
     res.json({
       success: true,
-      timestamp: new Date().toISOString(),
-      github: status
+      data: summary
     });
+
   } catch (error) {
-    logger.error('Failed to get GitHub status', error);
+    logger.error('Failed to get performance summary', { error: error.message });
     res.status(500).json({
       success: false,
-      error: 'Failed to retrieve GitHub status',
-      message: error.message
+      error: 'Failed to retrieve performance summary'
     });
   }
 });
 
 /**
- * Test GitHub connection
+ * GET /api/performance/alerts
+ * Get active performance alerts
  */
-router.post('/github/test', async (req, res) => {
+router.get('/alerts', authenticateToken, async (req, res) => {
   try {
-    const githubReporter = getGitHubIssueReporter();
-    const result = await githubReporter.testConnection();
+    const { severity } = req.query;
+    let alerts = latencyService.getPerformanceAlerts();
+    
+    // Filter by severity if specified
+    if (severity) {
+      alerts = alerts.filter(alert => alert.severity === severity);
+    }
     
     res.json({
       success: true,
-      timestamp: new Date().toISOString(),
-      connection: result
+      data: {
+        alerts,
+        count: alerts.length,
+        summary: {
+          critical: alerts.filter(a => a.severity === 'critical').length,
+          warning: alerts.filter(a => a.severity === 'warning').length,
+          total: alerts.length
+        },
+        timestamp: new Date().toISOString()
+      }
     });
+
   } catch (error) {
-    logger.error('GitHub connection test failed', error);
+    logger.error('Failed to get performance alerts', { error: error.message });
     res.status(500).json({
       success: false,
-      error: 'GitHub connection test failed',
-      message: error.message
+      error: 'Failed to retrieve performance alerts'
     });
   }
 });
 
 /**
- * Manually create a test GitHub issue
+ * GET /api/performance/operations/:operation/percentiles
+ * Get detailed percentile analysis for specific operation
  */
-router.post('/github/test-issue', async (req, res) => {
+router.get('/operations/:operation/percentiles', authenticateToken, async (req, res) => {
   try {
-    const { title, description, severity = 'info' } = req.body;
+    const { operation } = req.params;
+    const percentiles = latencyService.getPercentiles(operation);
     
-    if (!title) {
-      return res.status(400).json({
+    if (!percentiles) {
+      return res.status(404).json({
         success: false,
-        error: 'Title is required'
+        error: `No data found for operation: ${operation}`
       });
     }
     
-    const githubReporter = getGitHubIssueReporter();
-    const testError = new Error(title);
-    testError.type = 'manual_test';
+    res.json({
+      success: true,
+      data: {
+        operation,
+        percentiles,
+        threshold: latencyService.thresholds[operation] || null,
+        thresholdExceeded: percentiles.p95 > (latencyService.thresholds[operation] || Number.MAX_VALUE)
+      }
+    });
+
+  } catch (error) {
+    logger.error('Failed to get operation percentiles', {
+      operation: req.params.operation,
+      error: error.message
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve operation percentiles'
+    });
+  }
+});
+
+/**
+ * GET /api/performance/health
+ * Get overall system performance health
+ */
+router.get('/health', authenticateToken, async (req, res) => {
+  try {
+    const metrics = latencyService.getMetrics();
+    const alerts = latencyService.getPerformanceAlerts();
     
-    const context = {
-      severity,
-      type: 'manual_test',
-      description: description || 'This is a test issue created manually',
-      user: req.user?.id || 'unknown',
+    // Determine health status
+    let healthStatus = 'healthy';
+    let healthScore = 100;
+    
+    const criticalAlerts = alerts.filter(a => a.severity === 'critical');
+    const warningAlerts = alerts.filter(a => a.severity === 'warning');
+    
+    if (criticalAlerts.length > 0) {
+      healthStatus = 'critical';
+      healthScore = Math.max(0, 100 - (criticalAlerts.length * 25));
+    } else if (warningAlerts.length > 0) {
+      healthStatus = 'warning';
+      healthScore = Math.max(50, 100 - (warningAlerts.length * 10));
+    } else if (metrics.system.p95Latency > 5000) {
+      healthStatus = 'degraded';
+      healthScore = 75;
+    }
+    
+    const healthData = {
+      status: healthStatus,
+      score: healthScore,
+      checks: {
+        latency: {
+          status: metrics.system.p95Latency < 2500 ? 'pass' : 'fail',
+          value: Math.round(metrics.system.p95Latency * 100) / 100,
+          threshold: 2500
+        },
+        errorRate: {
+          status: (metrics.system.totalErrors / Math.max(1, metrics.system.totalRequests)) < 0.05 ? 'pass' : 'fail',
+          value: Math.round((metrics.system.totalErrors / Math.max(1, metrics.system.totalRequests)) * 10000) / 100,
+          threshold: 5.0
+        },
+        activeRequests: {
+          status: metrics.realtime.activeRequests < 100 ? 'pass' : 'fail',
+          value: metrics.realtime.activeRequests,
+          threshold: 100
+        }
+      },
+      alerts: {
+        critical: criticalAlerts.length,
+        warning: warningAlerts.length,
+        total: alerts.length
+      },
       timestamp: new Date().toISOString()
     };
     
-    const issue = await githubReporter.reportError(testError, context);
-    
-    if (issue) {
-      res.json({
-        success: true,
-        timestamp: new Date().toISOString(),
-        issue: {
-          number: issue.number,
-          url: issue.html_url,
-          title: issue.title
-        }
-      });
-    } else {
-      res.status(400).json({
+    res.json({
+      success: true,
+      data: healthData
+    });
+
+  } catch (error) {
+    logger.error('Failed to get performance health', { error: error.message });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve performance health'
+    });
+  }
+});
+
+/**
+ * DELETE /api/performance/metrics/reset
+ * Reset performance metrics (admin only)
+ */
+router.delete('/metrics/reset', authenticateToken, async (req, res) => {
+  try {
+    // Check admin permissions
+    if (!req.user.permissions.includes('admin')) {
+      return res.status(403).json({
         success: false,
-        error: 'Issue creation was skipped (rate limited or filtered)'
+        error: 'Admin permissions required'
       });
     }
-  } catch (error) {
-    logger.error('Failed to create test GitHub issue', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to create test issue',
-      message: error.message
-    });
-  }
-});
 
-/**
- * Reset performance metrics
- */
-router.post('/metrics/reset', async (req, res) => {
-  try {
-    const performanceMonitor = getPerformanceMonitor();
-    performanceMonitor.resetMetrics();
+    // Reset metrics
+    latencyService.metrics.systemPerformance = {
+      totalRequests: 0,
+      totalErrors: 0,
+      averageLatency: 0,
+      p50Latency: 0,
+      p90Latency: 0,
+      p95Latency: 0,
+      p99Latency: 0,
+      maxLatency: 0,
+      minLatency: Number.MAX_VALUE
+    };
+    
+    latencyService.metrics.operationLatency.clear();
+    latencyService.metrics.exchangeLatency.clear();
+    latencyService.metrics.orderRoundTrip.clear();
+    
+    logger.info('Performance metrics reset', { userId: req.user.id });
     
     res.json({
       success: true,
-      timestamp: new Date().toISOString(),
-      message: 'Performance metrics reset successfully'
+      message: 'Performance metrics reset successfully',
+      timestamp: new Date().toISOString()
     });
+
   } catch (error) {
-    logger.error('Failed to reset performance metrics', error);
+    logger.error('Failed to reset performance metrics', { error: error.message });
     res.status(500).json({
       success: false,
-      error: 'Failed to reset performance metrics',
-      message: error.message
+      error: 'Failed to reset performance metrics'
     });
   }
 });
 
 /**
- * Trigger performance optimization
+ * Error handling middleware
  */
-router.post('/optimize', async (req, res) => {
-  try {
-    const performanceMonitor = getPerformanceMonitor();
-    
-    // Force memory optimization
-    performanceMonitor.optimizeMemory();
-    
-    // Get updated metrics
-    const metrics = performanceMonitor.getPerformanceMetrics();
-    
-    res.json({
-      success: true,
-      timestamp: new Date().toISOString(),
-      message: 'Performance optimization triggered',
-      metrics: {
-        memory: metrics.memory,
-        uptime: metrics.uptime
-      }
-    });
-  } catch (error) {
-    logger.error('Failed to trigger performance optimization', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to trigger optimization',
-      message: error.message
-    });
-  }
-});
+router.use((error, req, res, next) => {
+  logger.error('Performance router error', {
+    error: error.message,
+    stack: error.stack,
+    url: req.url
+  });
 
-/**
- * Get health status with performance indicators
- */
-router.get('/health', async (req, res) => {
-  try {
-    const performanceMonitor = getPerformanceMonitor();
-    const githubReporter = getGitHubIssueReporter();
-    
-    const metrics = performanceMonitor.getPerformanceMetrics();
-    const githubStatus = githubReporter.getStatus();
-    
-    // Determine health status
-    const memoryUsage = metrics.memory.usage;
-    const cpuUsage = metrics.cpu.usage;
-    const errorRate = metrics.requests.errorRate;
-    
-    const thresholds = metrics.thresholds;
-    const isHealthy = 
-      memoryUsage < thresholds.memoryUsage &&
-      cpuUsage < thresholds.cpuUsage &&
-      errorRate < thresholds.errorRate;
-    
-    const status = isHealthy ? 'healthy' : 'degraded';
-    const statusCode = isHealthy ? 200 : 503;
-    
-    res.status(statusCode).json({
-      status,
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      performance: {
-        memory: {
-          usage: `${(memoryUsage * 100).toFixed(2)}%`,
-          threshold: `${(thresholds.memoryUsage * 100).toFixed(2)}%`,
-          healthy: memoryUsage < thresholds.memoryUsage
-        },
-        cpu: {
-          usage: `${(cpuUsage * 100).toFixed(2)}%`,
-          threshold: `${(thresholds.cpuUsage * 100).toFixed(2)}%`,
-          healthy: cpuUsage < thresholds.cpuUsage
-        },
-        requests: {
-          errorRate: `${(errorRate * 100).toFixed(2)}%`,
-          threshold: `${(thresholds.errorRate * 100).toFixed(2)}%`,
-          healthy: errorRate < thresholds.errorRate,
-          total: metrics.requests.total,
-          rps: metrics.requests.requestsPerSecond.toFixed(2)
-        }
-      },
-      services: {
-        github: {
-          enabled: githubStatus.enabled,
-          configured: githubStatus.configured,
-          rateLimitOk: githubStatus.rateLimitOk
-        }
-      }
-    });
-  } catch (error) {
-    logger.error('Failed to get health status', error);
-    res.status(500).json({
-      status: 'error',
-      timestamp: new Date().toISOString(),
-      error: 'Failed to retrieve health status',
-      message: error.message
-    });
-  }
+  res.status(500).json({
+    success: false,
+    error: 'Internal server error'
+  });
 });
 
 module.exports = router;

@@ -5,6 +5,7 @@ const AdvancedMLService = require('../utils/advancedMLService');
 const backtestingService = require('../utils/backtestingService');
 const tradingStrategyFactory = require('../utils/tradingStrategyFactory');
 const advancedIndicators = require('../utils/advancedIndicators');
+const MLPerformanceTracker = require('./mlPerformanceTracker');
 const logger = require('../utils/logger');
 
 /**
@@ -15,6 +16,7 @@ class MLService {
   constructor() {
     this.advancedMLService = new AdvancedMLService();
     this.realMLService = realMLService;
+    this.performanceTracker = new MLPerformanceTracker();
   }
 
   /**
@@ -194,6 +196,28 @@ class MLService {
         });
       }
 
+      // Track predictions in performance tracker
+      if (predictions && Array.isArray(predictions.predictions)) {
+        for (const prediction of predictions.predictions.slice(0, 10)) { // Limit to avoid overwhelming tracker
+          try {
+            await this.performanceTracker.recordPrediction(modelId, {
+              input: prediction.input || options,
+              prediction: prediction.value || prediction.price || prediction.signal,
+              confidence: prediction.confidence || 0.75,
+              features: prediction.features || {},
+              metadata: {
+                symbol: options.symbol,
+                timeframe: model.target_timeframe,
+                algorithm: model.algorithm_type,
+                userId: userId
+              }
+            });
+          } catch (trackingError) {
+            logger.warn('Failed to track prediction:', trackingError);
+          }
+        }
+      }
+
       return {
         modelId,
         modelName: model.name,
@@ -287,6 +311,78 @@ class MLService {
       logger.error(`Error getting metrics for model ${modelId}:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Update prediction outcome for performance tracking
+   */
+  async updatePredictionOutcome(predictionId, actualOutcome, metadata = {}) {
+    try {
+      const result = await this.performanceTracker.updatePredictionOutcome(
+        predictionId,
+        actualOutcome,
+        metadata
+      );
+
+      logger.debug('Prediction outcome updated', {
+        predictionId,
+        actualOutcome,
+        accuracy: result.accuracy,
+        service: 'ml-service'
+      });
+
+      return result;
+    } catch (error) {
+      logger.error('Failed to update prediction outcome:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get model performance report
+   */
+  async getModelPerformanceReport(modelId, userId) {
+    try {
+      // Verify user has access to model
+      const model = await this._getModelById(modelId, userId);
+      if (!model) {
+        throw new Error('Model not found');
+      }
+
+      const report = this.performanceTracker.getModelPerformanceReport(modelId);
+      
+      if (!report) {
+        return {
+          modelId,
+          modelName: model.name,
+          algorithm: model.algorithm_type,
+          message: 'No performance data available yet',
+          performance: {
+            totalPredictions: 0,
+            accuratePredictions: 0,
+            currentAccuracy: 0,
+            recentAccuracy: 0
+          }
+        };
+      }
+
+      return {
+        modelId,
+        modelName: model.name,
+        algorithm: model.algorithm_type,
+        ...report
+      };
+    } catch (error) {
+      logger.error(`Error getting performance report for model ${modelId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get performance tracker instance for direct access
+   */
+  getPerformanceTracker() {
+    return this.performanceTracker;
   }
 
   // Private helper methods

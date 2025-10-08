@@ -7,43 +7,26 @@ const logger = require('./logger');
 const advancedIndicators = require('./advancedIndicators');
 
 /**
- * DEPRECATED ML SERVICE
+ * ⚠️  DEPRECATED ML SERVICE - DO NOT USE ⚠️ 
  * 
- * This service contains legacy fake ML implementations that don't actually work.
- * It's being kept for backward compatibility but should not be used for new features.
+ * This service has been DEPRECATED and replaced by realMLService.js and productionMLModel.js
  * 
- * ⚠️ WARNING: This service contains mock/fake implementations!
+ * ❌ This service contains FAKE/MOCK implementations that do not work
+ * ❌ All methods throw errors to prevent accidental usage
+ * ❌ This file is kept only for reference and will be removed
  * 
- * Use realMLService.js instead for legitimate ML algorithms.
+ * ✅ Use realMLService.js for legitimate ML algorithms
+ * ✅ Use productionMLModel.js for production ML trading models
+ * ✅ Use advancedMLService.js for advanced algorithms (LSTM, Random Forest, etc.)
  */
 
 class DeprecatedMLService {
   constructor() {
-    this.models = new Map();
-    this.realtimePredictions = new Map();
-    this.modelPerformanceTracking = new Map();
+    logger.error('DEPRECATED: Attempted to use legacy ML Service. This service is disabled.');
+    logger.error('Use realMLService.js, productionMLModel.js, or advancedMLService.js instead.');
     
-    // These are the old fake algorithm claims
-    this.algorithms = {
-      LINEAR_REGRESSION: 'linear_regression',
-      POLYNOMIAL_REGRESSION: 'polynomial_regression',
-      RANDOM_FOREST: 'random_forest',
-      SVM: 'svm',
-      NAIVE_BAYES: 'naive_bayes',
-      LSTM: 'lstm',
-      MOVING_AVERAGE: 'moving_average',
-      TECHNICAL_INDICATORS: 'technical_indicators',
-      // These were never actually implemented properly:
-      ARIMA: 'arima',
-      SARIMA: 'sarima',
-      SARIMAX: 'sarimax',
-      PROPHET: 'prophet',
-      ENSEMBLE_GRADIENT_BOOST: 'ensemble_gradient_boost',
-      DEEP_NEURAL_NETWORK: 'deep_neural_network',
-      REINFORCEMENT_LEARNING: 'reinforcement_learning'
-    };
-    
-    logger.warn('DEPRECATED: Legacy ML Service loaded. Use realMLService.js for real implementations.');
+    // Throw error to prevent usage
+    throw new Error('DEPRECATED: This ML service is no longer available. Use realMLService.js instead.');
   }
 
   /**

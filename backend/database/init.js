@@ -262,26 +262,45 @@ const initializeDatabase = async () => {
         )
       `);
 
-      // ML Models table
+      // Enhanced ML Models table for production TensorFlow models
       database.run(`
         CREATE TABLE IF NOT EXISTS ml_models (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
           user_id TEXT NOT NULL,
-          algorithm_type TEXT NOT NULL,
-          target_timeframe TEXT NOT NULL,
-          symbols TEXT NOT NULL,
+          model_type TEXT NOT NULL,
+          architecture TEXT NOT NULL,
           parameters TEXT,
-          model_data TEXT,
+          symbols TEXT NOT NULL,
+          timeframe TEXT NOT NULL,
+          features TEXT,
+          description TEXT,
+          status TEXT DEFAULT 'draft',
+          version TEXT DEFAULT '1.0.0',
+          parent_model_id TEXT,
+          reproducibility_hash TEXT,
           training_status TEXT DEFAULT 'untrained',
+          artifact_path TEXT,
+          training_metrics TEXT,
+          validation_metrics TEXT,
+          training_history TEXT,
+          evaluation_results TEXT,
+          feature_importance TEXT,
+          hyperparameters TEXT,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          last_trained DATETIME,
+          trained_at DATETIME,
+          status_updated_at DATETIME,
+          deployed_at DATETIME,
           accuracy REAL,
           precision_score REAL,
           recall_score REAL,
           f1_score REAL,
-          FOREIGN KEY (user_id) REFERENCES users (id)
+          sharpe_ratio REAL,
+          max_drawdown REAL,
+          total_return REAL,
+          FOREIGN KEY (user_id) REFERENCES users (id),
+          FOREIGN KEY (parent_model_id) REFERENCES ml_models (id)
         )
       `);
 
@@ -361,7 +380,7 @@ const initializeDatabase = async () => {
         )
       `);
 
-      // Model Performance Metrics table
+      // Enhanced Model Performance Metrics table
       database.run(`
         CREATE TABLE IF NOT EXISTS model_performance_metrics (
           id TEXT PRIMARY KEY,
@@ -375,6 +394,58 @@ const initializeDatabase = async () => {
           root_mean_square_error REAL,
           directional_accuracy REAL,
           profit_correlation REAL,
+          sharpe_ratio REAL,
+          max_drawdown REAL,
+          total_return REAL,
+          volatility REAL,
+          beta REAL,
+          alpha REAL,
+          information_ratio REAL,
+          calmar_ratio REAL,
+          sortino_ratio REAL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (model_id) REFERENCES ml_models (id)
+        )
+      `);
+
+      // Model Activity Log table
+      database.run(`
+        CREATE TABLE IF NOT EXISTS model_activity_log (
+          id TEXT PRIMARY KEY,
+          model_id TEXT NOT NULL,
+          activity_type TEXT NOT NULL,
+          metadata TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (model_id) REFERENCES ml_models (id)
+        )
+      `);
+
+      // Feature Engineering table
+      database.run(`
+        CREATE TABLE IF NOT EXISTS feature_engineering (
+          id TEXT PRIMARY KEY,
+          model_id TEXT NOT NULL,
+          feature_name TEXT NOT NULL,
+          feature_type TEXT NOT NULL,
+          feature_config TEXT,
+          importance_score REAL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (model_id) REFERENCES ml_models (id)
+        )
+      `);
+
+      // Model Drift Detection table
+      database.run(`
+        CREATE TABLE IF NOT EXISTS model_drift_detection (
+          id TEXT PRIMARY KEY,
+          model_id TEXT NOT NULL,
+          drift_date DATE NOT NULL,
+          drift_score REAL NOT NULL,
+          drift_type TEXT NOT NULL,
+          feature_drift TEXT,
+          performance_drift TEXT,
+          action_taken TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (model_id) REFERENCES ml_models (id)
         )
       `);

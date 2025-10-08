@@ -1,8 +1,8 @@
 {
-  "version": "2.1.0",
-  "name": "AAITI - Auto AI Trading Interface",
-  "description": "Production-Ready AI Trading Platform with Enhanced ML Algorithms and Streamlined Installation",
-  "releaseDate": "2025-01-08",
+  "version": "2.0.0-rc.1",
+  "name": "AAITI - Advanced Automated Intelligent Trading Interface",
+  "description": "Production-Ready Release Candidate - Enterprise AI Trading Platform with Comprehensive Observability & Risk Management",
+  "releaseDate": "2024-12-21",
   "buildNumber": "2",
   "environment": "production",
   "features": [

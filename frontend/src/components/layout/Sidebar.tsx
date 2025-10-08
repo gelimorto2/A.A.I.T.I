@@ -25,6 +25,7 @@ import {
   Extension,
   Lightbulb,
   AccountTree,
+  Assessment,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -50,10 +51,22 @@ const menuItems = [
     description: 'Statistical Models'
   },
   { 
+    text: 'Production ML', 
+    icon: <Psychology />, 
+    path: '/production-ml',
+    description: 'TensorFlow Models'
+  },
+  { 
     text: 'Strategy Creator', 
     icon: <AccountTree />, 
     path: '/strategy-creator',
     description: 'Visual Strategy Builder'
+  },
+  { 
+    text: 'Backtesting', 
+    icon: <Assessment />, 
+    path: '/backtesting',
+    description: 'Advanced Backtesting'
   },
   { 
     text: 'Live Trading', 

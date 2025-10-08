@@ -1,0 +1,31 @@
+{
+  "name": "aaiti-performance-testing",
+  "version": "1.0.0",
+  "description": "Performance testing configuration and scripts for A.A.I.T.I",
+  "scripts": {
+    "install:k6": "curl https://github.com/grafana/k6/releases/download/v0.47.0/k6-v0.47.0-linux-amd64.tar.gz -L | tar xvz --strip-components 1",
+    "test:smoke": "k6 run --scenario smoke tests/performance/load-test.js",
+    "test:load": "k6 run --scenario load tests/performance/load-test.js",
+    "test:stress": "k6 run --scenario stress tests/performance/load-test.js",
+    "test:spike": "k6 run --scenario spike tests/performance/load-test.js",
+    "test:volume": "k6 run --scenario volume tests/performance/load-test.js",
+    "test:all": "npm run test:smoke && npm run test:load && npm run test:stress",
+    "baseline": "k6 run --scenario load --tag baseline=true tests/performance/load-test.js",
+    "report": "node scripts/generate-performance-report.js"
+  },
+  "devDependencies": {
+    "k6": "^0.47.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "performance",
+    "load-testing",
+    "k6",
+    "trading",
+    "api-testing"
+  ],
+  "author": "A.A.I.T.I Team",
+  "license": "MIT"
+}

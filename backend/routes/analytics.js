@@ -7,35 +7,77 @@ const marketDataService = require('../utils/marketData');
 
 const router = express.Router();
 
-// Get general performance analytics for user (all bots combined)
-router.get('/performance', (req, res) => {
-  const { days = 30 } = req.query;
-  const numDays = parseInt(days);
+// Get real performance analytics for user (all bots combined)
+router.get('/performance', authenticateToken, async (req, res) => {
+  try {
+    const { days = 30 } = req.query;
+    const numDays = parseInt(days);
+    const userId = req.user.id;
 
-  // Generate demo performance data for the frontend
-  const performanceData = Array.from({ length: numDays }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - (numDays - i - 1));
-    
-    const basePnl = i * 10; // Gradual upward trend
-    const volatility = Math.random() * 100 - 50; // Random volatility
-    
-    return {
-      date: date.toISOString().split('T')[0],
-      pnl: basePnl + volatility,
-      trades: Math.floor(Math.random() * 15) + 1,
-      winRate: Math.random() * 40 + 50, // 50-90%
-      sharpeRatio: Math.random() * 2 + 0.5, // 0.5-2.5
-      maxDrawdown: Math.random() * -15 - 2 // -2% to -17%
-    };
-  });
+    // Get real trading performance from database
+    const performanceQuery = `
+      SELECT 
+        DATE(t.created_at) as date,
+        COALESCE(SUM(t.pnl), 0) as pnl,
+        COUNT(t.id) as trades,
+        ROUND(
+          (COUNT(CASE WHEN t.pnl > 0 THEN 1 END) * 100.0 / COUNT(t.id)), 
+          2
+        ) as winRate,
+        COALESCE(AVG(t.pnl), 0) as avgPnl,
+        COALESCE(MIN(t.pnl), 0) as maxDrawdown
+      FROM trades t
+      INNER JOIN bots b ON t.bot_id = b.id
+      WHERE b.user_id = ? 
+        AND t.created_at >= DATE('now', '-${numDays} days')
+      GROUP BY DATE(t.created_at)
+      ORDER BY date ASC
+    `;
 
-  res.json({ 
-    performance: performanceData,
-    period: `${numDays} days`,
-    success: true
-  });
+    const performanceData = await new Promise((resolve, reject) => {
+      db.all(performanceQuery, [userId], (err, rows) => {
+        if (err) {
+          logger.error('Error fetching performance data:', err);
+          reject(err);
+        } else {
+          resolve(rows || []);
+        }
+      });
+    });
+
+    // Calculate Sharpe ratio and other metrics
+    const processedData = performanceData.map(row => ({
+      date: row.date,
+      pnl: parseFloat(row.pnl) || 0,
+      trades: parseInt(row.trades) || 0,
+      winRate: parseFloat(row.winRate) || 0,
+      sharpeRatio: calculateSharpeRatio(row.pnl, row.avgPnl),
+      maxDrawdown: parseFloat(row.maxDrawdown) || 0
+    }));
+
+    res.json({ 
+      performance: processedData,
+      period: `${numDays} days`,
+      success: true
+    });
+  } catch (error) {
+    logger.error('Error in performance analytics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch performance data'
+    });
+  }
 });
+
+// Helper function to calculate Sharpe ratio
+function calculateSharpeRatio(returns, avgReturn) {
+  if (!returns || returns === 0) return 0;
+  // Simplified Sharpe ratio calculation
+  const riskFreeRate = 0.02; // 2% annual risk-free rate
+  const excessReturn = avgReturn - (riskFreeRate / 252); // Daily risk-free rate
+  const volatility = Math.abs(returns) * 0.1; // Simplified volatility
+  return volatility > 0 ? excessReturn / volatility : 0;
+}
 
 // Get portfolio overview for user
 router.get('/portfolio', authenticateToken, (req, res) => {

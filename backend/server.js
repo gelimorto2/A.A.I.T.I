@@ -15,6 +15,16 @@ const tradingEnhancedRoutes = require('./routes/tradingEnhanced');
 const analyticsRoutes = require('./routes/analytics');
 const userRoutes = require('./routes/users');
 const mlRoutes = require('./routes/ml');
+// Temporarily disabled due to missing @tensorflow/tfjs-node dependency
+// const productionMLRoutes = require('./routes/productionML');
+// Sprint 3: ML Models Management routes
+const mlModelsRoutes = require('./routes/mlModels');
+const strategyLifecycleRoutes = require('./routes/strategyLifecycle');
+const advancedStrategiesRoutes = require('./routes/advancedStrategies');
+const featureEngineeringRoutes = require('./routes/featureEngineering');
+// Temporarily disabled due to missing @tensorflow/tfjs-node dependency
+// const mlPipelineRoutes = require('./routes/mlPipeline');
+const strategyExecutionRoutes = require('./routes/strategyExecution');
 const notificationRoutes = require('./routes/notifications');
 const functionsRoutes = require('./routes/functions');
 const logsRoutes = require('./routes/logs');
@@ -25,6 +35,8 @@ const apiKeysRoutes = require('./routes/apiKeys');
 const oauthRoutes = require('./routes/oauth');
 const complianceRoutes = require('./routes/compliance');
 const dataRetentionRoutes = require('./routes/dataRetention');
+// Sprint 4: Security Management routes
+const securityManagementRoutes = require('./routes/securityManagement');
 // Advanced Features routes
 const aiInsightsRoutes = require('./routes/aiInsights');
 const integrationsRoutes = require('./routes/integrations');
@@ -42,6 +54,33 @@ const highFrequencyTradingRoutes = require('./routes/highFrequencyTrading');
 const intelligentTradingAssistantsRoutes = require('./routes/intelligentTradingAssistants');
 // Production Trading routes - Real ML trading integration
 const productionTradingRoutes = require('./routes/productionTrading');
+// ML Performance tracking routes
+const { router: mlPerformanceRoutes, setupWebSocket: setupMLWebSocket } = require('./routes/mlPerformance');
+// Risk management routes
+const riskRoutes = require('./routes/risk');
+// Real Risk Engine routes
+const riskManagementRoutes = require('./routes/riskManagement');
+// Performance Load Testing routes
+const loadTestingRoutes = require('./routes/loadTesting');
+// Advanced backtesting routes
+const backtestingRoutes = require('./routes/backtesting');
+// Observability routes
+const observabilityRoutes = require('./routes/observability');
+// Chaos Testing routes
+const chaosTestingRoutes = require('./routes/chaosTestingRoutes');
+// Disaster Recovery routes
+const disasterRecoveryRoutes = require('./routes/disasterRecoveryRoutes');
+
+// Sprint 7: Advanced Analytics & Real-Time Intelligence routes
+const marketIntelligenceRoutes = require('./routes/marketIntelligence');
+const realTimeIntelligenceRoutes = require('./routes/realTimeIntelligence');
+const institutionalAnalyticsRoutesSpring7 = require('./routes/institutionalAnalytics');
+const technicalAnalysisRoutes = require('./routes/technicalAnalysis');
+const correlationAnalysisRoutes = require('./routes/correlationAnalysis');
+const { router: regimeDetectionRoutes, initializeRegimeRoutes } = require('./routes/regimeDetection');
+const { router: executiveDashboardRoutes, initializeDashboardRoutes } = require('./routes/executiveDashboard');
+const { router: pnlAttributionRoutes, initializeAttributionRoutes } = require('./routes/pnlAttribution');
+const { router: modelInterpretabilityRoutes, initializeInterpretabilityRoutes } = require('./routes/modelInterpretability');
 
 const { initializeDatabase } = require('./database/init');
 const databaseConfig = require('./config/database');
@@ -61,6 +100,27 @@ const { getVersionManager } = require('./utils/apiVersionManager');
 // Security & Compliance services
 const apiKeyManager = require('./utils/apiKeyManager');
 const dataRetentionService = require('./utils/dataRetentionService');
+
+// Sprint 7: Advanced Analytics & Intelligence Services
+const MarketIntelligenceService = require('./services/marketIntelligenceService');
+const RealTimeIntelligenceEngine = require('./services/realTimeIntelligenceEngine');
+const InstitutionalAnalytics = require('./services/institutionalAnalytics');
+const AdvancedTechnicalAnalysisEngine = require('./services/advancedTechnicalAnalysisEngine');
+const CrossAssetCorrelationAnalyzer = require('./services/crossAssetCorrelationAnalyzer');
+const MarketRegimeDetector = require('./services/marketRegimeDetector');
+const ExecutiveDashboardService = require('./services/executiveDashboardService');
+const PnLAttributionService = require('./services/pnlAttributionService');
+const ModelInterpretabilityService = require('./services/modelInterpretabilityService');
+
+// Sprint 3: Strategy Lifecycle Management
+const StrategyLifecycleManager = require('./services/strategyLifecycleManager');
+
+// Sprint 4: Security Middleware
+const { authenticateUser } = require('./middleware/auth');
+const { rbac } = require('./middleware/rbacMiddleware');
+const { inputCanonicalizer } = require('./middleware/inputCanonicalizationMiddleware');
+const { hmac } = require('./middleware/hmacMiddleware');
+const { scanner } = require('./services/dependencyScanner');
 
 // Performance configuration
 const performanceConfig = require('./config/performance');
@@ -88,6 +148,20 @@ logger.setDashboard(dashboard);
 // Initialize performance monitor and GitHub issue reporter
 let performanceMonitor;
 let githubReporter;
+
+// Sprint 7: Advanced Analytics & Intelligence Services instances
+let marketIntelligenceService;
+let realTimeIntelligenceEngine;
+let institutionalAnalyticsService;
+let advancedTechnicalAnalysisEngine;
+let crossAssetCorrelationAnalyzer;
+let marketRegimeDetector;
+let executiveDashboardService;
+let pnlAttributionService;
+let modelInterpretabilityService;
+
+// Sprint 3: Strategy Lifecycle Management
+let strategyLifecycleManager;
 
 const initializePerformanceServices = () => {
   try {
@@ -175,12 +249,38 @@ const initializeSocketIO = () => {
   });
 };
 
+// Register Sprint 7 routes after service initialization
+const registerSprint7Routes = () => {
+  if (marketIntelligenceService && realTimeIntelligenceEngine && institutionalAnalyticsService) {
+    app.use('/api/market-intelligence', marketIntelligenceRoutes(marketIntelligenceService, logger));
+    app.use('/api/real-time-intelligence', realTimeIntelligenceRoutes(realTimeIntelligenceEngine, logger));
+    app.use('/api/institutional-analytics', institutionalAnalyticsRoutesSpring7(institutionalAnalyticsService, logger));
+    app.use('/api/technical-analysis', technicalAnalysisRoutes(advancedTechnicalAnalysisEngine, logger));
+    app.use('/api/correlation-analysis', correlationAnalysisRoutes(crossAssetCorrelationAnalyzer, logger));
+    app.use('/api/regime', initializeRegimeRoutes(marketRegimeDetector));
+    app.use('/api/executive', initializeDashboardRoutes(executiveDashboardService));
+    app.use('/api/attribution', initializeAttributionRoutes(pnlAttributionService));
+    app.use('/api/interpretability', initializeInterpretabilityRoutes(modelInterpretabilityService));
+    logger.info('✅ Sprint 7 routes registered successfully', { service: 'aaiti-backend' });
+  } else {
+    logger.warn('⚠️ Sprint 7 services not initialized, routes skipped', { service: 'aaiti-backend' });
+  }
+};
+
 // Initialize app middleware
 const initializeMiddleware = () => {
   logger.info('🔐 Setting up security middleware...', { service: 'aaiti-backend' });
   
+  // Initialize observability middleware first
+  const { initializeObservabilityMiddleware } = require('./middleware/observabilityMiddleware');
+  initializeObservabilityMiddleware();
+  
   // Get metrics instance for middleware
   const metrics = getMetrics();
+  
+  // Observability middleware (first, to capture all requests)
+  const { observabilityMiddleware } = require('./middleware/observabilityMiddleware');
+  app.use(observabilityMiddleware);
   
   // Prometheus metrics middleware (before other middleware)
   app.use(metrics.createMiddleware());
@@ -241,6 +341,20 @@ const initializeMiddleware = () => {
   // Performance metrics middleware (before routes)
   app.use(collectRequestMetrics);
 
+  // Sprint 4: Security middleware stack (in correct order)
+  logger.info('🔒 Initializing Sprint 4 security middleware stack...', { service: 'aaiti-backend' });
+  
+  // 1. Input canonicalization (first line of defense)
+  app.use(inputCanonicalizer.middleware);
+  
+  // 2. HMAC authentication for protected trading endpoints
+  app.use('/api/trading', hmac.middleware);
+  app.use('/api/strategies', hmac.middleware);
+  app.use('/api/ml-models', hmac.middleware);
+  
+  // 3. RBAC authorization (after authentication)
+  app.use(rbac.middleware);
+
   // Add performance monitoring middleware
   app.use((req, res, next) => {
     if (performanceMonitor) {
@@ -276,6 +390,16 @@ const initializeMiddleware = () => {
   app.use('/api/analytics', analyticsRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/ml', mlRoutes);
+  // Temporarily disabled due to missing @tensorflow/tfjs-node dependency
+  // app.use('/api/production-ml', productionMLRoutes);
+  // Sprint 3: ML Models Management
+  app.use('/api/ml-models', mlModelsRoutes);
+  app.use('/api/strategies', strategyLifecycleRoutes(strategyLifecycleManager));
+  app.use('/api/advanced-strategies', advancedStrategiesRoutes);
+  app.use('/api/feature-engineering', featureEngineeringRoutes);
+  // Temporarily disabled due to missing @tensorflow/tfjs-node dependency
+  // app.use('/api/ml-pipeline', mlPipelineRoutes);
+  app.use('/api/strategy-execution', strategyExecutionRoutes);
   app.use('/api/notifications', notificationRoutes);
   app.use('/api/functions', functionsRoutes);
   app.use('/api/logs', logsRoutes);
@@ -284,11 +408,19 @@ const initializeMiddleware = () => {
   const performanceRoutes = require('./routes/performance');
   app.use('/api/performance', performanceRoutes);
   
+  // Real Risk Engine routes
+  app.use('/api/risk-management', riskManagementRoutes);
+  
+  // Performance Load Testing routes
+  app.use('/api/load-testing', loadTestingRoutes);
+  
   // Security & Compliance routes
   app.use('/api/api-keys', apiKeysRoutes);
   app.use('/api/oauth', oauthRoutes);
   app.use('/api/compliance', complianceRoutes);
   app.use('/api/data-retention', dataRetentionRoutes);
+  // Sprint 4: Security Management routes
+  app.use('/api/security', securityManagementRoutes);
   
   // Advanced Features routes
   app.use('/api/ai-insights', aiInsightsRoutes);
@@ -314,6 +446,26 @@ const initializeMiddleware = () => {
   
   // Production Trading routes - Real ML trading integration
   app.use('/api/production-trading', productionTradingRoutes);
+  
+  // ML Performance tracking routes
+  app.use('/api/ml-performance', mlPerformanceRoutes);
+  
+  // Risk management routes
+  app.use('/api/risk', riskRoutes);
+  
+  // Observability routes
+  app.use('/api/observability', observabilityRoutes);
+  
+  // Chaos Testing routes
+  app.use('/api/chaos', chaosTestingRoutes);
+  
+  // Disaster Recovery routes
+  app.use('/api/disaster-recovery', disasterRecoveryRoutes);
+  
+  // Advanced backtesting routes
+  app.use('/api/backtesting', backtestingRoutes);
+  
+  // Sprint 7 routes will be registered after service initialization
   
   // Metrics routes (for monitoring) under /api/metrics to avoid /api/health conflict
   app.use('/api/metrics', metricsRoutes);
@@ -666,18 +818,99 @@ const startServer = async () => {
     await apiKeyManager.cleanupExpiredKeys();
     logger.info('✅ Expired API keys cleaned up', { service: 'aaiti-backend' });
     
+    // Sprint 4: Initialize security components
+    logger.info('🔒 Initializing Sprint 4 security components...', { service: 'aaiti-backend' });
+    
+    // Initialize dependency scanner
+    try {
+      await scanner.initialize();
+      logger.info('✅ Dependency scanner initialized', { service: 'aaiti-backend' });
+      
+      // Run initial security scan (non-blocking)
+      scanner.runScan().then(results => {
+        const { vulnerabilities } = results;
+        const criticalCount = vulnerabilities.summary.critical || 0;
+        const highCount = vulnerabilities.summary.high || 0;
+        
+        if (criticalCount > 0 || highCount > 0) {
+          logger.warn('⚠️ Security vulnerabilities detected in dependencies', {
+            critical: criticalCount,
+            high: highCount,
+            service: 'aaiti-backend'
+          });
+        } else {
+          logger.info('✅ No critical security vulnerabilities detected', { service: 'aaiti-backend' });
+        }
+      }).catch(error => {
+        logger.error('Failed to run initial dependency scan', { error: error.message, service: 'aaiti-backend' });
+      });
+    } catch (error) {
+      logger.error('Failed to initialize dependency scanner', { error: error.message, service: 'aaiti-backend' });
+    }
+    
+    // Schedule periodic security scans (every 24 hours)
+    setInterval(async () => {
+      try {
+        logger.info('🔍 Running scheduled security scan...', { service: 'aaiti-backend' });
+        const results = await scanner.runScan();
+        const { vulnerabilities } = results;
+        const criticalCount = vulnerabilities.summary.critical || 0;
+        const highCount = vulnerabilities.summary.high || 0;
+        
+        if (criticalCount > 0 || highCount > 0) {
+          logger.warn('⚠️ Scheduled scan detected security vulnerabilities', {
+            critical: criticalCount,
+            high: highCount,
+            service: 'aaiti-backend'
+          });
+        }
+      } catch (error) {
+        logger.error('Scheduled security scan failed', { error: error.message, service: 'aaiti-backend' });
+      }
+    }, 24 * 60 * 60 * 1000); // 24 hours
+    
     logger.info('✅ Security and compliance services initialized', { service: 'aaiti-backend' });
+    
+    // Initialize Sprint 7: Advanced Analytics & Intelligence Services
+    logger.info('🧠 Initializing Sprint 7 Intelligence Services...', { service: 'aaiti-backend' });
+    marketIntelligenceService = new MarketIntelligenceService(logger);
+    realTimeIntelligenceEngine = new RealTimeIntelligenceEngine(logger);
+    institutionalAnalyticsService = new InstitutionalAnalytics(logger);
+    advancedTechnicalAnalysisEngine = new AdvancedTechnicalAnalysisEngine(logger, marketDataService);
+    crossAssetCorrelationAnalyzer = new CrossAssetCorrelationAnalyzer(logger, marketDataService);
+    marketRegimeDetector = new MarketRegimeDetector(logger, marketDataService);
+    executiveDashboardService = new ExecutiveDashboardService(logger, marketDataService, null);
+    pnlAttributionService = new PnLAttributionService(logger, marketDataService, null);
+    modelInterpretabilityService = new ModelInterpretabilityService(logger, null);
+    
+    // Initialize Sprint 3: Strategy Lifecycle Management
+    logger.info('📋 Initializing Strategy Lifecycle Manager...', { service: 'aaiti-backend' });
+    strategyLifecycleManager = new StrategyLifecycleManager();
+    await strategyLifecycleManager.initialize();
+    
+    // Start intelligence services
+    // Note: These services auto-initialize in their constructors, no explicit initialize() call needed
+    logger.info('✅ Sprint 7 Intelligence Services initialized successfully', { service: 'aaiti-backend' });
     
     // Initialize middleware
     logger.info('⚙️ Setting up application middleware...', { service: 'aaiti-backend' });
     initializeMiddleware();
     logger.info('✅ Middleware initialized successfully', { service: 'aaiti-backend' });
     
+    // Register Sprint 7 routes after services and middleware are ready
+    logger.info('🛣️ Registering Sprint 7 routes...', { service: 'aaiti-backend' });
+    registerSprint7Routes();
+    
     // Initialize Socket.IO
     logger.info('🔌 Initializing WebSocket server...', { service: 'aaiti-backend' });
   const io = initializeSocketIO();
   socketCtx = initializeSocketHandlers(io);
     logger.info('✅ Socket.IO initialized successfully', { service: 'aaiti-backend' });
+    
+    // Initialize ML Performance WebSocket
+    logger.info('🧠 Initializing ML Performance WebSocket...', { service: 'aaiti-backend' });
+    const mlWebSocket = setupMLWebSocket(server);
+    logger.info('✅ ML Performance WebSocket initialized successfully', { service: 'aaiti-backend' });
     
     // Initialize GraphQL server
     logger.info('🔗 Initializing GraphQL server...', { service: 'aaiti-backend' });

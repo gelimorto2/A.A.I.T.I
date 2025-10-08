@@ -655,61 +655,118 @@ const resolvers = {
 
     marketData: async (parent, args) => {
       const { symbols, timeframe = '1h', limit = 100 } = args;
+      const marketDataService = require('../utils/marketData');
       
-      // Mock implementation
-      const mockData = symbols.map(symbol => ({
-        symbol,
-        timestamp: new Date(),
-        open: 50000,
-        high: 52000,
-        low: 49000,
-        close: 51000,
-        volume: 1000000
-      }));
-
-      return mockData;
+      try {
+        // Get real market data for all symbols
+        const marketDataPromises = symbols.map(async (symbol) => {
+          const data = await marketDataService.getHistoricalData(symbol, timeframe);
+          const latestData = data.data.slice(0, limit);
+          
+          return latestData.map(point => ({
+            symbol,
+            timestamp: new Date(point.timestamp),
+            open: point.open,
+            high: point.high,
+            low: point.low,
+            close: point.close,
+            volume: point.volume
+          }));
+        });
+        
+        const allData = await Promise.all(marketDataPromises);
+        return allData.flat();
+      } catch (error) {
+        logger.error('GraphQL marketData error:', error);
+        throw new Error(`Failed to fetch market data: ${error.message}`);
+      }
     },
 
     currentPrices: async (parent, args) => {
       const { symbols } = args;
+      const marketDataService = require('../utils/marketData');
       
-      // Mock implementation
-      return symbols.map(symbol => ({
-        symbol,
-        price: 50000 + Math.random() * 1000,
-        change: Math.random() * 1000 - 500,
-        changePercent: (Math.random() - 0.5) * 10,
-        timestamp: new Date(),
-        volume: Math.random() * 1000000
-      }));
+      try {
+        // Get real current prices for all symbols
+        const pricePromises = symbols.map(async (symbol) => {
+          const quote = await marketDataService.getQuote(symbol);
+          return {
+            symbol,
+            price: quote.price,
+            change: quote.change,
+            changePercent: quote.changePercent,
+            timestamp: new Date(quote.lastUpdated),
+            volume: quote.volume
+          };
+        });
+        
+        return await Promise.all(pricePromises);
+      } catch (error) {
+        logger.error('GraphQL currentPrices error:', error);
+        throw new Error(`Failed to fetch current prices: ${error.message}`);
+      }
     }
   },
 
   Mutation: {
     executeTrade: async (parent, args, context) => {
       const { input } = args;
+      const RealTradingEngine = require('../utils/realTradingEngine');
       
-      // Mock implementation
-      const trade = {
-        id: `trade_${Date.now()}`,
-        userId: context.user?.id || 'user1',
-        symbol: input.symbol,
-        side: input.side,
-        type: input.type,
-        quantity: input.quantity,
-        price: input.price || 50000,
-        status: 'EXECUTED',
-        timestamp: new Date(),
-        exchange: 'binance',
-        fees: 25.0,
-        pnl: 0
-      };
-
-      return {
-        success: true,
-        trade,
-        error: null
-      };
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+      
+      try {
+        const tradingEngine = new RealTradingEngine();
+        
+        // Convert GraphQL input to trading signal format
+        const signal = {
+          symbol: input.symbol,
+          action: input.side,
+          price: input.price,
+          quantity: input.quantity,
+          type: input.type,
+          confidence: 1.0, // Manual trades have full confidence
+          userId: context.user.id
+        };
+        
+        const result = await tradingEngine.executeSignal(signal);
+        
+        if (result.success) {
+          return {
+            success: true,
+            trade: {
+              id: result.orderId || `trade_${Date.now()}`,
+              userId: context.user.id,
+              symbol: input.symbol,
+              side: input.side,
+              type: input.type,
+              quantity: input.quantity,
+              price: result.executedPrice || input.price,
+              status: 'EXECUTED',
+              timestamp: new Date(),
+              exchange: result.exchange || 'binance',
+              fees: result.fees || 0,
+              pnl: 0
+            },
+            error: null
+          };
+        } else {
+          return {
+            success: false,
+            trade: null,
+            error: result.error || 'Trade execution failed'
+          };
+        }
+      } catch (error) {
+        logger.error('GraphQL trade execution error:', error);
+        return {
+          success: false,
+          trade: null,
+          error: error.message
+        };
+      }
     },
 
     clearCache: async (parent, args) => {

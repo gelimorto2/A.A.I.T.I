@@ -166,34 +166,34 @@ class DatabaseConfig {
   }
 
   setupPoolMonitoring() {
-    // Monitor connection pool health every 30 seconds
-    setInterval(() => {
-      this.pools.forEach((pool, name) => {
-        const stats = {
-          totalCount: pool.totalCount,
-          idleCount: pool.idleCount,
-          waitingCount: pool.waitingCount
-        };
+    const DatabasePoolMonitor = require('../utils/databasePoolMonitor');
+    this.poolMonitor = new DatabasePoolMonitor(this.pools);
 
-        logger.debug(`📊 Pool ${name} statistics`, {
-          ...stats,
-          utilization: `${Math.round(((stats.totalCount - stats.idleCount) / pool.options.max) * 100)}%`,
-          service: 'database-config'
+    // Setup pool event listeners for detailed monitoring
+    this.pools.forEach((pool, name) => {
+      if (pool && pool.on) {
+        pool.on('connect', () => {
+          this.poolMonitor.recordConnection('created', name);
         });
 
-        // Alert on high utilization
-        const utilization = (stats.totalCount - stats.idleCount) / pool.options.max;
-        if (utilization > 0.8) {
-          logger.warn('🔥 High database pool utilization detected', {
-            poolName: name,
-            utilization: `${Math.round(utilization * 100)}%`,
-            totalConnections: stats.totalCount,
-            maxConnections: pool.options.max,
+        pool.on('remove', () => {
+          this.poolMonitor.recordConnection('destroyed', name);
+        });
+
+        pool.on('error', (err) => {
+          logger.error('Database pool error', {
+            error: err.message,
+            pool: name,
             service: 'database-config'
           });
-        }
-      });
-    }, 30000);
+        });
+      }
+    });
+
+    logger.info('� Enhanced database pool monitoring initialized', {
+      poolCount: this.pools.size,
+      service: 'database-config'
+    });
   }
 
   getPool(type = 'primary') {

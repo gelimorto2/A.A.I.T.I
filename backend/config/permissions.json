@@ -1,0 +1,225 @@
+{
+  "version": "1.0.0",
+  "description": "Role-Based Access Control (RBAC) permissions matrix for A.A.I.T.I trading platform",
+  "roles": {
+    "admin": {
+      "description": "Full system access and user management",
+      "permissions": [
+        "user:create",
+        "user:read",
+        "user:update",
+        "user:delete",
+        "model:create",
+        "model:read",
+        "model:update",
+        "model:delete",
+        "model:deploy",
+        "model:approve",
+        "strategy:create",
+        "strategy:read",
+        "strategy:update",
+        "strategy:delete",
+        "strategy:validate",
+        "strategy:approve",
+        "strategy:deploy",
+        "strategy:retire",
+        "trading:execute",
+        "trading:cancel",
+        "trading:view_all",
+        "risk:configure",
+        "risk:override",
+        "system:metrics",
+        "system:logs",
+        "system:config",
+        "backtest:run",
+        "backtest:view_all",
+        "api_key:create",
+        "api_key:revoke",
+        "audit:view"
+      ]
+    },
+    "trader": {
+      "description": "Professional trader with model creation and execution rights",
+      "permissions": [
+        "model:create",
+        "model:read",
+        "model:update",
+        "strategy:create",
+        "strategy:read",
+        "strategy:update",
+        "strategy:validate",
+        "trading:execute",
+        "trading:cancel",
+        "trading:view_own",
+        "backtest:run",
+        "backtest:view_own",
+        "api_key:create_limited"
+      ]
+    },
+    "analyst": {
+      "description": "Research analyst with model creation and backtesting rights",
+      "permissions": [
+        "model:create",
+        "model:read",
+        "model:update",
+        "strategy:create",
+        "strategy:read",
+        "strategy:validate",
+        "backtest:run",
+        "backtest:view_own",
+        "trading:view_own"
+      ]
+    },
+    "viewer": {
+      "description": "Read-only access to own resources",
+      "permissions": [
+        "model:read_own",
+        "strategy:read_own",
+        "trading:view_own",
+        "backtest:view_own"
+      ]
+    },
+    "api_user": {
+      "description": "Programmatic API access with limited trading rights",
+      "permissions": [
+        "model:read",
+        "trading:execute_limited",
+        "trading:view_own",
+        "backtest:run_limited"
+      ]
+    }
+  },
+  "special_rules": {
+    "resource_owner_access": true,
+    "admin_override": true,
+    "cross_role_permissions": false
+  },
+  "resources": {
+    "user": ["create", "read", "update", "delete"],
+    "model": ["create", "read", "update", "delete", "deploy", "approve"],
+    "strategy": ["create", "read", "update", "delete", "validate", "approve", "deploy", "retire"],
+    "trading": ["execute", "cancel", "view_own", "view_all", "execute_limited"],
+    "risk": ["configure", "override"],
+    "system": ["metrics", "logs", "config"],
+    "backtest": ["run", "view_own", "view_all", "run_limited"],
+    "api_key": ["create", "revoke", "create_limited"],
+    "audit": ["view"]
+  },
+  "permission_inheritance": {
+    "read_own": ["read"],
+    "view_own": ["view_all"],
+    "execute_limited": ["execute"],
+    "run_limited": ["run"],
+    "create_limited": ["create"]
+  },
+  "route_permissions": {
+    "GET /api/users": ["user:read"],
+    "POST /api/users": ["user:create"],
+    "PUT /api/users/:id": ["user:update"],
+    "DELETE /api/users/:id": ["user:delete"],
+    
+    "GET /api/ml-models": ["model:read"],
+    "POST /api/ml-models": ["model:create"],
+    "PUT /api/ml-models/:id": ["model:update"],
+    "DELETE /api/ml-models/:id": ["model:delete"],
+    "POST /api/ml-models/:id/deploy": ["model:deploy"],
+    "POST /api/ml-models/:id/approve": ["model:approve"],
+    
+    "GET /api/ml-strategy/models": ["model:read"],
+    "POST /api/ml-strategy/models": ["model:create"],
+    "PUT /api/ml-strategy/models/:id": ["model:update"],
+    "DELETE /api/ml-strategy/models/:id": ["model:delete"],
+    "PUT /api/ml-strategy/models/:id/status": ["model:update"],
+    
+    "GET /api/ml-strategy/strategies": ["strategy:read"],
+    "POST /api/ml-strategy/strategies": ["strategy:create"],
+    "PUT /api/ml-strategy/strategies/:id": ["strategy:update"],
+    "DELETE /api/ml-strategy/strategies/:id": ["strategy:delete"],
+    "POST /api/ml-strategy/strategies/:id/validate": ["strategy:validate"],
+    "POST /api/ml-strategy/strategies/:id/approve": ["strategy:approve"],
+    "POST /api/ml-strategy/strategies/:id/deploy": ["strategy:deploy"],
+    "POST /api/ml-strategy/strategies/:id/retire": ["strategy:retire"],
+    
+    "GET /api/trading/orders": ["trading:view_own"],
+    "POST /api/trading/orders": ["trading:execute"],
+    "DELETE /api/trading/orders/:id": ["trading:cancel"],
+    "GET /api/trading/positions": ["trading:view_own"],
+    "GET /api/trading/history": ["trading:view_own"],
+    
+    "GET /api/ml-strategy/backtest/fixtures": ["backtest:run"],
+    "POST /api/ml-strategy/backtest/run": ["backtest:run"],
+    "GET /api/ml-strategy/backtest/results/:modelId": ["backtest:view_own"],
+    "POST /api/ml-strategy/backtest/compare": ["backtest:run"],
+    
+    "GET /api/risk/settings": ["risk:configure"],
+    "PUT /api/risk/settings": ["risk:configure"],
+    "POST /api/risk/override": ["risk:override"],
+    
+    "GET /api/system/metrics": ["system:metrics"],
+    "GET /api/system/logs": ["system:logs"],
+    "PUT /api/system/config": ["system:config"],
+    
+    "POST /api/auth/api-keys": ["api_key:create"],
+    "DELETE /api/auth/api-keys/:id": ["api_key:revoke"],
+    
+    "GET /api/audit/logs": ["audit:view"]
+  },
+  "special_conditions": {
+    "own_resource_access": {
+      "description": "Users can access their own resources even with limited permissions",
+      "routes": [
+        "GET /api/ml-strategy/models",
+        "GET /api/ml-strategy/strategies", 
+        "GET /api/trading/orders",
+        "GET /api/trading/positions",
+        "GET /api/ml-strategy/backtest/results/:modelId"
+      ],
+      "condition": "resource.user_id === user.id"
+    },
+    "api_key_scope_enforcement": {
+      "description": "API keys have limited scope based on their configuration",
+      "enforcement": "api_key.scopes must contain required permission"
+    },
+    "rate_limiting": {
+      "description": "Different roles have different rate limits",
+      "limits": {
+        "admin": "1000/hour",
+        "trader": "500/hour", 
+        "analyst": "300/hour",
+        "viewer": "100/hour",
+        "api_user": "200/hour"
+      }
+    }
+  },
+  "security_policies": {
+    "session_timeout": {
+      "admin": 480,
+      "trader": 240,
+      "analyst": 240,
+      "viewer": 120,
+      "api_user": 0
+    },
+    "mfa_required": {
+      "admin": true,
+      "trader": true,
+      "analyst": false,
+      "viewer": false,
+      "api_user": false
+    },
+    "ip_restrictions": {
+      "admin": "office_network",
+      "trader": "any",
+      "analyst": "any", 
+      "viewer": "any",
+      "api_user": "configured_ips"
+    }
+  },
+  "endpoint_permissions": {
+    "/api/trading": ["admin", "trader"],
+    "/api/strategies": ["admin", "trader", "analyst"],
+    "/api/ml-models": ["admin", "data_scientist"],
+    "/api/security": ["admin"],
+    "/api/users": ["admin"],
+    "/api/analytics": ["admin", "analyst", "trader"]
+  }
+}

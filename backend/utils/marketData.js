@@ -238,9 +238,8 @@ class MarketDataService {
         service: 'market-data'
       });
       
-      // Return mock data as fallback
-      logger.info('Falling back to mock data', { symbol, service: 'market-data' });
-      return this.getMockQuote(symbol);
+      // Don't return mock data - throw the error for proper handling
+      throw new Error(`Failed to fetch real market data for ${symbol}: ${error.message}`);
       }
     });
   }
@@ -388,9 +387,8 @@ class MarketDataService {
         service: 'market-data'
       });
       
-      // Return mock historical data as fallback
-      logger.info('Falling back to mock historical data', { symbol, interval, service: 'market-data' });
-      return this.getMockHistoricalData(symbol, interval);
+      // Don't return mock data - throw the error for proper handling
+      throw new Error(`Failed to fetch real historical data for ${symbol}: ${error.message}`);
     }
   }
 
@@ -475,8 +473,8 @@ class MarketDataService {
             const q = await this.getQuote(sym); // will use existing logic
             fetchedMap[sym] = { usd: q.price, usd_24h_change: q.change, usd_24h_vol: q.volume, last_updated_at: Date.now()/1000 };
           } catch (e) {
-            const mq = this.getMockQuote(sym);
-            fetchedMap[sym] = { usd: mq.price, usd_24h_change: mq.change, usd_24h_vol: mq.volume, last_updated_at: Date.now()/1000 };
+            logger.warn(`Failed to fetch individual quote for ${sym}:`, e.message);
+            // Don't add mock data - leave it empty so the result shows failure
           }
         }
       }
@@ -553,84 +551,10 @@ class MarketDataService {
   }
 
   /**
-   * Mock quote data for fallback
+   * DEPRECATED: Mock data methods removed for production
+   * All market data must come from real sources (CoinGecko, Binance, etc.)
+   * If you need test data, use dedicated test fixtures or test databases
    */
-  getMockQuote(symbol) {
-    const convertedSymbol = this.validateAndConvertSymbol(symbol);
-    const basePrice = 100 + Math.random() * 500;
-    const change = (Math.random() - 0.5) * 10;
-    
-    logger.debug('Generating mock quote data', { 
-      symbol: convertedSymbol, 
-      originalSymbol: symbol,
-      service: 'market-data'
-    });
-    
-    return {
-      symbol: convertedSymbol,
-      originalSymbol: symbol,
-      price: Number((basePrice + change).toFixed(2)),
-      change: Number(change.toFixed(2)),
-      changePercent: Number(((change / basePrice) * 100).toFixed(2)),
-      volume: Math.floor(Math.random() * 10000000),
-      high: Number((basePrice + Math.abs(change) + Math.random() * 5).toFixed(2)),
-      low: Number((basePrice - Math.abs(change) - Math.random() * 5).toFixed(2)),
-      open: Number((basePrice + (Math.random() - 0.5) * 5).toFixed(2)),
-      previousClose: Number(basePrice.toFixed(2)),
-      timestamp: new Date().toISOString().split('T')[0],
-      lastRefreshed: new Date().toISOString(),
-      isMock: true,
-      provider: 'Mock'
-    };
-  }
-
-  /**
-   * Mock historical data for fallback
-   */
-  getMockHistoricalData(symbol, interval) {
-    const convertedSymbol = this.validateAndConvertSymbol(symbol);
-    const data = [];
-    const basePrice = 100 + Math.random() * 500;
-    
-    logger.debug('Generating mock historical data', { 
-      symbol: convertedSymbol, 
-      originalSymbol: symbol,
-      interval,
-      service: 'market-data'
-    });
-    
-    for (let i = 99; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      
-      const volatility = Math.random() * 10;
-      const open = basePrice + (Math.random() - 0.5) * volatility;
-      const close = open + (Math.random() - 0.5) * volatility;
-      const high = Math.max(open, close) + Math.random() * 5;
-      const low = Math.min(open, close) - Math.random() * 5;
-      
-      data.push({
-        date: date.toISOString().split('T')[0],
-        timestamp: date.getTime(),
-        open: Number(open.toFixed(2)),
-        high: Number(high.toFixed(2)),
-        low: Number(low.toFixed(2)),
-        close: Number(close.toFixed(2)),
-        volume: Math.floor(Math.random() * 1000000)
-      });
-    }
-    
-    return {
-      symbol: convertedSymbol,
-      originalSymbol: symbol,
-      interval,
-      data,
-      lastRefreshed: new Date().toISOString(),
-      isMock: true,
-      provider: 'Mock',
-      dataPoints: data.length
-    };
-  }
 
   /**
    * Get popular trading symbols
