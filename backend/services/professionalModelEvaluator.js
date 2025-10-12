@@ -653,8 +653,8 @@ class ProfessionalModelEvaluator {
   }
 
   calculateExpectedShortfall(returns, confidenceLevel) {
-    const var = this.calculateVaR(returns, confidenceLevel);
-    const tailReturns = returns.filter(r => r <= var);
+    const valueAtRisk = this.calculateVaR(returns, confidenceLevel);
+    const tailReturns = returns.filter(r => r <= valueAtRisk);
     return tailReturns.length > 0 ? this.calculateMean(tailReturns) : 0;
   }
 

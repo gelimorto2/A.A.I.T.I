@@ -1027,6 +1027,28 @@ class MarketIntelligenceService extends EventEmitter {
         
         return highCorrelations;
     }
+
+    calculateSkewness(returns) {
+        const mean = returns.reduce((sum, ret) => sum + ret, 0) / returns.length;
+        const variance = returns.reduce((sum, ret) => sum + Math.pow(ret - mean, 2), 0) / returns.length;
+        const stdDev = Math.sqrt(variance);
+        
+        if (stdDev === 0) return 0;
+        
+        const skewness = returns.reduce((sum, ret) => sum + Math.pow((ret - mean) / stdDev, 3), 0) / returns.length;
+        return skewness;
+    }
+
+    calculateKurtosis(returns) {
+        const mean = returns.reduce((sum, ret) => sum + ret, 0) / returns.length;
+        const variance = returns.reduce((sum, ret) => sum + Math.pow(ret - mean, 2), 0) / returns.length;
+        const stdDev = Math.sqrt(variance);
+        
+        if (stdDev === 0) return 0;
+        
+        const kurtosis = returns.reduce((sum, ret) => sum + Math.pow((ret - mean) / stdDev, 4), 0) / returns.length;
+        return kurtosis - 3; // Excess kurtosis
+    }
 }
 
 module.exports = MarketIntelligenceService;
