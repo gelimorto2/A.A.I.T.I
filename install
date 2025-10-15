@@ -23,8 +23,9 @@ VERSION="2.1.0"
 echo -e "${BLUE}"
 cat << EOF
 ╔══════════════════════════════════════════════════════════════════════════════════════╗
-║                    🚀 ${PROJECT_NAME} v${VERSION} - Interactive Installer                     ║
-║                      Auto AI Trading Interface - Docker Edition                     ║
+║                   ${PROJECT_NAME} v${VERSION} - Interactive Installer                ║
+║                      Auto AI Trading Interface - Docker Edition                      ║
+║                    Automated Artificial Intelligence Trading Interface               ║
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 EOF
 echo -e "${NC}"
@@ -57,7 +58,7 @@ print_step() {
 # Simplified setup - no configuration prompts
 # ----------------------------------------------------------------------------
 setup_configuration() {
-    print_info "Skipping configuration setup - will be done through dashboard welcome flow"
+    print_info "WELCOME to the ${PROJECT_NAME} setup"
     return 0
 }
 
@@ -324,7 +325,7 @@ install_aaiti() {
     # Success message
     echo ""
     echo -e "${GREEN}${WHITE}╔════════════════════════════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${GREEN}${WHITE}║                           🎉 Installation Complete! 🎉                                  ║${NC}"
+    echo -e "${GREEN}${WHITE}║                           🎉 Installation Complete! 🎉                                ║${NC}"
     echo -e "${GREEN}${WHITE}╚════════════════════════════════════════════════════════════════════════════════════════╝${NC}"
     echo ""
     echo -e "${WHITE}📊 A.A.I.T.I Dashboard:${NC} ${BLUE}http://localhost:5000${NC}"
@@ -644,13 +645,13 @@ stylish_header() {
         fi
     fi
     echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
-    printf "${BLUE}║${NC}  🚀 %-54s ${BLUE}║\n" "${PROJECT_NAME} v${VERSION}"
-    printf "${BLUE}║${NC}  📊 Status: %-44s ${BLUE}║\n" "$status"
+    printf "${BLUE}║${NC}  🚀 %-54s ${BLUE}                                     ║\n" "${PROJECT_NAME} v${VERSION}"
+    printf "${BLUE}║${NC}  📊 Status: %-44s ${BLUE}                             ║\n" "$status"
     if [ -f .aaiti_setup.env ]; then
         # shellcheck disable=SC1091
         source .aaiti_setup.env
-        printf "${BLUE}║${NC}  👤 Admin: %-45s ${BLUE}║\n" "${AAITI_ADMIN_USERNAME:-admin}"
-        printf "${BLUE}║${NC}  🌐 Port: %-46s ${BLUE}║\n" "${AAITI_APP_PORT:-5000}"
+        printf "${BLUE}║${NC}  👤 Admin: %-45s ${BLUE}                     ║\n" "${AAITI_ADMIN_USERNAME:-admin}"
+        printf "${BLUE}║${NC}  🌐 Port: %-46s ${BLUE}                      ║\n" "${AAITI_APP_PORT:-5000}"
     else
         printf "${BLUE}║${NC}  ⚙️  Run setup to configure admin & port          ${BLUE}║\n"
     fi

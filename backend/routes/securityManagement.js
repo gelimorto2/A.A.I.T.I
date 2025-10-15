@@ -5,7 +5,15 @@ const { rbac, requireAdmin } = require('../middleware/rbacMiddleware');
 const { scanner } = require('../services/dependencyScanner');
 const { inputCanonicalizer } = require('../middleware/inputCanonicalizationMiddleware');
 const { hmac } = require('../middleware/hmacMiddleware');
-const SecurityRegressionSuite = require('../tests/securityRegressionSuite');
+// Only load security regression suite in development/test environments
+let SecurityRegressionSuite = null;
+if (process.env.NODE_ENV !== 'production') {
+  try {
+    SecurityRegressionSuite = require('../tests/securityRegressionSuite');
+  } catch (error) {
+    console.log('Security regression suite not available in production');
+  }
+}
 
 /**
  * Sprint 4: Security & Hardening API Routes
@@ -246,6 +254,13 @@ router.post('/test/fuzzing', requireAdmin(), (req, res) => {
  */
 router.post('/test/regression', requireAdmin(), async (req, res) => {
   try {
+    if (!SecurityRegressionSuite) {
+      return res.status(404).json({
+        success: false,
+        message: 'Security regression suite not available in production environment'
+      });
+    }
+
     logger.info('Security regression test suite initiated by admin');
 
     const securitySuite = new SecurityRegressionSuite(req.app);

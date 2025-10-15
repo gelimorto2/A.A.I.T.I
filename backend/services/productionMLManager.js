@@ -1,7 +1,7 @@
 const ProductionTensorFlowMLService = require('../utils/productionTensorFlowMLService');
 const MLModelRepository = require('../repositories/mlModelRepository');
 const { v4: uuidv4 } = require('uuid');
-const logger = require('./logger');
+const logger = require('../utils/logger');
 const path = require('path');
 
 /**
