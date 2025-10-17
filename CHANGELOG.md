@@ -1,5 +1,122 @@
 # A.A.I.T.I Release Notes & Changelog
 
+## Version 2.1.0 - "Streamlined Installation & Configuration" Update
+**Release Date**: October 2025  
+**Status**: Stable Release
+
+### 🎉 Installation System Overhaul
+
+This release completely overhauls the installation system, making it significantly easier to configure and deploy A.A.I.T.I with proper configuration management and streamlined setup process.
+
+### 🚀 New Features
+
+#### Interactive Configuration Generator
+- **Comprehensive Configuration Wizard**: Step-by-step guided setup
+- **Installation Type Selection**: Production, Development, or Docker-Dev modes
+- **Database Configuration**: SQLite or PostgreSQL with easy setup
+- **API Key Management**: Configure exchange APIs during installation
+- **Security Setup**: Auto-generated JWT secrets and encryption keys
+- **Performance Tuning**: Configure resource limits and optimization settings
+- **Environment-Based Config**: All settings stored in `.env` file
+
+#### Streamlined Installer
+- **Removed Useless Functions**: Eliminated redundant npm and Node.js checks for Docker installations
+- **Docker-Only Focus**: Simplified to Docker-first deployment strategy
+- **Configuration Integration**: Wizard runs automatically during installation
+- **Better Error Handling**: Clear error messages and troubleshooting guidance
+- **Status Management**: Improved status checks with health monitoring
+- **Reconfiguration Support**: Easy configuration updates without reinstall
+
+#### Configuration Management
+- **`.env` File Support**: Industry-standard environment variable management
+- **Configuration Examples**: Comprehensive `.env.example` file
+- **Backup System**: Automatic backup of existing configurations
+- **Secure Permissions**: Automatic file permission setting (600)
+- **Manual Override**: Support for manual configuration editing
+
+### 📝 Documentation Updates
+- **Updated INSTALL.md**: Complete rewrite with configuration guide
+- **Configuration Reference**: Detailed environment variable documentation
+- **Usage Examples**: Production and development configuration examples
+- **Troubleshooting Guide**: Common issues and solutions
+
+### 🔧 Improvements
+
+#### Installation Process
+- **Faster Setup**: Removed unnecessary dependencies and steps
+- **Better UX**: Clear progress indicators and status messages
+- **Flexible Configuration**: Configure once, deploy anywhere
+- **Exchange Integration**: Optional API key setup during installation
+- **Security Hardening**: Auto-generated secrets with proper entropy
+
+#### Docker Integration
+- **Environment Variables**: Full `.env` support in docker-compose.yml
+- **Dynamic Port Binding**: Configure port from .env file
+- **Feature Flags**: Enable/disable features via configuration
+- **Resource Limits**: Configurable memory and CPU limits
+
+#### Developer Experience
+- **Configuration Scripts**: Standalone config generator script
+- **Development Mode**: Optimized settings for local development
+- **Hot Reload Support**: Docker development mode with live updates
+- **Clear Commands**: Simplified management commands
+
+### 🐛 Bug Fixes
+- Fixed installation issues with missing dependencies
+- Resolved configuration inconsistencies between components
+- Fixed Docker port binding issues
+- Corrected environment variable precedence
+
+### 🔒 Security Enhancements
+- Automatic secret generation with strong cryptography
+- Secure file permissions for sensitive configuration
+- Environment variable validation
+- API key encryption support
+
+### 📦 Files Added
+- `scripts/config-generator.sh` - Interactive configuration wizard
+- `scripts/CONFIG_GENERATOR_README.md` - Configuration guide
+- `.env.example` - Configuration template
+- `install.backup` - Backup of previous installer
+
+### 📦 Files Modified
+- `install` - Completely rewritten installer script
+- `docker-compose.yml` - Enhanced with environment variable support
+- `INSTALL.md` - Comprehensive installation guide update
+
+### ⬆️ Upgrade Guide
+
+For existing installations:
+
+1. **Backup your data**:
+   ```bash
+   docker compose down
+   cp -r database database.backup
+   ```
+
+2. **Pull updates**:
+   ```bash
+   git pull
+   ```
+
+3. **Run configuration wizard**:
+   ```bash
+   bash scripts/config-generator.sh
+   ```
+
+4. **Rebuild and start**:
+   ```bash
+   ./install start
+   ```
+
+### 📋 Migration Notes
+- The old `.aaiti_setup.env` file is no longer used
+- Configuration is now in `.env` file
+- Exchange API keys can be configured during installation
+- All previous environment variables are supported
+
+---
+
 ## Version 2.0.0 - "Production Ready" Release Candidate
 **Release Date**: December 2024  
 **Status**: Release Candidate - Ready for Production Deployment

@@ -1,8 +1,8 @@
-# 🚀 A.A.I.T.I Installation Guide - Simplified & Production-Ready
+# 🚀 A.A.I.T.I Installation Guide v2.0 - Streamlined & Production-Ready
 
-## One-Command Installation
+## Quick Start - One-Command Installation
 
-### Universal Docker Installer
+### Universal Docker Installer with Configuration
 
 ```bash
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
@@ -10,14 +10,26 @@ cd A.A.I.T.I
 ./install
 ```
 
-**That's it!** The interactive installer provides a production-ready A.A.I.T.I trading platform in minutes.
+**That's it!** The interactive installer will guide you through configuration and deployment.
+
+## What's New in v2.0
+
+✨ **Interactive Configuration Wizard** - Set up your installation with a step-by-step wizard
+✨ **Streamlined Installation** - Removed unnecessary dependencies and functions
+✨ **Environment-Based Config** - All settings in one `.env` file
+✨ **API Key Management** - Configure exchange APIs during installation
+✨ **Flexible Deployment** - Choose between production, development, or docker-dev modes
 
 ## What the Installer Does
 
 The unified installer:
+- ✅ **Runs configuration wizard** to generate `.env` file
+- ✅ **Configures installation type** (production/development/docker-dev)
+- ✅ **Sets up API keys** for exchanges (Binance, Alpaca, Polygon)
+- ✅ **Configures database** (SQLite or PostgreSQL)
+- ✅ **Generates security secrets** (JWT, encryption keys)
 - ✅ **Checks system requirements** (Docker, memory, disk space)
 - ✅ **Builds production containers** with all ML dependencies
-- ✅ **Configures optimized settings** for trading performance
 - ✅ **Starts all services** with health monitoring
 - ✅ **Provides management commands** for ongoing operations
 
@@ -25,44 +37,124 @@ The unified installer:
 
 ### Minimum Requirements
 - **Docker**: Version 20.0+ with Docker Compose
-- **Memory**: 4GB RAM
+- **Memory**: 4GB RAM (2GB for development)
 - **Disk**: 2GB available space
 - **Network**: Internet connection for market data
 
 ### Supported Operating Systems
 - **Linux**: All distributions with Docker support
 - **macOS**: Docker Desktop required
+- **Windows**: Docker Desktop with WSL2
+
+## Installation Process
+
+### Step 1: Configuration Wizard
+
+When you run `./install` for the first time, you'll be guided through an interactive configuration wizard that asks for:
+
+#### 1. Installation Type
+- **Production** - Docker-based, optimized for live trading
+- **Development** - Local setup with hot-reload and debugging
+- **Docker Development** - Containerized with dev tools
+
+#### 2. Application Settings
+- HTTP port (default: 5000)
+- Log level (error/warn/info/debug)
+- Frontend URL
+
+#### 3. Database Configuration
+- **SQLite** - Simple, file-based (recommended for small deployments)
+- **PostgreSQL** - Production-grade, scalable
+
+#### 4. Security Settings
+- Automatically generated JWT secret
+- Encryption key for sensitive data
+- Session secret
+
+#### 5. Exchange API Keys (Optional)
+- **Binance** - API key, secret, testnet option
+- **Alpaca** - API key, secret, paper trading option
+- **Polygon.io** - Market data API key
+
+#### 6. Performance Settings
+- Thread pool size
+- Memory limits
+- Cache TTL
+- Rate limiting
+
+### Step 2: Docker Build & Deploy
+
+After configuration, the installer will:
+1. Build Docker containers with your configuration
+2. Start services
+3. Perform health checks
+4. Display access URLs and management commands
 
 ## Interactive Installer Menu
 
 When you run `./install`, you get an interactive menu:
 
 ```
-🔧 A.A.I.T.I Interactive Installer
-===================================
+╔══════════════════════════════════════════════════════════════╗
+║  🚀 A.A.I.T.I v2.1.0                                        ║
+║  📊 Status: Running                                          ║
+║  🌐 Port: 5000                                              ║
+╚══════════════════════════════════════════════════════════════╝
 
-1) 🚀 Install A.A.I.T.I (Production Ready)
-2) 📊 Check Status
-3) ⏹️  Stop A.A.I.T.I
-4) 📋 View Logs
-5) ❓ Help
-6) 🚪 Exit
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Main Menu
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1) 🚀 Install / Full Setup
+  2) ▶️  Start Services
+  3) 📊 Check Status
+  4) ⏹️  Stop Services
+  5) 📋 View Logs
+  6) 🔄 Restart Services
+  7) ⚙️  Reconfigure
+  8) ❓ Help
+  9) 🗑️  Remove / Uninstall
+  0) 🚪 Exit
 ```
-
-### Installation Process
-
-1. **System Check**: Verifies Docker is installed and running
-2. **Container Build**: Creates optimized production containers
-3. **Service Start**: Launches A.A.I.T.I with health monitoring
-4. **Ready**: Access at http://localhost:5000
 
 ## Management Commands
 
 After installation, manage A.A.I.T.I with these commands:
 
+### Quick Commands
+
+```bash
+./install start       # Start services
+./install stop        # Stop services
+./install restart     # Restart services
+./install status      # Check status
+./install logs        # View logs (tail -f)
+./install config      # Reconfigure settings
+./install help        # Show help
+```
+
+### Configuration Management
+
+#### Reconfigure Settings
+```bash
+# Run the configuration wizard again
+bash scripts/config-generator.sh
+
+# Or use the installer menu
+./install config
+```
+
+#### Manual Configuration
+You can manually edit the `.env` file:
+```bash
+nano .env
+# After editing, restart services:
+./install restart
+```
+
 ### Check Status
 ```bash
-# Interactive status check
+# Interactive status check with health info
 ./install status
 
 # Direct Docker command
@@ -71,11 +163,14 @@ docker compose ps
 
 ### View Logs
 ```bash
-# Interactive log viewer
+# Interactive log viewer (follows logs)
 ./install logs
 
 # Direct Docker command
 docker compose logs -f aaiti
+
+# Last 100 lines
+docker compose logs --tail 100 aaiti
 ```
 
 ### Stop/Start Services
@@ -204,46 +299,119 @@ docker run --rm -v aaiti_data:/data -v $(pwd):/backup alpine tar xzf /backup/aai
 - 🎯 **Simpler**: No complex configuration options
 - 🔧 **Easier maintenance**: Single configuration to maintain
 
-## Advanced Usage
+## Configuration Reference
 
-### Custom Configuration
+### Environment Variables (.env)
 
-Edit `docker-compose.yml` for custom settings:
+The `.env` file contains all configuration. Here are the key settings:
 
-```yaml
-environment:
-  - NODE_ENV=production
-  - PORT=5000
-  - LOG_LEVEL=info        # debug, info, warn, error
-  - API_RATE_LIMIT_MAX=1000
-  - CACHE_TTL=300
+#### Application Settings
+```bash
+NODE_ENV=production              # production, development
+PORT=5000                        # HTTP port
+LOG_LEVEL=info                   # error, warn, info, debug
+FRONTEND_URL=http://localhost:3000
+```
+
+#### Database Settings
+```bash
+# SQLite (default)
+DB_TYPE=sqlite
+DB_PATH=./database/aaiti.sqlite
+
+# PostgreSQL (alternative)
+DB_TYPE=postgresql
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=aaiti
+DB_USER=aaiti_user
+DB_PASSWORD=your_secure_password
+```
+
+#### Security Settings
+```bash
+JWT_SECRET=auto_generated_secret
+ENCRYPTION_KEY=auto_generated_key
+SESSION_SECRET=auto_generated_secret
+JWT_EXPIRES_IN=7d
+BCRYPT_ROUNDS=12
+```
+
+#### Exchange API Keys
+```bash
+# Binance
+BINANCE_API_KEY=your_api_key
+BINANCE_API_SECRET=your_api_secret
+BINANCE_TESTNET=true
+
+# Alpaca (Stocks)
+ALPACA_API_KEY=your_api_key
+ALPACA_API_SECRET=your_api_secret
+ALPACA_PAPER=true
+
+# Polygon.io (Market Data)
+POLYGON_API_KEY=your_api_key
+```
+
+#### Performance Settings
+```bash
+UV_THREADPOOL_SIZE=16
+NODE_OPTIONS=--max-old-space-size=2048
+CACHE_TTL=300
+API_RATE_LIMIT_WINDOW=900000
+API_RATE_LIMIT_MAX=1000
+```
+
+#### Feature Flags
+```bash
+ENABLE_ML_MODELS=true
+ENABLE_ADVANCED_STRATEGIES=true
+ENABLE_BACKTESTING=true
+ENABLE_PAPER_TRADING=true
+ENABLE_WEBSOCKET=true
+```
+
+### Updating Configuration
+
+After modifying `.env`:
+```bash
+./install restart
 ```
 
 ### Development Mode
 
-For development with hot reload:
+For local development without Docker:
 
-1. Create `docker-compose.override.yml`:
-```yaml
-services:
-  aaiti:
-    volumes:
-      - .:/app
-      - /app/node_modules
-    environment:
-      - NODE_ENV=development
-    command: npm run dev
+1. Run configuration wizard:
+```bash
+bash scripts/config-generator.sh
+# Select "Development" mode
 ```
 
-2. Start: `docker compose up -d`
+2. Install dependencies:
+```bash
+npm install
+cd frontend && npm install
+cd ../backend && npm install
+```
+
+3. Run services:
+```bash
+# Backend
+cd backend && npm run dev
+
+# Frontend (new terminal)
+cd frontend && npm start
+```
 
 ### Network Access
 
-To allow external access, modify `docker-compose.yml`:
-```yaml
-ports:
-  - "0.0.0.0:5000:5000"  # Bind to all interfaces
+To allow external access, modify `.env`:
+```bash
+PORT=0.0.0.0:5000  # Bind to all interfaces
 ```
+
+⚠️ **Warning**: Only expose to external networks with proper firewall and security measures.
 
 ## Getting Help
 

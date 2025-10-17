@@ -55,14 +55,39 @@ A.A.I.T.I delivers institutional-grade trading infrastructure with:
 - **Backtesting Framework**: Historical simulation with realistic transaction costs
 - **Research Platform**: Jupyter integration for strategy development and analysis
 
+## 🚀 Quick Start - New v2.1 Installation
+
+### One-Command Installation with Interactive Configuration
+
+```bash
+# Clone repository
+git clone https://github.com/gelimorto2/A.A.I.T.I.git
+cd A.A.I.T.I
+
+# Run interactive installer (includes configuration wizard)
+./install
+```
+
+The installer will guide you through:
+- ✅ Installation type selection (Production/Development/Docker-Dev)
+- ✅ Database configuration (SQLite/PostgreSQL)
+- ✅ Exchange API keys (Binance, Alpaca, Polygon)
+- ✅ Security settings (auto-generated secrets)
+- ✅ Performance tuning
+- ✅ Automatic Docker deployment
+
+**Access your platform**: `http://localhost:5000`
+
+📚 **[Complete Installation Guide](INSTALL.md)** | 🔧 **[Quick Reference](QUICK_REFERENCE.md)**
+
 ## 🚀 Production Deployment
 
 ### System Requirements
-- **CPU**: 4+ cores (8+ recommended for high-frequency trading)
-- **RAM**: 16GB minimum (32GB+ recommended for production)
-- **Storage**: 100GB+ SSD with RAID for database
+- **Docker**: 20.0+ with Docker Compose
+- **RAM**: 4GB minimum (16GB+ recommended for production)
+- **Storage**: 2GB minimum (100GB+ SSD for production)
 - **Network**: Low-latency internet connection (<50ms to exchange APIs)
-- **OS**: Linux (Ubuntu 20.04+ LTS recommended) or Docker
+- **OS**: Linux, macOS, or Windows with Docker Desktop
 
 ### Enterprise Installation
 
@@ -71,31 +96,78 @@ A.A.I.T.I delivers institutional-grade trading infrastructure with:
 git clone https://github.com/gelimorto2/A.A.I.T.I.git
 cd A.A.I.T.I
 
-# Production deployment with PostgreSQL
-docker-compose -f docker-compose.prod.yml up -d
+# Run interactive installer
+./install
 
-# Initialize production database
-docker-compose exec backend npm run migrate:production
+# During configuration wizard:
+# - Select: Production
+# - Database: PostgreSQL (recommended for production)
+# - Configure your exchange API keys
+# - Set performance tuning for your hardware
 
-# Configure exchange API keys
-cp backend/.env.example backend/.env.production
-# Edit .env.production with your exchange credentials
+# Access dashboard
+# http://localhost:5000
+```
+
+### Configuration Management
+
+```bash
+# Reconfigure settings anytime
+./install config
+
+# Or manually edit configuration
+nano .env
+./install restart
+
+# View current status
+./install status
+
+# View logs
+./install logs
 ```
 
 ### Live Trading Setup
 
+After installation, configure your exchange APIs via:
+
+**Option 1: During Installation**
 ```bash
-# Secure API key configuration
-export BINANCE_API_KEY="your_binance_api_key"
-export BINANCE_SECRET_KEY="your_binance_secret_key"
-export DATABASE_URL="postgresql://user:pass@localhost:5432/aaiti_prod"
+# The wizard will prompt for:
+# - Binance API Key & Secret
+# - Alpaca API Key & Secret (for stocks)
+# - Polygon API Key (for market data)
+```
 
-# Start production services
-docker-compose -f docker-compose.prod.yml up -d
+**Option 2: Manual Configuration**
+```bash
+# Edit .env file
+nano .env
 
-# Verify system health
-curl https://your-domain.com/api/health
-curl https://your-domain.com/api/production-trading/status
+# Add your keys:
+BINANCE_API_KEY=your_api_key
+BINANCE_API_SECRET=your_secret
+BINANCE_TESTNET=true  # Use testnet for testing
+
+# Restart services
+./install restart
+```
+
+**Option 3: Via Dashboard**
+- Navigate to Settings → API Keys
+- Add your exchange credentials
+- Enable trading
+
+### Verify Production Setup
+
+```bash
+# Check system health
+./install status
+
+# View API health
+curl http://localhost:5000/api/health
+
+# Check logs
+./install logs
 ```
 
 ### Development Environment

@@ -5,33 +5,71 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "5000:5000"
+      - "${PORT:-5000}:${PORT:-5000}"
+    env_file:
+      - .env
     environment:
-      - NODE_ENV=production
-      - PORT=5000
-      - DB_PATH=/app/data/aaiti.sqlite
-      - LOG_LEVEL=info
+      # Override with defaults if not set in .env
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-5000}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      
+      # Database Configuration
+      - DB_TYPE=${DB_TYPE:-sqlite}
+      - DB_PATH=${DB_PATH:-/app/data/aaiti.sqlite}
+      - DB_HOST=${DB_HOST:-localhost}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-aaiti}
+      - DB_USER=${DB_USER:-}
+      - DB_PASSWORD=${DB_PASSWORD:-}
+      
+      # SQLite Optimization
+      - SQLITE_CACHE_SIZE=${SQLITE_CACHE_SIZE:-10000}
+      - SQLITE_SYNCHRONOUS=${SQLITE_SYNCHRONOUS:-NORMAL}
+      - SQLITE_JOURNAL_MODE=${SQLITE_JOURNAL_MODE:-WAL}
+      
+      # Security
+      - JWT_SECRET=${JWT_SECRET:-}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
+      - SESSION_SECRET=${SESSION_SECRET:-}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - BCRYPT_ROUNDS=${BCRYPT_ROUNDS:-12}
+      
+      # Exchange API Keys
+      - BINANCE_API_KEY=${BINANCE_API_KEY:-}
+      - BINANCE_API_SECRET=${BINANCE_API_SECRET:-}
+      - BINANCE_TESTNET=${BINANCE_TESTNET:-true}
+      - ALPACA_API_KEY=${ALPACA_API_KEY:-}
+      - ALPACA_API_SECRET=${ALPACA_API_SECRET:-}
+      - ALPACA_PAPER=${ALPACA_PAPER:-true}
+      - POLYGON_API_KEY=${POLYGON_API_KEY:-}
+      
       # Performance Optimizations
-      - UV_THREADPOOL_SIZE=16
-      - NODE_OPTIONS=--max-old-space-size=2048 --max-semi-space-size=64
+      - UV_THREADPOOL_SIZE=${UV_THREADPOOL_SIZE:-16}
+      - NODE_OPTIONS=${NODE_OPTIONS:---max-old-space-size=2048}
       - NPM_CONFIG_UPDATE_NOTIFIER=false
       - FORCE_COLOR=0
-      # Database Configuration
-      - SQLITE_CACHE_SIZE=10000
-      - SQLITE_SYNCHRONOUS=NORMAL
-      - SQLITE_JOURNAL_MODE=WAL
+      
       # API Configuration  
-      - API_RATE_LIMIT_WINDOW=900000
-      - API_RATE_LIMIT_MAX=1000
-      - CACHE_TTL=300
-      - CONCURRENT_REQUESTS=50
+      - API_RATE_LIMIT_WINDOW=${API_RATE_LIMIT_WINDOW:-900000}
+      - API_RATE_LIMIT_MAX=${API_RATE_LIMIT_MAX:-1000}
+      - CACHE_TTL=${CACHE_TTL:-300}
+      - CONCURRENT_REQUESTS=${CONCURRENT_REQUESTS:-50}
+      
+      # Feature Flags
+      - ENABLE_ML_MODELS=${ENABLE_ML_MODELS:-true}
+      - ENABLE_ADVANCED_STRATEGIES=${ENABLE_ADVANCED_STRATEGIES:-true}
+      - ENABLE_BACKTESTING=${ENABLE_BACKTESTING:-true}
+      - ENABLE_PAPER_TRADING=${ENABLE_PAPER_TRADING:-true}
+      - ENABLE_WEBSOCKET=${ENABLE_WEBSOCKET:-true}
+      
     volumes:
       - aaiti_data:/app/data
       - aaiti_logs:/app/logs
       - aaiti_cache:/app/cache
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-5000}/api/health"]
       interval: 30s
       timeout: 15s
       retries: 5
