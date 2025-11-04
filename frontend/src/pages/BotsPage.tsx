@@ -28,6 +28,7 @@ import {
   Add,
   PlayArrow,
   Stop,
+  Pause,
   Edit,
   Delete,
   MoreVert,
@@ -169,7 +170,7 @@ const BotsPage: React.FC = () => {
     }
   };
 
-  const handleBotAction = async (botId: string, action: 'start' | 'stop' | 'pause') => {
+  const handleBotAction = async (botId: string, action: 'start' | 'stop' | 'pause' | 'continue') => {
     try {
       const response = await fetch(`/api/bots/${botId}/${action}`, {
         method: 'POST',
@@ -177,14 +178,26 @@ const BotsPage: React.FC = () => {
       });
 
       if (response.ok) {
-        setSuccess(`Bot ${action}ed successfully!`);
+        const actionPastTense: Record<string, string> = { 
+          start: 'started', 
+          stop: 'stopped', 
+          pause: 'paused', 
+          continue: 'continued' 
+        };
+        setSuccess(`Bot ${actionPastTense[action]} successfully!`);
         dispatch(fetchBots());
       } else {
         const errorData = await response.json();
         setError(errorData.error || `Failed to ${action} bot`);
       }
     } catch (error) {
-      setError(`Network error while ${action}ing bot`);
+      const actionPresent: Record<string, string> = { 
+        start: 'starting', 
+        stop: 'stopping', 
+        pause: 'pausing', 
+        continue: 'continuing' 
+      };
+      setError(`Network error while ${actionPresent[action]} bot`);
     }
   };
 
@@ -430,16 +443,48 @@ const BotsPage: React.FC = () => {
                 {/* Action Buttons */}
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   {bot.status === 'running' ? (
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      color="error"
-                      startIcon={<Stop />}
-                      onClick={() => handleBotAction(bot.id, 'stop')}
-                      fullWidth
-                    >
-                      Stop
-                    </Button>
+                    <>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="warning"
+                        startIcon={<Pause />}
+                        onClick={() => handleBotAction(bot.id, 'pause')}
+                      >
+                        Pause
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="error"
+                        startIcon={<Stop />}
+                        onClick={() => handleBotAction(bot.id, 'stop')}
+                      >
+                        Stop
+                      </Button>
+                    </>
+                  ) : bot.status === 'paused' ? (
+                    <>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="success"
+                        startIcon={<PlayArrow />}
+                        onClick={() => handleBotAction(bot.id, 'continue')}
+                        fullWidth
+                      >
+                        Continue
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="error"
+                        startIcon={<Stop />}
+                        onClick={() => handleBotAction(bot.id, 'stop')}
+                      >
+                        Stop
+                      </Button>
+                    </>
                   ) : (
                     <Button
                       size="small"

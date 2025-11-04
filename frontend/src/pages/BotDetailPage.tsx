@@ -25,6 +25,7 @@ import {
   ArrowBack,
   PlayArrow,
   Stop,
+  Pause,
   Edit,
   SmartToy,
   TrendingUp,
@@ -118,7 +119,7 @@ const BotDetailPage: React.FC = () => {
     }
   };
 
-  const handleBotAction = async (action: 'start' | 'stop') => {
+  const handleBotAction = async (action: 'start' | 'stop' | 'pause' | 'continue') => {
     if (!bot) return;
 
     try {
@@ -129,13 +130,25 @@ const BotDetailPage: React.FC = () => {
       if (response.ok) {
         dispatch(fetchBots());
         // Update local bot state
-        setBot({ ...bot, status: action === 'start' ? 'running' : 'stopped' });
+        const statusMap: Record<string, string> = {
+          start: 'running',
+          continue: 'running',
+          stop: 'stopped',
+          pause: 'paused'
+        };
+        setBot({ ...bot, status: statusMap[action] });
       } else {
         const errorData = await response.json();
         setError(errorData.error || `Failed to ${action} bot`);
       }
     } catch (error) {
-      setError(`Network error while ${action}ing bot`);
+      const actionPresent: Record<string, string> = { 
+        start: 'starting', 
+        stop: 'stopping', 
+        pause: 'pausing', 
+        continue: 'continuing' 
+      };
+      setError(`Network error while ${actionPresent[action]} bot`);
     }
   };
 
@@ -145,6 +158,8 @@ const BotDetailPage: React.FC = () => {
         return <CheckCircle sx={{ color: '#00ff88' }} />;
       case 'stopped':
         return <Stop sx={{ color: '#666' }} />;
+      case 'paused':
+        return <Warning sx={{ color: '#ffaa00' }} />;
       case 'error':
         return <Error sx={{ color: '#ff3366' }} />;
       default:
@@ -238,14 +253,43 @@ const BotDetailPage: React.FC = () => {
             CSV
           </Button>
           {bot.status === 'running' ? (
-            <Button
-              variant="contained"
-              color="error"
-              startIcon={<Stop />}
-              onClick={() => handleBotAction('stop')}
-            >
-              Stop Agent
-            </Button>
+            <>
+              <Button
+                variant="contained"
+                color="warning"
+                startIcon={<Pause />}
+                onClick={() => handleBotAction('pause')}
+              >
+                Pause
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                startIcon={<Stop />}
+                onClick={() => handleBotAction('stop')}
+              >
+                Stop
+              </Button>
+            </>
+          ) : bot.status === 'paused' ? (
+            <>
+              <Button
+                variant="contained"
+                color="success"
+                startIcon={<PlayArrow />}
+                onClick={() => handleBotAction('continue')}
+              >
+                Continue
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                startIcon={<Stop />}
+                onClick={() => handleBotAction('stop')}
+              >
+                Stop
+              </Button>
+            </>
           ) : (
             <Button
               variant="contained"
