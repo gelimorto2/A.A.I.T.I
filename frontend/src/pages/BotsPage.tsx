@@ -178,15 +178,26 @@ const BotsPage: React.FC = () => {
       });
 
       if (response.ok) {
-        const actionPastTense = action === 'continue' ? 'continued' : `${action}ed`;
-        setSuccess(`Bot ${actionPastTense} successfully!`);
+        const actionPastTense: Record<string, string> = { 
+          start: 'started', 
+          stop: 'stopped', 
+          pause: 'paused', 
+          continue: 'continued' 
+        };
+        setSuccess(`Bot ${actionPastTense[action]} successfully!`);
         dispatch(fetchBots());
       } else {
         const errorData = await response.json();
         setError(errorData.error || `Failed to ${action} bot`);
       }
     } catch (error) {
-      setError(`Network error while ${action === 'continue' ? 'continuing' : `${action}ing`} bot`);
+      const actionPresent: Record<string, string> = { 
+        start: 'starting', 
+        stop: 'stopping', 
+        pause: 'pausing', 
+        continue: 'continuing' 
+      };
+      setError(`Network error while ${actionPresent[action]} bot`);
     }
   };
 

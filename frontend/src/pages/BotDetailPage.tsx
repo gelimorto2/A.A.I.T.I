@@ -130,21 +130,25 @@ const BotDetailPage: React.FC = () => {
       if (response.ok) {
         dispatch(fetchBots());
         // Update local bot state
-        let newStatus = bot.status;
-        if (action === 'start' || action === 'continue') {
-          newStatus = 'running';
-        } else if (action === 'stop') {
-          newStatus = 'stopped';
-        } else if (action === 'pause') {
-          newStatus = 'paused';
-        }
-        setBot({ ...bot, status: newStatus });
+        const statusMap: Record<string, string> = {
+          start: 'running',
+          continue: 'running',
+          stop: 'stopped',
+          pause: 'paused'
+        };
+        setBot({ ...bot, status: statusMap[action] });
       } else {
         const errorData = await response.json();
         setError(errorData.error || `Failed to ${action} bot`);
       }
     } catch (error) {
-      setError(`Network error while ${action === 'continue' ? 'continuing' : `${action}ing`} bot`);
+      const actionPresent: Record<string, string> = { 
+        start: 'starting', 
+        stop: 'stopping', 
+        pause: 'pausing', 
+        continue: 'continuing' 
+      };
+      setError(`Network error while ${actionPresent[action]} bot`);
     }
   };
 
