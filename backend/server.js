@@ -15,63 +15,38 @@ const tradingEnhancedRoutes = require('./routes/tradingEnhanced');
 const analyticsRoutes = require('./routes/analytics');
 const userRoutes = require('./routes/users');
 const mlRoutes = require('./routes/ml');
-// Temporarily disabled due to missing @tensorflow/tfjs-node dependency
-// const productionMLRoutes = require('./routes/productionML');
-// Sprint 3: ML Models Management routes
 const mlModelsRoutes = require('./routes/mlModels');
 const strategyLifecycleRoutes = require('./routes/strategyLifecycle');
 const advancedStrategiesRoutes = require('./routes/advancedStrategies');
 const featureEngineeringRoutes = require('./routes/featureEngineering');
-// Temporarily disabled due to missing @tensorflow/tfjs-node dependency
-// const mlPipelineRoutes = require('./routes/mlPipeline');
 const strategyExecutionRoutes = require('./routes/strategyExecution');
 const notificationRoutes = require('./routes/notifications');
 const functionsRoutes = require('./routes/functions');
 const logsRoutes = require('./routes/logs');
 const setupRoutes = require('./routes/setup');
 const { router: metricsRoutes, collectRequestMetrics } = require('./routes/metrics');
-// Security & Compliance routes
 const apiKeysRoutes = require('./routes/apiKeys');
 const oauthRoutes = require('./routes/oauth');
 const complianceRoutes = require('./routes/compliance');
 const dataRetentionRoutes = require('./routes/dataRetention');
-// Sprint 4: Security Management routes
 const securityManagementRoutes = require('./routes/securityManagement');
-// Advanced Features routes
 const aiInsightsRoutes = require('./routes/aiInsights');
 const integrationsRoutes = require('./routes/integrations');
-// Exchange Integration Hub routes (TODO 3.1)
 const exchangeIntegrationRoutes = require('./routes/exchangeIntegration');
-// Next-Generation AI & ML routes (TODO 2.1)
 const nextGenAIRoutes = require('./routes/nextGenAI');
-// Advanced Analytics & Reporting routes (TODO 2.2)
 const advancedAnalyticsRoutes = require('./routes/advancedAnalytics');
-// Paper Trading routes
 const paperTradingRoutes = require('./routes/paperTrading');
-// High-Frequency Trading routes (TODO 3.2)
 const highFrequencyTradingRoutes = require('./routes/highFrequencyTrading');
-// Intelligent Trading Assistants routes (TODO 5.1)
 const intelligentTradingAssistantsRoutes = require('./routes/intelligentTradingAssistants');
-// Production Trading routes - Real ML trading integration
 const productionTradingRoutes = require('./routes/productionTrading');
-// ML Performance tracking routes
 const { router: mlPerformanceRoutes, setupWebSocket: setupMLWebSocket } = require('./routes/mlPerformance');
-// Risk management routes
 const riskRoutes = require('./routes/risk');
-// Real Risk Engine routes
 const riskManagementRoutes = require('./routes/riskManagement');
-// Performance Load Testing routes
 const loadTestingRoutes = require('./routes/loadTesting');
-// Advanced backtesting routes
 const backtestingRoutes = require('./routes/backtesting');
-// Observability routes
 const observabilityRoutes = require('./routes/observability');
-// Chaos Testing routes
 const chaosTestingRoutes = require('./routes/chaosTestingRoutes');
-// Disaster Recovery routes
 const disasterRecoveryRoutes = require('./routes/disasterRecoveryRoutes');
-
-// Sprint 7: Advanced Analytics & Real-Time Intelligence routes
 const marketIntelligenceRoutes = require('./routes/marketIntelligence');
 const realTimeIntelligenceRoutes = require('./routes/realTimeIntelligence');
 const institutionalAnalyticsRoutesSpring7 = require('./routes/institutionalAnalytics');
@@ -97,11 +72,8 @@ const { getMetrics } = require('./utils/prometheusMetrics');
 const { getNotificationManager } = require('./utils/notificationManager');
 const { createGraphQLServer } = require('./routes/graphql');
 const { getVersionManager } = require('./utils/apiVersionManager');
-// Security & Compliance services
 const apiKeyManager = require('./utils/apiKeyManager');
 const dataRetentionService = require('./utils/dataRetentionService');
-
-// Sprint 7: Advanced Analytics & Intelligence Services
 const MarketIntelligenceService = require('./services/marketIntelligenceService');
 const RealTimeIntelligenceEngine = require('./services/realTimeIntelligenceEngine');
 const InstitutionalAnalytics = require('./services/institutionalAnalytics');
@@ -111,21 +83,13 @@ const MarketRegimeDetector = require('./services/marketRegimeDetector');
 const ExecutiveDashboardService = require('./services/executiveDashboardService');
 const PnLAttributionService = require('./services/pnlAttributionService');
 const ModelInterpretabilityService = require('./services/modelInterpretabilityService');
-
-// Sprint 3: Strategy Lifecycle Management
 const StrategyLifecycleManager = require('./services/strategyLifecycleManager');
-
-// Sprint 4: Security Middleware
 const { authenticateUser } = require('./middleware/auth');
 const { rbac } = require('./middleware/rbacMiddleware');
 const { inputCanonicalizer } = require('./middleware/inputCanonicalizationMiddleware');
 const { hmac } = require('./middleware/hmacMiddleware');
 const { scanner } = require('./services/dependencyScanner');
-
-// Performance configuration
 const performanceConfig = require('./config/performance');
-
-// Performance and GitHub reporting services
 const { getPerformanceMonitor } = require('./utils/performanceMonitor');
 const { getGitHubIssueReporter } = require('./utils/githubIssueReporter');
 
@@ -390,15 +354,10 @@ const initializeMiddleware = () => {
   app.use('/api/analytics', analyticsRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/ml', mlRoutes);
-  // Temporarily disabled due to missing @tensorflow/tfjs-node dependency
-  // app.use('/api/production-ml', productionMLRoutes);
-  // Sprint 3: ML Models Management
   app.use('/api/ml-models', mlModelsRoutes);
   app.use('/api/strategies', strategyLifecycleRoutes(strategyLifecycleManager));
   app.use('/api/advanced-strategies', advancedStrategiesRoutes);
   app.use('/api/feature-engineering', featureEngineeringRoutes);
-  // Temporarily disabled due to missing @tensorflow/tfjs-node dependency
-  // app.use('/api/ml-pipeline', mlPipelineRoutes);
   app.use('/api/strategy-execution', strategyExecutionRoutes);
   app.use('/api/notifications', notificationRoutes);
   app.use('/api/functions', functionsRoutes);
