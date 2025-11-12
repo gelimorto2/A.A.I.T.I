@@ -213,34 +213,35 @@ const MetricsCharts: React.FC<MetricsChartsProps> = ({
   };
 
   const generateMockData = () => {
-    const timePoints = generateTimePoints(timeframe);
-    
-    const accuracyData = timePoints.map(time => {
-      const dataPoint: TimeSeriesData = { timestamp: time };
-      displayModels.forEach(model => {
-        // Simulate time series data with some variance
-        const baseAccuracy = model.accuracy;
-        const variance = 0.05 * Math.sin(Date.parse(time) / 1000000) + Math.random() * 0.02 - 0.01;
-        dataPoint[model.id] = Math.max(0, Math.min(1, baseAccuracy + variance));
+    try {
+      const timePoints = generateTimePoints(timeframe);
+      
+      const accuracyData = timePoints.map(time => {
+        const dataPoint: TimeSeriesData = { timestamp: time };
+        displayModels.forEach(model => {
+          // Simulate time series data with some variance
+          const baseAccuracy = model.accuracy;
+          const variance = 0.05 * Math.sin(Date.parse(time) / 1000000) + Math.random() * 0.02 - 0.01;
+          dataPoint[model.id] = Math.max(0, Math.min(1, baseAccuracy + variance));
+        });
+        return dataPoint;
       });
-      return dataPoint;
-    });
 
-    const predictionsData = timePoints.map(time => {
-      const dataPoint: TimeSeriesData = { timestamp: time };
-      displayModels.forEach(model => {
-        // Simulate prediction count over time
-        const basePredictions = model.totalPredictions / timePoints.length;
-        const variance = Math.random() * basePredictions * 0.3;
-        dataPoint[model.id] = Math.floor(basePredictions + variance);
+      const predictionsData = timePoints.map(time => {
+        const dataPoint: TimeSeriesData = { timestamp: time };
+        displayModels.forEach(model => {
+          // Simulate prediction count over time
+          const basePredictions = model.totalPredictions / timePoints.length;
+          const variance = Math.random() * basePredictions * 0.3;
+          dataPoint[model.id] = Math.floor(basePredictions + variance);
+        });
+        return dataPoint;
       });
-      return dataPoint;
-    });
 
-    const driftData = timePoints.map(time => {
-      const dataPoint: TimeSeriesData = { timestamp: time };
-      displayModels.forEach(model => {
-        // Simulate drift over time
+      const driftData = timePoints.map(time => {
+        const dataPoint: TimeSeriesData = { timestamp: time };
+        displayModels.forEach(model => {
+          // Simulate drift over time
           const baseDrift = model.drift;
           const variance = 0.02 * Math.sin(Date.parse(time) / 500000) + Math.random() * 0.01 - 0.005;
           dataPoint[model.id] = Math.max(0, baseDrift + variance);
