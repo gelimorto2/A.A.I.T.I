@@ -323,40 +323,51 @@ const UserManagement: React.FC = () => {
                 </Typography>
 
                 <List>
-                  {activities.slice(0, 10).map((activity, index) => (
-                    <React.Fragment key={activity.id}>
-                      <ListItem>
-                        <ListItemAvatar>
-                          <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
-                            {getActionIcon(activity.action as ActivityAction)}
-                          </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={
-                            <Typography variant="body2">
-                              <strong>{activity.username}</strong> {activity.action.replace('_', ' ')}
-                            </Typography>
-                          }
-                          secondary={
-                            <Box>
-                              <Typography variant="caption" color="text.secondary">
-                                {activity.resource} • {formatTimeAgo(activity.timestamp)}
+                  {activities.slice(0, 10).map((activity, index) => {
+                    // Find the user for this activity to show their avatar
+                    const activityUser = users.find(u => u.username === activity.username);
+                    
+                    return (
+                      <React.Fragment key={activity.id}>
+                        <ListItem>
+                          <ListItemAvatar>
+                            {activityUser ? (
+                              <Avatar sx={{ bgcolor: theme.palette.primary.main, width: 32, height: 32 }}>
+                                {activityUser.username.charAt(0).toUpperCase()}
+                              </Avatar>
+                            ) : (
+                              <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
+                                {getActionIcon(activity.action as ActivityAction)}
+                              </Avatar>
+                            )}
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={
+                              <Typography variant="body2">
+                                <strong>{activity.username}</strong> {activity.action.replace('_', ' ')}
                               </Typography>
-                              {!activity.success && (
-                                <Chip
-                                  label="Failed"
-                                  color="error"
-                                  size="small"
-                                  sx={{ ml: 1 }}
-                                />
-                              )}
-                            </Box>
-                          }
-                        />
-                      </ListItem>
-                      {index < activities.length - 1 && <Divider />}
-                    </React.Fragment>
-                  ))}
+                            }
+                            secondary={
+                              <Box>
+                                <Typography variant="caption" color="text.secondary">
+                                  {activity.resource} • {formatTimeAgo(activity.timestamp)}
+                                </Typography>
+                                {!activity.success && (
+                                  <Chip
+                                    label="Failed"
+                                    color="error"
+                                    size="small"
+                                    sx={{ ml: 1 }}
+                                  />
+                                )}
+                              </Box>
+                            }
+                          />
+                        </ListItem>
+                        {index < activities.length - 1 && <Divider />}
+                      </React.Fragment>
+                    );
+                  })}
                 </List>
 
                 {activities.length === 0 && (
