@@ -13,6 +13,8 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
+  useMediaQuery,
+  useTheme as useMuiTheme,
 } from '@mui/material';
 import {
   Notifications,
@@ -34,6 +36,8 @@ const Navbar: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const { isConnected } = useSocket();
   const { isDarkMode, themeMode, setThemeMode, systemPrefersDark } = useTheme();
+  const muiTheme = useMuiTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
   
   const [themeMenuAnchor, setThemeMenuAnchor] = useState<null | HTMLElement>(null);
 
@@ -82,15 +86,19 @@ const Navbar: React.FC = () => {
 
   return (
     <AppBar 
-      position="static" 
+      position={isMobile ? "sticky" : "static"}
       elevation={0}
       sx={{ 
         bgcolor: 'background.paper',
         borderBottom: '1px solid #333',
         height: 64,
+        top: 0,
+        zIndex: (theme) => theme.zIndex.appBar,
+        // Add safe area insets for iOS devices
+        paddingTop: 'env(safe-area-inset-top)',
       }}
     >
-      <Toolbar sx={{ minHeight: '64px !important' }}>
+      <Toolbar sx={{ minHeight: '64px !important', paddingTop: 'env(safe-area-inset-top)' }}>
         <Typography 
           variant="h5" 
           component="div" 

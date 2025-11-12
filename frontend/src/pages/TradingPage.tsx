@@ -432,7 +432,6 @@ const TradingPage: React.FC = () => {
                   ref={chartContainerRef}
                   sx={{ height: 400, width: '100%' }}
                 />
-</invoke>
               </CardContent>
             </Card>
           </Grid>

@@ -25,7 +25,15 @@ const AppRouter: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <Box sx={{ 
+      display: 'flex', 
+      height: '100vh',
+      // Use dynamic viewport height on mobile to account for browser UI
+      '@supports (height: 100dvh)': {
+        height: '100dvh',
+      },
+      overflow: 'hidden',
+    }}>
       <Sidebar />
       <Box 
         sx={{ 
@@ -33,6 +41,7 @@ const AppRouter: React.FC = () => {
           display: 'flex', 
           flexDirection: 'column',
           ml: isMobile ? 0 : '240px', // Offset for permanent sidebar on desktop
+          overflow: 'hidden',
         }}
       >
         <Navbar />
@@ -41,7 +50,10 @@ const AppRouter: React.FC = () => {
             flexGrow: 1, 
             overflow: 'auto', 
             p: isMobile ? 1 : 2, // Less padding on mobile
-            pt: isMobile ? 8 : 2, // Extra top padding for mobile menu button
+            // Adjust for sticky navbar on mobile
+            ...(isMobile && {
+              paddingTop: 2,
+            }),
           }}
         >
           <Routes>
