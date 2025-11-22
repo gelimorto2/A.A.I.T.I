@@ -206,6 +206,36 @@ router.post('/:id/stop', authenticateToken, auditLog('bot_stop', 'bot'), async (
   }
 });
 
+// Pause bot
+router.post('/:id/pause', authenticateToken, auditLog('bot_pause', 'bot'), async (req, res) => {
+  try {
+    const current = await botsService.getUserBot(req.user.id, req.params.id);
+    if (!current) return res.status(404).json({ error: 'Bot not found' });
+    if (current.status !== 'running') return res.status(400).json({ error: 'Bot must be running to pause' });
+    await botsService.setBotStatus({ userId: req.user.id, botId: req.params.id, status: 'paused' });
+    logger.info(`Bot paused: ${req.params.id} by user ${req.user.username}`);
+    res.json({ message: 'Bot paused successfully' });
+  } catch (err) {
+    logger.error('Error pausing bot:', err);
+    res.status(500).json({ error: 'Failed to pause bot' });
+  }
+});
+
+// Continue (resume) bot
+router.post('/:id/continue', authenticateToken, auditLog('bot_continue', 'bot'), async (req, res) => {
+  try {
+    const current = await botsService.getUserBot(req.user.id, req.params.id);
+    if (!current) return res.status(404).json({ error: 'Bot not found' });
+    if (current.status !== 'paused') return res.status(400).json({ error: 'Bot must be paused to continue' });
+    await botsService.setBotStatus({ userId: req.user.id, botId: req.params.id, status: 'running' });
+    logger.info(`Bot continued: ${req.params.id} by user ${req.user.username}`);
+    res.json({ message: 'Bot continued successfully' });
+  } catch (err) {
+    logger.error('Error continuing bot:', err);
+    res.status(500).json({ error: 'Failed to continue bot' });
+  }
+});
+
 // Delete bot
 router.delete('/:id', authenticateToken, auditLog('bot_delete', 'bot'), async (req, res) => {
   try {
